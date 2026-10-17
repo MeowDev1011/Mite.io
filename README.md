@@ -184,12 +184,3 @@ The code contains Apache-2.0 license headers in files. Check LICENSE in repo roo
 ## Live demo
 Play online: https://mite-io.pages.dev/
 Repo: https://github.com/MeowDev1011/Mite.io
-
----
-
-If you'd like, I can now:
-- Add screenshots or an animated GIF to the README and upload images to the repo.
-- Create a prominent "Play" button in index.html linking to the live demo.
-- Add CONTRIBUTING.md and GitHub ISSUE/PR templates.
-
-Which of these should I do next?
