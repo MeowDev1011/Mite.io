@@ -1,141 +1,147 @@
-# Mite.io 🧫🧬🎮 — Evolución y acción dentro del torrente sanguíneo (EDICIÓN AMIGABLE) 🚀✨
+# Mite.io 🧫🧬🎮 — Evolution action inside the bloodstream
 
 ![Logo Mite.io](mite_io_logo.png)
 
-[![Jugar Online](https://img.shields.io/badge/Play%20Online-mite--io.ai.studio-brightgreen)](https://mite-io.pages.dev/)
-[![Licencia: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/MeowDev1011/Mite.io/blob/main/LICENSE)
+[![Play Online](https://img.shields.io/badge/Play%20Online-mite--io.ai.studio-brightgreen)](https://mite-io.pages.dev/)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/MeowDev1011/Mite.io/blob/main/LICENSE)
 [![Top Language](https://img.shields.io/github/languages/top/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io)
+[![Repo Size](https://img.shields.io/github/repo-size/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io)
+[![TypeScript](https://img.shields.io/badge/TypeScript-%E2%9D%A4-blue)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-Ready-brightgreen)](https://vitejs.dev/)
 
-¡Bienvenido a Mite.io! 🐱🧫
+Mite.io is a fast-paced browser survival game where you play as a microbe inside the bloodstream. 🦠⚡
+Grow by absorbing cells, split to attack or escape, avoid antibodies, evolve with mutations, and dominate the arena. 🧬🔥
 
-Este README está escrito para ser divertido, claro y extremadamente útil — con MUCHOS emojis por línea porque la vida es mejor con emoción. 😄🎉
-
----
-
-## Índice 📚
-- 🎯 Pitch rápido
-- ✨ Fautures (una línea = un emoji) 
-- 🚪 Cómo jugar rápido (Quickplay)
-- 🎮 Controles y accesibilidad
-- 🔬 Sistemas principales (física, split, eject)
-- 🌳 Árbol de mutaciones y tablas de balance
-- 🗺️ Mapa / spawns / reglas de arena (completo)
-- 🛠️ Guía para desarrolladores (resumen tipo NASA, + links a DEV.md)
-- 🤖 Integración de agentes (resumen y link a AGENTS.md)
-- ⚙️ CI / pruebas headless (ejemplos de código)
-- 🧩 Contribuir — checklist PR
-- ❗ Troubleshooting & FAQs
-- 🔗 Enlaces rápidos y demo
+Play now: https://mite-io.pages.dev/ 🚀
 
 ---
 
-## 🎯 Pitch rápido
-- 🦠 Eres un microbio en el torrente sanguíneo.
-- 🍽️ Absorbe células para crecer.
-- ✂️ Divide (split) para atacar o escapar.
-- 💨 Expulsa masa para disparar o alimentar.
-- 🧬 Elige mutaciones durante la partida para especializarte.
-- 🏁 Partidas cortas, mucha acción y espacio para la maestría.
+## Table of contents 📚
+- 🧠 What this is
+- ✨ Features
+- 🎮 How to play
+- 🕹️ Controls
+- ⚙️ Core systems
+- 🧱 Repo structure
+- 🛠️ Local setup
+- 🤝 Contributing
+- 🐞 Troubleshooting
+- 🔗 Links
 
 ---
 
-## ✨ FAUTURES (EMOJI POR LÍNEA) 🎉
-- 🧠 Motor de simulación en canvas a 60 FPS (adaptable)
-- ✂️ Mecánica de split: dividirse tácticamente
-- 💨 Eject: expulsar masa como proyectil
-- 🧬 Mutaciones: elecciones en partida que cambian tu build
-- 🤖 Bots IA: predator, grazer, kamikaze, evasivo
-- 🎨 Skins y tienda cosmética (cytes)
-- 🏆 Logros y toasts de desbloqueo
-- 🌍 i18n: detección de idioma y traducciones
-- 📱 Controles táctiles + HUD adaptativo
-- 🔊 Motor de audio con toggles y manejo móvil
-- 🧰 Optimizaciones: pooling, particionado espacial
-- 🔐 Seguridad: agentes en workers/iframes
+## What this is 🧠
+Mite.io is a browser-based action game with evolution and survival mechanics. 🧫
+You start small, absorb nearby cells, and grow into a more dangerous organism. 🥚➡️🦠
+The gameplay loop is simple but intense: eat, grow, split, dodge, attack, mutate, survive. 🎯
+The project is built with TypeScript, React, and Vite, and it uses a canvas-driven game loop for fast input and smooth simulation. ⚡🎨
 
 ---
 
-## 🚪 Quickplay — Entra ya!
-- 🔗 Demo: https://mite-io.pages.dev/
-- 🖱️ Click play → selecciona skin → ¡a la arena! ⚔️
-- ⏱️ Sesiones rápidas: reinicia y mejora tus mutaciones.
+## Features ✨
+- 🧬 Mutation system with mid-match evolution choices
+- ✂️ Split mechanic to attack, evade, or reposition
+- 💨 Eject mass to create projectiles and tactical pressure
+- 🤖 AI bots with different behaviors and aggression patterns
+- 🏆 Achievement tracking and unlock notifications
+- 🛍️ In-game store with cytes and cosmetic skins
+- 🎨 Skin selection and visual customization
+- 💾 Local profile persistence for progression and settings
+- 🌍 Internationalization and language detection
+- 📱 Mobile-friendly controls and responsive HUD
+- 🔊 Sound engine with mute and volume support
+- 🧰 Optimized rendering and simulation for browser performance
 
 ---
 
-## 🎮 Controles & accesibilidad
-- 🖱️ Mover / apuntar: ratón / dedo
-- ⌨️ Split: Space
-- 💨 Eject: W
-- ⏸️ Pausa / menú: Escape
-- 📱 Móvil: joystick virtual + botones de acción
-- ♿ Opciones: volumen, idioma, contraste (plan)
+## How to play 🎮
+- 🧪 Spawn into the arena and begin absorbing small cells
+- 🧠 Grow carefully while avoiding larger threats
+- ✂️ Split into smaller bodies to trap or escape predators
+- 💣 Use eject mass to pressure enemies or create distance
+- 🧬 Take mutation choices to specialize your build
+- 🏁 Survive longer and dominate the map
 
 ---
 
-## 🔬 Sistemas principales (detallado)
-### 1) Masa → radio → velocidad
-- 📏 Radio calculado desde masa: area ≈ masa, radius = sqrt(masa / PI) * k
-- 🐢 Velocidad ↘ a medida que la masa aumenta según:
+## Controls 🕹️
+- 🖱️ Aim: mouse
+- ✂️ Split: Spacebar
+- 💨 Eject mass: W
+- ⏸️ Pause: Escape
+- 📱 Mobile: touch steering and virtual controls
 
-```text
-speed = baseSpeed * (1 / (1 + mass / massScaling))
+---
+
+## Core systems ⚙️
+### Growth and survival
+- 📈 Larger organisms usually move more slowly
+- 🍽️ Smaller cells are easier to absorb
+- ⚠️ Bigger enemies are danger, but they also provide risk-reward decisions
+
+### Split behavior
+- ✂️ Splitting divides your mass across multiple bodies
+- 🧠 This helps with attack, escape, and map control
+- 🔁 Recombining is useful when you need to recover strength
+
+### Mutation system
+- 🧬 Mutations change your build over a run
+- ⚡ Examples: speed, damage, defense, mass conversion, mobility
+- 🧠 Each mutation creates different play patterns and strategies
+
+---
+
+## Repository structure 🧱
+```bash
+package.json
+index.html
+vite.config.ts
+.tsconfig.json
+.env.example
+README.md
+AGENTS.md
+DEV.md
+LICENSE
+mite_io_logo.png
+src/
+  App.tsx
+  main.tsx
+  index.css
+  game/
+    engine.ts
+    types.ts
+    constants.ts
+    skins.ts
+    bacteria.ts
+    achievements.ts
+    botNames.ts
+  components/
+    TitleScreen.tsx
+    GameHUD.tsx
+    GameOverModal.tsx
+    PauseModal.tsx
+    EvolutionModal.tsx
+    ShopModal.tsx
+    SkinsModal.tsx
+    TutorialModal.tsx
+    AchievementsModal.tsx
+    AchievementToast.tsx
+  audio/
+    soundEngine.ts
+  storage/
+    profileStorage.ts
+  i18n/
+    languages.ts
 ```
 
-### 2) Split (división)
-- ✂️ Al presionar Space: se crea una nueva entidad con masa = floor(masa * splitRatio)
-- 🔁 Recombina cuando piezas están cerca y después de cooldown_recombine ms
-- ⚠️ Parche de invulnerabilidad: niño tiene invuln_window ms (configurable)
-
-### 3) Eject / proyectiles
-- 💨 Eject resta ejectMass del jugador y crea un proyectil con velocidad impulse
-- 💥 Proyectiles aplican empuje/dmg según projectileMass * dmgMultiplier
-
-### 4) Mutations (elecciones en partida)
-- 🧬 Ofertas en hitos (tiempo o masa) — pick 1/3
-- 🔀 Tipos: movement, combat, defense, utility
-- 📊 Reglas: algunas mutaciones stackean, otras no (ver constants.ts)
-
 ---
 
-## 🌳 Árbol de mutaciones — Ejemplo (completo)
-| Tier | ID | Tipo | Efecto | Stackable |
-|---:|---|---|---|---:|
-| 1 | M_SPEED_1 | Movement | +10% top speed | Sí |
-| 1 | M_REGEN_1 | Defense | +0.5 HP/s | Sí |
-| 2 | M_SPLIT_PWR | Combat | +20% split impulse | No |
-| 2 | M_EJECT_BIG | Utility | +25% eject mass | No |
-| 3 | M_REGEN_2 | Defense | +1.5 HP/s (si M_REGEN_1 presente) | Sí |
+## Local setup 🛠️
+Requirements:
+- 🟢 Node.js 18+
+- 📦 npm, pnpm, or yarn
 
-> 🔧 Lógica: aplicar mutaciones pasa por `applyMutation(entity, mutationId)` y debe validarse en tests.
-
----
-
-## 🗺️ Mapa, spawns y reglas de la arena (COMPLETO)
-### Arena
-- 🗺️ Tamaño: width = 10000, height = 10000 (configurable en settings.mapSize)
-- 🌊 Spawn points: generados procedimentalmente en capas (center-biased heatmap)
-
-### Tables de spawn (ejemplo)
-- Food spawn rate: baseFoodPerSecond = 10
-- Antibody spawn rate: baseAntibodiesPerMinute = 2
-- Bot spawn: mantener N bots activos según difficulty
-
-### Reglas de reproducción y equilibrio
-- 🍽️ Comida: pequeñas entidades estáticas, masa_food = 1–3
-- 🛡️ Antibodies: hostiles, daño alto pero lento
-- 🤝 Balance: ajustar constants.spawnRates y constants.balance multipliers
-
----
-
-## 🛠️ Guía para desarrolladores (NASA-grade resumen) 🛰️
-> Nota: DEV.md contiene la guía completa. Aquí incrustamos la versión “documento técnico” resumida pero exhaustiva.
-
-### Requisitos exactos
-- Node.js >= 18.x LTS ✅
-- npm >= 9.x o pnpm/yarn ✅
-- Editor recomendado: VSCode + ESLint + Prettier ✅
-
-### Setup local (comandos)
+Install and run:
 ```bash
 git clone https://github.com/MeowDev1011/Mite.io.git
 cd Mite.io
@@ -144,104 +150,66 @@ cp .env.example .env
 npm run dev
 ```
 
-### Scripts clave
-- `npm run dev` — dev server (Vite) 🔁
-- `npm run build` — build producción 🏗️
-- `npm run preview` — preview build 👀
-- `npm run lint` — comprobación TypeScript (tsc --noEmit) ✅
-- `npm run test` — (sugerido) pruebas unitarias e integración 🧪
-
-### Estructura de código (profunda)
-- `src/game/engine.ts` — bucle principal, manager de entidades
-- `src/game/physics.ts` — funciones puras de física
-- `src/game/types.ts` — tipos compartidos entre engine y UI
-- `src/components/*` — UI (React)
-- `src/storage/profileStorage.ts` — adaptador localStorage y migraciones
-- `src/audio/soundEngine.ts` — manejo audio y políticas móviles
-
-### Arquitectura y mejores prácticas
-- ✅ Mantener `engine.onTick` lo más puro y rápido posible
-- ✅ Evitar allocations en tick: usar object pools
-- ✅ Side-effects en adaptadores: storage, analytics, sonido
-- ✅ Exponer debug flags para tuning en runtime (debug build)
-
----
-
-## 🤖 Integración de agentes — Resumen (AGENTS.md) 📡
-- 🔗 Ver AGENTS.md para el contrato completo (TypeScript interfaces, JSON Schema, WS proto)
-- 📝 APIs: `sendInput({aim,split,eject})`, `getLastSnapshot()`, subscribe a eventos
-- 🧪 Headless agents: snapshot over WS con `tick` alignment
-
----
-
-## ⚙️ CI y pruebas headless — Ejemplos (copiar/pegar)
-### GitHub Actions (CI básico)
-```yaml
-name: CI
-on: [push, pull_request]
-jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
-      - run: npm ci
-      - run: npm run lint
-  build:
-    runs-on: ubuntu-latest
-    needs: lint
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
-      - run: npm ci
-      - run: npm run build
-  playtest:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
-      - run: npm ci
-      - run: npm run test:headless || echo "Headless tests not configured"
+Production build:
+```bash
+npm run build
+npm run preview
 ```
 
-### Headless test runner (pseudo TS)
-```ts
-import { createEngineHeadless } from './src/game/engine'
-const engine = createEngineHeadless({ seed: 42 })
-engine.step(60000) // simula 60s
-console.assert(engine.entities.length < 2000)
+Useful scripts:
+```bash
+npm run dev
+npm run build
+npm run preview
+npm run lint
 ```
 
 ---
 
-## 🧩 Contribuir — Checklist para PR ✅
-- [ ] Ejecuté `npm run lint` y `npm run build`
-- [ ] Añadí/actualicé tests relevantes
-- [ ] Documenté cambios en README/DEV/AGENTS
-- [ ] PR claro con descripción, pasos de prueba y screenshots si aplica
+## Development guide 👩‍💻
+The detailed engineering guide lives in [DEV.md](DEV.md). 🧰
+It includes setup, architecture, coding conventions, testing strategy, and CI examples. 🚀
+
+Agent integration information lives in [AGENTS.md](AGENTS.md). 🤖
 
 ---
 
-## ❗ Troubleshooting & FAQs (rápido)
-- 🎧 Audio en móvil no suena: requiere interacción del usuario
-- 🏷️ Licencia badge muestra "not specified": espera caché de shields.io o confirma LICENSE en rama por defecto
-- 🧭 Canvas en blanco: abre DevTools y verifica errores; confirma existencia de `#root` en index.html
+## Contributing 🤝
+Contributions are welcome. ✨
+Open issues for bugs, balance suggestions, gameplay ideas, or UI improvements. 🐞
+Keep changes scoped, readable, and easy to review. 👀
+
+Recommended workflow:
+```bash
+git checkout -b feature/my-change
+npm run lint
+npm run build
+```
+
+Before opening a PR:
+- ✅ Run lint
+- ✅ Build the project
+- ✅ Test the behavior manually
+- ✅ Keep the patch focused
 
 ---
 
-## 🔗 Enlaces rápidos
-- 🎮 Demo: https://mite-io.pages.dev/
-- 🐱 Repo: https://github.com/MeowDev1011/Mite.io
-- 🧰 DEV guide: https://github.com/MeowDev1011/Mite.io/blob/main/DEV.md
-- 🤖 AGENTS guide: https://github.com/MeowDev1011/Mite.io/blob/main/AGENTS.md
+## Troubleshooting 🐞
+- Canvas not rendering: check browser console and the root mount in `main.tsx`.
+- Audio not playing on mobile: user interaction is required before autoplay. 🔊
+- Profile not saving: check browser storage permissions and localStorage availability. 💾
+- FPS dips on weak hardware: keep simulation costs low and profile engine work. ⚡
 
 ---
 
-¿Quieres que genere ahora la GDD completa (mapas, tablas de spawn detalladas, fórmulas de balance y PDF listo para imprimir)? Si dices “GDD please”, te lo construyo entero. 🎮📄🔥
+## Links 🔗
+- 🌐 Demo: https://mite-io.pages.dev/
+- 🐱 GitHub: https://github.com/MeowDev1011/Mite.io
+- 🧰 Developer guide: [DEV.md](DEV.md)
+- 🤖 Agent guide: [AGENTS.md](AGENTS.md)
+- 📜 License: [LICENSE](LICENSE)
+
+---
+
+Mite.io is small, fast, and chaotic in the best possible way. 🧫⚡🎉
+If you enjoy the project, give it a star and help it grow. ⭐
