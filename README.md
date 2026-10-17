@@ -9,7 +9,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-%E2%9D%A4-blue)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-Ready-brightgreen)](https://vitejs.dev/)
 
-Mite.io is a fast-paced browser survival game where you play as a microbe inside the bloodstream. 🦠⚡
+Mite.io is a fast, chaotic browser survival game where you play as a microbe inside the bloodstream. 🦠⚡
 Grow by absorbing cells, split to attack or escape, avoid antibodies, evolve with mutations, and dominate the arena. 🧬🔥
 
 Play now: https://mite-io.pages.dev/ 🚀
@@ -31,24 +31,24 @@ Play now: https://mite-io.pages.dev/ 🚀
 ---
 
 ## What this is 🧠
-Mite.io is a browser-based action game with evolution and survival mechanics. 🧫
-You start small, absorb nearby cells, and grow into a more dangerous organism. 🥚➡️🦠
+Mite.io is a browser based action game with evolution and survival mechanics. 🧫
+You start small, absorb nearby cells and grow into a more dangerous organism. 🥚➡️🦠
 The gameplay loop is simple but intense: eat, grow, split, dodge, attack, mutate, survive. 🎯
-The project is built with TypeScript, React, and Vite, and it uses a canvas-driven game loop for fast input and smooth simulation. ⚡🎨
+The project is built with TypeScript, React and Vite and it uses a canvas driven game loop for fast input and smooth simulation. ⚡🎨
 
 ---
 
 ## Features ✨
-- 🧬 Mutation system with mid-match evolution choices
-- ✂️ Split mechanic to attack, evade, or reposition
+- 🧬 Mutation system with mid match evolution choices
+- ✂️ Split mechanic to attack, evade or reposition
 - 💨 Eject mass to create projectiles and tactical pressure
 - 🤖 AI bots with different behaviors and aggression patterns
 - 🏆 Achievement tracking and unlock notifications
-- 🛍️ In-game store with cytes and cosmetic skins
+- 🛍️ In game store with cytes and cosmetic skins
 - 🎨 Skin selection and visual customization
 - 💾 Local profile persistence for progression and settings
 - 🌍 Internationalization and language detection
-- 📱 Mobile-friendly controls and responsive HUD
+- 📱 Mobile friendly controls and responsive HUD
 - 🔊 Sound engine with mute and volume support
 - 🧰 Optimized rendering and simulation for browser performance
 
@@ -75,29 +75,33 @@ The project is built with TypeScript, React, and Vite, and it uses a canvas-driv
 
 ## Core systems ⚙️
 ### Growth and survival
-- 📈 Larger organisms usually move more slowly
+- 📈 Larger organisms usually move more slowly due to mass
 - 🍽️ Smaller cells are easier to absorb
-- ⚠️ Bigger enemies are danger, but they also provide risk-reward decisions
+- ⚠️ Bigger enemies are dangerous but provide higher reward when defeated
 
 ### Split behavior
 - ✂️ Splitting divides your mass across multiple bodies
-- 🧠 This helps with attack, escape, and map control
-- 🔁 Recombining is useful when you need to recover strength
+- 🔁 Recombining restores mass when split pieces return close to each other after a cooldown period
+- 🧠 Use split to attack, kite, and control space on the map
+
+### Eject and projectiles
+- 💨 Eject removes a small amount of player mass and spawns a projectile entity
+- 💥 Projectiles apply push or damage based on configured projectile mass and damage multiplier
 
 ### Mutation system
-- 🧬 Mutations change your build over a run
-- ⚡ Examples: speed, damage, defense, mass conversion, mobility
-- 🧠 Each mutation creates different play patterns and strategies
+- 🧬 Mutations are offered during a match at milestone events
+- 🔀 Mutations modify stats like speed, regen and eject power and can enable new behaviors
+- 📊 Rules for stacking and interactions live in src/game/constants.ts and should be tested when changed
 
 ---
 
-## Repository structure 🧱
+## Repo structure 🧱
 ```bash
 package.json
 index.html
 vite.config.ts
-.tsconfig.json
-.env.example
+tsconfig.json
+env.example
 README.md
 AGENTS.md
 DEV.md
@@ -109,6 +113,7 @@ src/
   index.css
   game/
     engine.ts
+    physics.ts
     types.ts
     constants.ts
     skins.ts
@@ -138,7 +143,7 @@ src/
 
 ## Local setup 🛠️
 Requirements:
-- 🟢 Node.js 18+
+- 🟢 Node.js 18 or newer
 - 📦 npm, pnpm, or yarn
 
 Install and run:
@@ -167,17 +172,17 @@ npm run lint
 ---
 
 ## Development guide 👩‍💻
-The detailed engineering guide lives in [DEV.md](DEV.md). 🧰
-It includes setup, architecture, coding conventions, testing strategy, and CI examples. 🚀
+The detailed engineering guide lives in DEV.md. 🧰
+It includes setup, architecture, coding conventions, testing strategy and CI examples. 🚀
 
-Agent integration information lives in [AGENTS.md](AGENTS.md). 🤖
+Agent integration information lives in AGENTS.md. 🤖
 
 ---
 
 ## Contributing 🤝
 Contributions are welcome. ✨
 Open issues for bugs, balance suggestions, gameplay ideas, or UI improvements. 🐞
-Keep changes scoped, readable, and easy to review. 👀
+Keep changes scoped, readable and easy to review. 👀
 
 Recommended workflow:
 ```bash
@@ -195,21 +200,21 @@ Before opening a PR:
 ---
 
 ## Troubleshooting 🐞
-- Canvas not rendering: check browser console and the root mount in `main.tsx`.
-- Audio not playing on mobile: user interaction is required before autoplay. 🔊
-- Profile not saving: check browser storage permissions and localStorage availability. 💾
-- FPS dips on weak hardware: keep simulation costs low and profile engine work. ⚡
+- 🎧 Audio on mobile may require a user interaction before playback
+- 🏷️ License badge may show outdated cache from shields.io; wait a few minutes after adding LICENSE to the default branch
+- 🧭 Canvas blank issues: open DevTools and inspect console errors and verify the root mount in index.html
+- 💾 Profile persistence issues: check localStorage permissions in your browser
 
 ---
 
 ## Links 🔗
 - 🌐 Demo: https://mite-io.pages.dev/
 - 🐱 GitHub: https://github.com/MeowDev1011/Mite.io
-- 🧰 Developer guide: [DEV.md](DEV.md)
-- 🤖 Agent guide: [AGENTS.md](AGENTS.md)
-- 📜 License: [LICENSE](LICENSE)
+- 🧰 Developer guide: https://github.com/MeowDev1011/Mite.io/blob/main/DEV.md
+- 🤖 Agent guide: https://github.com/MeowDev1011/Mite.io/blob/main/AGENTS.md
+- 📜 License: https://github.com/MeowDev1011/Mite.io/blob/main/LICENSE
 
 ---
 
-Mite.io is small, fast, and chaotic in the best possible way. 🧫⚡🎉
+Mite.io is small, fast and chaotic in the best possible way. 🧫⚡🎉
 If you enjoy the project, give it a star and help it grow. ⭐
