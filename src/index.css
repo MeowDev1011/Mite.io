@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@layer base {
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: #080305;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Custom glow and pulsating organic animations */
+@keyframes pulse-blood {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+.animate-pulse-blood {
+  animation: pulse-blood 3.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Vignette biological microscope lens effect */
+.microscope-vignette {
+  background: radial-gradient(circle at 50% 50%, rgba(20, 5, 8, 0) 55%, rgba(10, 2, 4, 0.75) 88%, rgba(5, 1, 2, 0.95) 100%);
+  pointer-events: none;
+}

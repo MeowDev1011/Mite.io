@@ -1,0 +1,117 @@
+// Achievements system for Mite.io
+// Badges, requirements, and state management
+
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  category: 'survival' | 'combat' | 'evolution' | 'secret';
+  unlocked: boolean;
+  unlockedAt?: string;
+  badgeColor: string;
+  rewardText: string;
+}
+
+export const ACHIEVEMENTS_LIST: Achievement[] = [
+  {
+    id: 'first_blood',
+    title: 'Primera Infección',
+    description: 'Devorá a tu primer microbio rival en el torrente sanguíneo.',
+    icon: 'blood',
+    category: 'combat',
+    unlocked: false,
+    badgeColor: '#ef4444',
+    rewardText: 'Skin: Fago Carmesí + 75 Cytes',
+  },
+  {
+    id: 'mass_100',
+    title: 'Biomasa En Crecimiento',
+    description: 'Alcanzá una masa de 100 unidades.',
+    icon: 'cell',
+    category: 'survival',
+    unlocked: false,
+    badgeColor: '#10b981',
+    rewardText: '+75 Cytes de regalo',
+  },
+  {
+    id: 'territory_conqueror',
+    title: 'Conquistador de Órganos',
+    description: 'Conquistá tu primer órgano anatómico del cuerpo al alcanzar 100 de masa.',
+    icon: 'shield',
+    category: 'evolution',
+    unlocked: false,
+    badgeColor: '#10b981',
+    rewardText: '+150 Cytes de colonización',
+  },
+  {
+    id: 'mass_500',
+    title: 'Titán Vascular',
+    description: 'Superá los 500 de masa y dominá el vaso sanguíneo.',
+    icon: 'crown',
+    category: 'survival',
+    unlocked: false,
+    badgeColor: '#f59e0b',
+    rewardText: 'Skin: Corona de Oro Real + 75 Cytes',
+  },
+  {
+    id: 'mitosis_master',
+    title: 'Maestro de la Fisión',
+    description: 'Dividite 5 veces en una sola partida usando la tecla Espacio.',
+    icon: 'dna',
+    category: 'evolution',
+    unlocked: false,
+    badgeColor: '#38bdf8',
+    rewardText: 'Skin: Cyber Cian + 75 Cytes',
+  },
+  {
+    id: 'antibody_survivor',
+    title: 'Evasión Inmunológica',
+    description: 'Escapá ileso de un Anticuerpo Patrulla tras activar su alarma.',
+    icon: 'shield',
+    category: 'survival',
+    unlocked: false,
+    badgeColor: '#a855f7',
+    rewardText: 'Skin: Ámbar Solar + 75 Cytes',
+  },
+  {
+    id: 'erythrocyte_feast',
+    title: 'Festín de Hemoglobina',
+    description: 'Consumí 10 glóbulos rojos completos.',
+    icon: 'blood',
+    category: 'combat',
+    unlocked: false,
+    badgeColor: '#f43f5e',
+    rewardText: 'Espora: Hemoglobina Densa + 75 Cytes',
+  },
+  {
+    id: 'bloodstream_king',
+    title: 'Rey del Torrente (#1)',
+    description: 'Alcanzá el puesto número 1 de la tabla de líderes.',
+    icon: 'crown',
+    category: 'survival',
+    unlocked: false,
+    badgeColor: '#eab308',
+    rewardText: 'Espora: Polvo Cósmico + 75 Cytes',
+  },
+  {
+    id: 'secret_lymph_node',
+    title: 'Cripta Linfática Oculta',
+    description: 'Descubrí el pasaje secreto del nódulo linfático en el mapa.',
+    icon: 'portal',
+    category: 'secret',
+    unlocked: false,
+    badgeColor: '#06b6d4',
+    rewardText: 'Skin: Amatista del Vacío + 75 Cytes',
+  },
+  {
+    id: 'toxic_bomber',
+    title: 'Espora Tóxica',
+    description: 'Ralentizá a un depredador usando esporas eyectadas con la tecla W.',
+    icon: 'biohazard',
+    category: 'combat',
+    unlocked: false,
+    badgeColor: '#84cc16',
+    rewardText: 'Espora: Toxina Bio-Verde + 75 Cytes',
+  },
+];

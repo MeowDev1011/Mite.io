@@ -1,0 +1,6 @@
+{
+  "name": "Mite.io - Invasión en el Torrente Sanguíneo",
+  "description": "Juego de acción y evolución celular en tiempo real dentro del torrente sanguíneo. Devorá nutrientes, dividite para cazar y esquivá los anticuerpos patrulla.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
