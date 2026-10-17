@@ -1,6 +1,6 @@
 # Mite.io 🧫🧬 — Evolution action inside the bloodstream
 
-[![Play Online](https://img.shields.io/badge/Play%20Online-mite--io.ai.studio-brightgreen)](https://mite-io.ai.studio)
+[![Play Online](https://img.shields.io/badge/Play%20Online-mite--io.ai.studio-brightgreen)](https://mite-io.pages.dev/)
 [![License](https://img.shields.io/github/license/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io/blob/main/LICENSE)
 [![Top Language](https://img.shields.io/github/languages/top/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io)
 [![Repo Size](https://img.shields.io/github/repo-size/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io)
@@ -9,8 +9,7 @@
 
 Mite.io is an action growth/evolution game set inside the bloodstream. Grow by absorbing cells, split to attack or escape, avoid antibodies, and compete to dominate the environment. 🎮🧪
 
-Play now: https://mite-io.ai.studio 🚀
-
+Play now: https://mite-io.pages.dev/
 ---
 
 ## Table of Contents
@@ -183,7 +182,7 @@ The code contains Apache-2.0 license headers in files. Check LICENSE in repo roo
 ---
 
 ## Live demo
-Play online: https://mite-io.ai.studio
+Play online: https://mite-io.pages.dev/
 Repo: https://github.com/MeowDev1011/Mite.io
 
 ---
