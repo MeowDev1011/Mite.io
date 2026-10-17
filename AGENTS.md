@@ -1,41 +1,54 @@
-# AGENTS.md — Mite.io: Agents Integration Guide (Technical) 🤖🧫
+# AGENTS.md — Mite.io: Agents Integration Guide (Technical) 🤖🧫🎯
 
-Purpose
-- This document defines the technical contract for "agents" that integrate with the Mite.io game engine: AI bots, observers, analytics hooks, auto-test agents, or external controllers.  
-- Read this if you are writing any automated participant (bot), telemetry/monitoring integration, or external controller that consumes or injects game events.
+Welcome! This is the canonical, technical guide for agents that integrate with Mite.io.
+It targets: bot authors, telemetry consumers, external controllers, headless test runners, and integrations.
+This version adds detailed schemas, WebSocket examples, lifecycle rules, quotas, and debugging tips — with extra emojis because why not. 🎉🧪
 
 Table of contents
 - Agent types
 - Integration points & lifecycle
-- Event payloads (TypeScript)
-- Example agent (TypeScript)
-- Performance & safety constraints
-- Testing locally
-- Registering an agent
-- Troubleshooting & support
+- Event payloads (TypeScript) & JSON schemas
+- WebSocket protocol example
+- Agent API surface
+- Example agent (TypeScript) + minimal CLI runner
+- Telemetry & analytics events
+- Performance, quotas & safety
+- Testing, replay & determinism
+- Registering, onboarding & contribution
+- Troubleshooting & debugging
 
-1) Agent types
-- Bot Agent: an in-game autonomous player controlled by code running in the same runtime (client-side) or remotely (headless).  
-- Observer Agent: reads engine events to produce logs, analytics, or visualization (no game input).  
-- Controller Agent: sends control inputs (aim, split, eject) for testing or external play.  
-- Test Agent: deterministic agent used by unit/integration tests to validate mechanics.
+---
 
-2) Integration points & lifecycle
-- Agents may register callbacks with the engine or be provided a small agent API object.
-- Typical lifecycle:
-  - onRegister(agentContext) — called once when agent attached
-  - onSpawn(entity) — called when the agent's controlled entity is spawned
-  - onTick(deltaMs, state) — called every simulation tick (high-frequency)
-  - onEvent(event) — receive low-frequency game events (achievement, death)
-  - onDestroy() — cleanup and stop timers
+## Agent types 🧩
+- **Bot Agent** — autonomous in-game player; may run client-side (in worker/iframe) or headless server-side. 🤖
+- **Observer Agent** — read-only; consumes snapshots and events for analytics, replays, or visualizations. 👁️📊
+- **Controller Agent** — test harness or remote player that injects inputs (aim/split/eject). 🎛️
+- **Test Agent** — deterministic agent used in CI or local regression tests. ✅
 
-3) Event payloads (TypeScript interfaces)
-- Use these interfaces as the canonical contract. Keep implementations lightweight: only read fields you need.
+Each agent type has different trust & performance expectations — treat third-party bot agents as partial trust and sandbox accordingly.
+
+---
+
+## Integration points & lifecycle 🔁
+Agents typically interact via a compact API provided by the engine. Lifecycle callbacks are:
+- `onRegister(agentContext)` — once when the agent attaches. ✅
+- `onSpawn(entity)` — when an entity controlled by the agent is spawned. 🐣
+- `onTick(deltaMs, snapshot)` — high-frequency tick (engine may run at 30–120Hz). ⚡
+- `onEvent(event)` — lower-frequency game events (achievement, death, mutationChosen). 🔔
+- `onDestroy()` — cleanup, flush telemetry, stop timers. 🧹
+
+Engine guarantees:
+- `onTick` calls are ordered and monotonic but not strictly real-time under heavy load.
+- Agents should be resilient to skipped ticks and late snapshots.
+
+---
+
+## Event payloads (TypeScript) & JSON schema 📐
+Use these types as the canonical contract. Keep payloads minimal and stable.
 
 ```ts
-// Minimal shared types for agents
+// agent-types.ts
 export interface Vec2 { x: number; y: number }
-
 export type EntityKind = 'player' | 'bot' | 'antibody' | 'food'
 
 export interface EntitySnapshot {
@@ -45,7 +58,7 @@ export interface EntitySnapshot {
   radius: number
   mass: number
   velocity?: Vec2
-  ownerAgentId?: string // present for controlled entities
+  ownerAgentId?: string
   skinId?: string
   createdAt: number // epoch ms
 }
@@ -53,6 +66,7 @@ export interface EntitySnapshot {
 export interface GameStateSnapshot {
   time: number // epoch ms
   deltaMs: number
+  tick: number
   entities: EntitySnapshot[]
   leaderboard: { id: string; mass: number }[]
   settings: { mapSize: { width: number; height: number } }
@@ -66,8 +80,45 @@ export interface EngineEvent {
 }
 ```
 
-4) Agent API surface (recommended)
-- The engine exposes a minimal agent API object on registration:
+Example JSON Schema (GameStateSnapshot — partial):
+
+```json
+{
+  "$id": "https://mite.io/schemas/GameStateSnapshot.json",
+  "type": "object",
+  "properties": {
+    "time": {"type": "integer"},
+    "deltaMs": {"type": "integer"},
+    "tick": {"type": "integer"},
+    "entities": {"type": "array"}
+  },
+  "required": ["time","deltaMs","tick","entities"]
+}
+```
+
+---
+
+## WebSocket protocol example 🌐
+For remote/headless agents we recommend a compact protocol over WebSocket. Keep messages small.
+
+Client → Server (agent host) example (snapshot):
+```json
+{ "type": "snapshot", "tick": 12345, "time": 1620000000000, "entities": [{"id":"e1","x":10,"y":20,"r":5,"m":12}]} 
+```
+
+Agent → Server (input) example:
+```json
+{ "type": "input", "tick": 12345, "agentId": "agent-42", "input": { "aim": {"x": 0.5, "y": -0.2}, "split": false, "eject": 0 } }
+```
+
+Design rules:
+- Use `tick` to match snapshots → inputs. Never apply inputs without tick alignment. ⛓️
+- Compress or delta-encode snapshots when running many agents remotely. 🔽
+
+---
+
+## Agent API surface (recommended) 🧭
+The engine should expose a minimal, stable API for agents:
 
 ```ts
 export interface AgentAPI {
@@ -76,98 +127,96 @@ export interface AgentAPI {
   getLastSnapshot(): GameStateSnapshot
   on(eventType: EngineEvent['type'], handler: (e: EngineEvent) => void): void
   off(eventType: EngineEvent['type'], handler: (e: EngineEvent) => void): void
-  log(...args: any[]): void // for debug only, rate-limited
+  log(...args: any[]): void // rate-limited
   config?: Record<string, any>
 }
 ```
 
-- Agents MUST call sendInput at most once per tick. Batch inputs into one call per tick.
-
-5) Example: minimal TypeScript bot (client-side)
-- This example demonstrates hooking the agent into the engine and issuing simple steering.
-
-```ts
-// exampleAgent.ts
-import type { AgentAPI, GameStateSnapshot, Vec2 } from './agent-types'
-
-export default function createChaserAgent(api: AgentAPI, targetId?: string) {
-  let running = true
-  api.on('spawn', (e) => api.log('spawn event', e))
-  // simple tick handler
-  function onTick(snapshot: GameStateSnapshot) {
-    if (!running) return
-    const me = snapshot.entities.find((s) => s.ownerAgentId === api.id)
-    if (!me) return
-    // pick nearest target
-    const target = snapshot.entities
-      .filter((s) => s.id !== me.id && s.kind !== 'food')
-      .sort((a, b) => (distance(a.position, me.position) - distance(b.position, me.position)))[0]
-    if (!target) return
-    // aim toward target and occasionally split
-    const aim = normalize(sub(target.position, me.position))
-    const shouldSplit = me.mass > (target.mass * 1.2) && Math.random() < 0.01
-    api.sendInput({ aim, split: shouldSplit })
-  }
-
-  return {
-    start() {
-      // engine will call onTick with snapshots; here we expect engine to wire `onTick` to our function
-      api.log('chaser started')
-    },
-    stop() {
-      running = false
-      api.log('chaser stopped')
-    }
-  }
-}
-
-// small helpers
-function sub(a: Vec2, b: Vec2): Vec2 { return { x: a.x - b.x, y: a.y - b.y } }
-function distance(a: Vec2, b: Vec2) { return Math.hypot(a.x - b.x, a.y - b.y) }
-function normalize(v: Vec2) { const d = Math.hypot(v.x, v.y) || 1; return { x: v.x / d, y: v.y / d } }
-```
-
-6) Performance & safety constraints
-- onTick is high-frequency (e.g., 60Hz). Keep handlers extremely cheap: avoid heavy allocations, sync network calls, or expensive loops.  
-- If you need heavy computation, offload to a WebWorker or run the agent headless on a server and send compact inputs.  
-- The engine may throttle or disconnect agents that block the main thread or exceed CPU budgets.
-
-7) Determinism & testing
-- For test agents, prefer deterministic math: seed RNG externally and avoid Date.now() dependent logic in gameplay core.  
-- Provide a "headless" mode that emits the same snapshots as the UI to run regression tests.
-
-8) How to register an agent (example / conceptual)
-- Client-side registration (pseudo):
-
-```ts
-import { engine } from './engine'
-import createChaserAgent from './exampleAgent'
-
-const api = engine.registerAgent({ id: 'agent-001', config: { difficulty: 'easy' } })
-const agent = createChaserAgent(api)
-agent.start()
-```
-
-- Remote agent (headless) pattern:
-  - The client provides a compact snapshot over WebSocket (state diff or whitelist of relevant fields).
-  - The remote agent returns an input object per tick. Keep payloads small.
-
-9) Security & sandboxing
-- Treat third-party agent code as untrusted if executed client-side. Prefer running third-party agents in an isolated iframe or worker and enforce rate limits.  
-- Avoid exposing direct engine internals or secrets to agents.
-
-10) Testing & debugging tips
-- Add debug flags to the engine: show hitboxes, log top-N entity counts, enable verbose agent telemetry (rate-limited).  
-- Provide a replay system that serializes snapshots to reproduce runs for debugging.
-
-11) Contribution & proposing agent features
-- Open an issue labeled `agent-spec` with a short design: data payloads, expected frequency, and a sample implementation.  
-- If you propose a new agent API, include a migration plan and performance budget (ms per tick).
-
-12) Contact & further docs
-- Technical dev guide: DEV.md — https://github.com/MeowDev1011/Mite.io/blob/main/DEV.md  
-- For security or infra concerns, open an issue: https://github.com/MeowDev1011/Mite.io/issues/new
+Rules:
+- Call `sendInput()` at most once per tick. Multiple calls may be coalesced or rejected.
+- Avoid blocking operations in callbacks. Offload heavy work to workers.
 
 ---
 
-This document aims to be the single source of truth for agent authors. If you need additional message schemas (e.g., analytics schema, telemetry events) I can add a dedicated JSON schema section next.
+## Example: minimal TypeScript bot (client-side) 🧪
+A compact example demonstrates a chaser bot that targets nearest non-food entity.
+
+```ts
+// exampleAgent.ts (same as in agent-types earlier, simplified)
+import type { AgentAPI, GameStateSnapshot } from './agent-types'
+export default function createChaserAgent(api: AgentAPI) {
+  function onTick(snapshot: GameStateSnapshot) {
+    const me = snapshot.entities.find(e=> e.ownerAgentId===api.id)
+    if(!me) return
+    const target = snapshot.entities
+      .filter(e=> e.id!==me.id && e.kind!=='food')
+      .sort((a,b)=>dist(a.position,me.position)-dist(b.position,me.position))[0]
+    if(!target) return
+    api.sendInput({ aim: normalize(sub(target.position, me.position)), split: me.mass > target.mass*1.2 })
+  }
+  api.on('spawn',()=>api.log('spawn'))
+  api.on('despawn',()=>api.log('despawn'))
+  // engine should wire the onTick handler
+  return { onTick }
+}
+```
+
+Small CLI runner example (pseudo):
+```bash
+# run a headless agent that connects via WS
+node headless-agent.js --server=wss://mite-io.example/ws --agentId=agent-01
+```
+
+---
+
+## Telemetry & analytics events 📈
+Suggested event types and payloads (lightweight):
+- `agent.connected` — { agentId, time }
+- `agent.disconnected` — { agentId, time, reason }
+- `game.start` / `game.end` — { matchId, duration }
+- `achievement.unlocked` — { agentId, achievementId }
+
+Design telemetry to be anonymizable and privacy-safe. Keep PII out of telemetry.
+
+---
+
+## Performance, quotas & safety ⚠️⏱️
+- Budget per-agent: aim for < 1ms per tick on main thread; if you exceed this, move to a worker. 🧰
+- Network budget: prefer < 2KB snapshot diffs per tick for remote agents. 📡
+- The engine may enforce disconnects for agents that exceed CPU/network budgets.
+- Run untrusted agent code in workers/iframes and sanitize inputs.
+
+---
+
+## Testing, replay & determinism 🔁🧪
+- Provide a headless deterministic mode where seeds and RNG are controllable. 🎲
+- Implement a replay recorder that writes snapshots to a JSONL or compressed binary for debugging. 🗄️
+- CI tests: use deterministic test agents to validate physics, split/recombine, and mutation effects.
+
+---
+
+## Registering, onboarding & contribution ✍️🤝
+- To propose agent API changes, open an issue labeled `agent-spec` with:
+  - proposed payloads
+  - performance budget
+  - migration plan
+  - sample implementation
+- Fork, implement a sample agent (in `examples/agents/`) and open a PR with your tests.
+
+---
+
+## Troubleshooting & debugging 🐞🔬
+- If an agent is unresponsive: check tick alignment, latency, and snapshot completeness.
+- For noisy logs: enable rate-limited debug logs in AgentAPI (engine side).
+- Use replay files to reproduce non-deterministic failures.
+
+---
+
+## Next steps & extensions ✨
+If you want, I can add:
+- Full JSON Schema files for all payloads
+- WS protocol RFC-style doc
+- Example headless agent using node + ws package
+- A small test harness and CI job for headless smoke tests
+
+Happy agenting! 🎉🧠
