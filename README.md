@@ -1,4 +1,4 @@
-# Mite.io 🧫🧬 — Acción evolutiva dentro del torrente sanguíneo
+# Mite.io 🧫🧬 — Evolution action inside the bloodstream
 
 [![Play Online](https://img.shields.io/badge/Play%20Online-mite--io.ai.studio-brightgreen)](https://mite-io.ai.studio)
 [![License](https://img.shields.io/github/license/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io/blob/main/LICENSE)
@@ -7,118 +7,111 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-%E2%9D%A4-blue)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-Ready-brightgreen)](https://vitejs.dev/)
 
-Mite.io es un juego de acción multijugador/singleplayer (front-end) ambientado dentro del torrente sanguíneo. Creces absorbiendo células, te separas para atacar o escapar, esquivas anticuerpos y compites por dominar el entorno. 🧪🎮
+Mite.io is an action growth/evolution game set inside the bloodstream. Grow by absorbing cells, split to attack or escape, avoid antibodies, and compete to dominate the environment. 🎮🧪
 
-Juega ahora: https://mite-io.ai.studio 🚀
-
----
-
-## Tabla de contenidos
-- 📌 ¿Qué es?
-- 🧩 Características
-- 🏗 Estructura del repositorio (rápido recorrido)
-- 🚀 Cómo ejecutar (desarrollo / producción)
-- 🎮 Controles y jugabilidad
-- 🛠 Desarrollo y arquitectura (qué archivos leer)
-- 🤝 Contribuir
-- 🐞 Depuración y problemas comunes
-- 📝 Licencia y créditos
+Play now: https://mite-io.ai.studio 🚀
 
 ---
 
-## 📌 ¿Qué es?
-Mite.io es un juego de acción con mecánicas de crecimiento y evolución en un escenario microscópico. Ideal para jugadores que disfrutan de partidas cortas y repletas de decisiones rápidas (split, eject, mutaciones). Está implementado en TypeScript + React + Vite.
+## Table of Contents
+- What this is
+- Features
+- Repository structure
+- How to run (dev & prod)
+- Controls
+- Key files and architecture
+- Contributing
+- Troubleshooting
+- License & credits
 
 ---
 
-## 🧩 Características
-- Render por canvas a 60 FPS con un motor de juego propio (simulación de microbios, anticuerpos, bots). ⚙️
-- Evoluciones / mutaciones que cambian habilidades del jugador. 🧬
-- Logros, tienda y skins personalizables. 🏷️✨
-- Guardado de perfil local (cytes, skins, idioma). 💾
-- Sonido y efectos gestionados por un sound engine (mute toggle). 🔊
-- Internacionalización (i18n) con detección de idioma. 🌐
+## What this is
+Mite.io is a fast-paced action game that combines growth mechanics, splitting, and evolution choices (mutations). It’s implemented with TypeScript, React, and Vite. The client runs a canvas-based game engine at 60 FPS and provides UI for skins, shop, achievements, and localization.
 
 ---
 
-## 🏗 Estructura principal del repositorio
+## Features
+- 60 FPS canvas renderer with a custom game engine (entities: player, bots, antibodies)
+- Evolution / mutation choices that change player abilities
+- Achievements, store, and customizable skins
+- Local profile storage (cytes balance, selected skin, preferred language)
+- Sound engine with mute toggle
+- Internationalization support with device language detection
+
+---
+
+## Repository layout (important files)
 ```
-package.json                 # scripts y dependencias (Vite, React, Tailwind, etc.)
-index.html                  # entry html
-vite.config.ts              # configuración de Vite
+package.json                 # scripts & deps (Vite, React, Tailwind, etc.)
+index.html                  # entry point HTML
+vite.config.ts              # Vite configuration
 .tsconfig.json              # TypeScript config
-.env.example                # variables de entorno de ejemplo
-mite_io_logo.png            # logo / recursos
+.env.example                # example env vars
+mite_io_logo.png            # logo image
 src/
-  main.tsx                  # punto de entrada React
-  App.tsx                   # orchestrator: instancia GameEngine, HUD y modales
-  index.css                 # estilos globales (Tailwind + custom)
+  main.tsx                  # React entry: createRoot -> App
+  App.tsx                   # Orchestrator: mounts GameEngine and UI components
+  index.css                 # global styles (Tailwind + custom)
   audio/
-    soundEngine.ts          # motor de sonido (control mute/play)
+    soundEngine.ts          # sound manager (play, mute)
   game/
-    engine.ts               # MOTOR del juego (loop, entidades, física, bots) ← archivo grande y central
-    types.ts                # tipos TS: GameState, GameStats, LeaderboardEntry, MutationId...
-    constants.ts            # constantes del juego (tamaños, masses, timers)
-    skins.ts                # definición de skins y colores
-    bacteria.ts             # lógica de bacterias/bots
-    achievements.ts         # lógica / meta de logros
-    botNames.ts             # nombres para bots
+    engine.ts               # GAME ENGINE: loop, entities, physics, bots (core logic)
+    types.ts                # shared TS types (GameState, GameStats, MutationId...)
+    constants.ts            # game constants
+    skins.ts                # skin definitions and colors
+    bacteria.ts             # bot / bacteria logic
+    achievements.ts         # achievement definitions/logic
+    botNames.ts             # bot name generator
   components/
-    TitleScreen.tsx         # pantalla de inicio
-    GameHUD.tsx             # HUD en partida (radar, estado, botones)
-    GameOverModal.tsx       # modal de final de partida
-    PauseModal.tsx          # pausa
-    EvolutionModal.tsx      # elegir mutación
-    ShopModal.tsx           # tienda
-    SkinsModal.tsx          # selector de skins
-    TutorialModal.tsx       # tutorial interactivo
-    AchievementsModal.tsx   # galería de logros
-    AchievementToast.tsx    # notificación
+    TitleScreen.tsx         # start screen UI
+    GameHUD.tsx             # in-game HUD (radar, controls)
+    GameOverModal.tsx       # end-of-game modal
+    PauseModal.tsx          # pause menu
+    EvolutionModal.tsx      # pick mutation modal
+    ShopModal.tsx           # shop UI
+    SkinsModal.tsx          # skin selector
+    TutorialModal.tsx       # step-by-step tutorial
+    AchievementsModal.tsx   # achievements gallery
+    AchievementToast.tsx    # achievement popup
   storage/
-    profileStorage.ts       # guardado local del perfil (cytes, skin, idioma, prefs)
+    profileStorage.ts       # local profile persistence (localStorage)
   i18n/
-    languages.ts            # detección de idioma y traducciones
+    languages.ts            # translations & language detection
 ```
 
-Cómo encaja: App.tsx crea y controla una instancia de GameEngine (src/game/engine.ts). El engine hace la simulación y llama a callbacks que actualizan React (HUD, modales, estado). El audio, perfiles y skins están desacoplados en módulos propios para mantener el motor limpio.
+How it fits together: App.tsx creates a GameEngine instance (src/game/engine.ts). The engine runs the simulation and calls React callbacks (onStatsUpdate, onLeaderboardUpdate, onAchievementUnlocked, etc.). UI components read profileStorage for preferences and trigger engine actions (split, eject, pause).
 
 ---
 
-## 🚀 Cómo ejecutar (rápido)
-Requisitos: Node.js (v18+ recomendado) y npm / pnpm / yarn.
+## How to run (quick)
+Requirements: Node.js (v18+ recommended) and npm/pnpm/yarn.
 
-1. Clona el repo:
+Clone and install:
 ```bash
 git clone https://github.com/MeowDev1011/Mite.io.git
 cd Mite.io
-```
-
-2. Instala dependencias:
-```bash
 npm install
-# o
-# pnpm install
-# yarn
 ```
 
-3. Copia variables de entorno si necesitas (hay .env.example):
+Create an env file if needed:
 ```bash
 cp .env.example .env
 ```
 
-4. Ejecuta en modo desarrollo (Vite, puerto 3000):
+Development (Vite, port 3000):
 ```bash
 npm run dev
-# abre http://localhost:3000
+# open http://localhost:3000
 ```
 
-5. Construir para producción:
+Build and preview production:
 ```bash
 npm run build
-npm run preview   # preview local del build
+npm run preview
 ```
 
-Scripts útiles (desde package.json):
+Useful npm scripts (from package.json):
 - dev: vite --port=3000 --host=0.0.0.0
 - build: vite build
 - preview: vite preview
@@ -127,109 +120,77 @@ Scripts útiles (desde package.json):
 
 ---
 
-## 🎮 Controles / Jugabilidad
-- Movimiento: apunta con el ratón (mouse steer). 🖱️
-- Split / dividir: Barra espaciadora (Space) — divide tu microbio para atacar/escapar. ⚔️
-- Eject / expulsar masa: W (KeyW). 🟢
-- Pausa / menú: Esc (Escape). ⏸️
-- También hay soporte touch: swipes/touch para heading en móvil.
+## Controls
+- Movement: aim with mouse (mouse steering)
+- Split: Spacebar (split your microbe to attack or evade)
+- Eject mass / spore: W
+- Pause / Menu: Escape
+- Mobile: touch controls supported (touch heading / virtual steering)
 
 ---
 
-## 🛠 Desarrollo — archivos importantes (he leído el código)
-- src/game/engine.ts — Núcleo del motor: loop de render, gestión de entidades (player, bots, anticuerpos), físicas y colisiones. Es el archivo más grande y donde se aplica la mayoría de la lógica del juego.
-- src/game/types.ts — Define GameState, GameStats, LeaderboardEntry, MutationId y tipos compartidos entre engine y UI.
-- src/audio/soundEngine.ts — Controla reproducción y mute de sonidos; usado por la UI y el motor.
-- src/storage/profileStorage.ts — Persistencia local del perfil (selectedSkinId, cytes, preferredLanguage). Útil para comportamientos de UI y para restaurar preferencias.
-- src/components/* — UI reactiva para todas las pantallas (TitleScreen, HUD, modales). Observa cómo App.tsx conecta callbacks del engine con estos componentes.
-- src/game/skins.ts — Contiene MICROBE_SKINS y lógica de colores/skins. Cambiar ahí impacta visualmente en el motor.
-- src/game/achievements.ts — Definición y condiciones de logros; dispara el achievement toast.
+## Key files & architecture (what I inspected)
+- src/game/engine.ts — core game loop and simulation (entities, collision, bot AI). This file contains the main runtime logic.
+- src/game/types.ts — shared TypeScript types used across engine and UI.
+- src/audio/soundEngine.ts — central sound control used by App and engine.
+- src/storage/profileStorage.ts — reads/writes local profile (cytes, skins, language). Useful for restoring user preferences.
+- src/components/* — UI components that render TitleScreen, HUD, and modals. App.tsx wires engine callbacks to these components.
+- src/game/skins.ts — skin definitions; updating this changes the player appearance.
+- src/game/achievements.ts — achievement rules and triggers.
 
-Puntos de integración:
-- engine.onStatsUpdate → actualiza HUD/mini-radar.
-- engine.onAchievementUnlocked → dispara AchievementToast.
-- profileStorage.getProfile() → usado por HUD y para aplicar skins.
-
----
-
-## 🤝 Contribuir
-¡Contribuciones bienvenidas! 🙌
-- Abre issues para bugs o mejoras.
-- Haz PRs pequeñas y descriptivas.
-- Añade tests o validaciones de tipos donde sea necesario.
-- Antes de PR: ejecuta `npm run lint` y asegúrate de que la build local pase.
-
-Plantilla rápida para PR:
-- Qué cambias (1–2 líneas)
-- Por qué (motivación)
-- Archivos principales modificados
-- Cómo probarlo localmente
+Integration points:
+- engine.onStatsUpdate → updates HUD and mini-map
+- engine.onAchievementUnlocked → triggers AchievementToast
+- profileStorage.getProfile() → used by HUD and to re-apply skins
 
 ---
 
-## 🐞 Problemas comunes / Debug
-- Canvas negro / sin renderización:
-  - Asegúrate de dar permisos cross-origin si cargas assets externos.
-  - Revisa console por errores TS/Runtime.
-- Sonido no se reproduce en móvil:
-  - Revisa política de autoplay; algunos navegadores requieren interacción previa.
-- Perfil no guarda cambios:
-  - Comprueba `localStorage` y permisos del navegador; profileStorage guarda localmente.
+## Contributing
+Contributions welcome! Please open issues for bugs or feature requests and make small, focused PRs.
+
+Before submitting a PR:
+- Run `npm run lint` (tsc --noEmit)
+- Ensure the change is scoped and tested locally (run dev and smoke test)
+
+PR template suggestion (include in CONTRIBUTING.md):
+- Summary of change
+- Motivation
+- Files changed
+- How to test
+
+I can add CONTRIBUTING.md and ISSUE/PR templates if you want.
 
 ---
 
-## 🧾 Licencia
-El código principal usa licencia Apache-2.0 (ver encabezado en archivos y LICENSE si se añade). Consulta el archivo LICENSE en el repo para detalles.
+## Troubleshooting
+- Canvas not rendering: confirm #root exists and main.tsx mounts createRoot; check console for runtime errors.
+- Sounds not playing on mobile: autoplay policies require a user interaction before audio playback.
+- Profile not persisting: check browser localStorage permissions.
 
 ---
 
-## ❤️ Agradecimientos / Recursos
-- Hecho con TypeScript + React + Vite.
-- Iconos / UI: lucide-react y Tailwind (configuración mínima).
-- Logo: mite_io_logo.png (en la raíz).
+## License
+The code contains Apache-2.0 license headers in files. Check LICENSE in repo root for full terms.
 
 ---
 
-ENGLISH BELOW / INGLÉS ABAJO
+## Credits & Resources
+- Built with TypeScript + React + Vite
+- UI icons: lucide-react
+- Styling: Tailwind (setup present in package.json)
+- Logo: mite_io_logo.png
 
 ---
 
-# Mite.io 🧫🧬 — Evolution action inside the bloodstream
-
-[![Play Online](https://img.shields.io/badge/Play%20Online-mite--io.ai.studio-brightgreen)](https://mite-io.ai.studio)
-[![License](https://img.shields.io/github/license/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io/blob/main/LICENSE)
-[![Top Language](https://img.shields.io/github/languages/top/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io)
-[![Repo Size](https://img.shields.io/github/repo-size/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io)
-[![TypeScript](https://img.shields.io/badge/TypeScript-%E2%9D%A4-blue)](https://www.typescriptlang.org/)
-
-Mite.io is an action growth/evolution game set inside the bloodstream. Grow by absorbing cells, split to attack or escape, avoid antibodies, and compete to dominate the environment. 🎮🧪
-
-Play now: https://mite-io.ai.studio 🚀
+## Live demo
+Play online: https://mite-io.ai.studio
+Repo: https://github.com/MeowDev1011/Mite.io
 
 ---
 
-## Quick links
-- Live demo: https://mite-io.ai.studio
-- Repo: https://github.com/MeowDev1011/Mite.io
+If you'd like, I can now:
+- Add screenshots or an animated GIF to the README and upload images to the repo.
+- Create a prominent "Play" button in index.html linking to the live demo.
+- Add CONTRIBUTING.md and GitHub ISSUE/PR templates.
 
----
-
-## What this is
-Mite.io is a fast-paced action game with growth and mutation mechanics. Implemented with TypeScript, React and Vite. The client runs a canvas-based game engine at 60 FPS and provides UI for skins, store, achievements and localization.
-
-## How to run
-(see Spanish section above for full commands)
-
-1. git clone https://github.com/MeowDev1011/Mite.io.git
-2. npm install
-3. cp .env.example .env
-4. npm run dev -> open http://localhost:3000
-
----
-
-If you'd like, I can:
-- Add screenshots and a demo GIF to the README.
-- Create CONTRIBUTING.md and ISSUE/PR templates.
-- Add a short troubleshooting section for common engine issues.
-
-Have it published and linked to https://mite-io.ai.studio as requested. 🎉
+Which of these should I do next?
