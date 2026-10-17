@@ -1,4 +1,5 @@
 # Mite.io 🧫🧬 — Evolution action inside the bloodstream
+mite_io_logo.png
 
 [![Play Online](https://img.shields.io/badge/Play%20Online-mite--io.ai.studio-brightgreen)](https://mite-io.pages.dev/)
 [![License](https://img.shields.io/github/license/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io/blob/main/LICENSE)
