@@ -3,11 +3,11 @@
 ![Logo Mite.io](mite_io_logo.png)
 
 [![Play Online](https://img.shields.io/badge/Play%20Online-mite--io.ai.studio-brightgreen)](https://mite-io.pages.dev/)
-[![License](https://img.shields.io/github/license/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io/blob/main/LICENSE)
-[![Top Language](https://img.shields.io/github/languages/top/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io)
-[![Repo Size](https://img.shields.io/github/repo-size/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io)
-[![TypeScript](https://img.shields.io/badge/TypeScript-%E2%9D%A4-blue)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-Ready-brightgreen)](https://vitejs.dev/)
+[![License](https://img.shields.io/github/license/MeowDev1011/Mite.io?style=flat-square)](https://github.com/MeowDev1011/Mite.io/blob/main/LICENSE)
+[![Top Language](https://img.shields.io/github/languages/top/MeowDev1011/Mite.io?style=flat-square)](https://github.com/MeowDev1011/Mite.io)
+[![Repo Size](https://img.shields.io/github/repo-size/MeowDev1011/Mite.io?style=flat-square)](https://github.com/MeowDev1011/Mite.io)
+[![TypeScript](https://img.shields.io/badge/TypeScript-%E2%9D%A4-blue?style=flat-square)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-Ready-brightgreen?style=flat-square)](https://vitejs.dev/)
 
 Mite.io is an action growth/evolution game set inside the bloodstream. Grow by absorbing cells, split to attack or escape, avoid antibodies, and compete to dominate the environment. 🎮🧪
 
@@ -16,29 +16,39 @@ Play now: https://mite-io.pages.dev/
 
 ## Table of Contents
 - What this is
-- Features
+- Features (expanded)
 - Repository structure
 - How to run (dev & prod)
 - Controls
 - Key files and architecture
 - Contributing
 - Troubleshooting
-- License & credits
+- License & credits (expanded)
 
 ---
 
 ## What this is
-Mite.io is a fast-paced action game that combines growth mechanics, splitting, and evolution choices (mutations). It’s implemented with TypeScript, React, and Vite. The client runs a canvas-based game engine at 60 FPS and provides UI for skins, shop, achievements, and localization.
+Mite.io is a fast-paced action game that combines growth mechanics, splitting, and evolution choices (mutations). It’s implemented with TypeScript, React, and Vite. The client runs a canvas-based simulation with an emphasis on smooth performance, responsive controls, and emergent multiplayer-like bot interactions.
 
 ---
 
-## Features
-- 60 FPS canvas renderer with a custom game engine (entities: player, bots, antibodies)
-- Evolution / mutation choices that change player abilities
-- Achievements, store, and customizable skins
-- Local profile storage (cytes balance, selected skin, preferred language)
-- Sound engine with mute toggle
-- Internationalization support with device language detection
+## Features (expanded)
+- 60 FPS canvas renderer with a custom lightweight game engine (entities: player, bots, antibodies).
+- Evolution / mutation system: make choices during gameplay that permanently alter abilities or stats for that session (speed, mass conversion, defensive traits).
+- Splitting mechanic: split to attack other microbes or to escape dangerous situations; split mass distribution and recombination behavior.
+- Mass ejection / spore mechanic: eject mass to feed or to create projectiles.
+- AI-driven bots with varied behaviors and procedurally generated bot names.
+- Achievements system with unlock notifications and progress tracking.
+- In-game store where players can spend "cytes" (local currency) to buy skins and cosmetic upgrades.
+- Skins and visual customization (color palettes, patterns) with preview in the UI.
+- Local profile storage (cytes balance, selected skin, preferred language, achievements) using browser localStorage.
+- Sound engine with mute toggle, volume settings, and mobile autoplay handling.
+- Internationalization support with device language detection and a simple translation lookup table.
+- Responsive UI and touch controls for mobile devices (touch heading, virtual steering, and mobile HUD layout).
+- Pause, tutorial, and step-by-step onboarding for new players.
+- Leaderboard snapshot (local/session-based) and in-game stat HUD (size, speed, nearby threats).
+- Achievement toasts and modular modal system for UI: Evolution choices, Shop, Skins, Achievements, Pause, Game Over.
+- Optimized rendering with object pooling and efficient collision checks for stable performance in browsers.
 
 ---
 
@@ -81,7 +91,7 @@ src/
     languages.ts            # translations & language detection
 ```
 
-How it fits together: App.tsx creates a GameEngine instance (src/game/engine.ts). The engine runs the simulation and calls React callbacks (onStatsUpdate, onLeaderboardUpdate, onAchievementUnlocked, etc.). UI components read profileStorage for preferences and trigger engine actions (split, eject, pause).
+How it fits together: App.tsx creates a GameEngine instance (src/game/engine.ts). The engine runs the simulation and calls React callbacks (onStatsUpdate, onLeaderboardUpdate, onAchievementUnlocked), while React handles rendering UI overlays and modals.
 
 ---
 
@@ -171,15 +181,42 @@ I can add CONTRIBUTING.md and ISSUE/PR templates if you want.
 ---
 
 ## License
-The code contains Apache-2.0 license headers in files. Check LICENSE in repo root for full terms.
+The project is distributed under the Apache-2.0 license. See LICENSE in the repository root for full terms and contributor guidance.
 
 ---
 
-## Credits & Resources
-- Built with TypeScript + React + Vite
-- UI icons: lucide-react
-- Styling: Tailwind (setup present in package.json)
-- Logo: mite_io_logo.png
+## Credits & Resources (expanded)
+This section lists the main libraries, assets, and contributors that made Mite.io possible. If you used or modified any asset or third-party code, make sure to follow its license and attribution requirements.
+
+Core technologies
+- TypeScript — language used across the client and game code (static types and safer tooling).
+- React — UI and component rendering.
+- Vite — fast development server and build tool.
+- Tailwind CSS — utility-first styling for UI components.
+
+Libraries and utilities
+- lucide-react — vector icons used in the UI.
+- tinycolor2 or similar (if used) — color utilities for skins and palettes.
+- Any bundler plugins or helper libs referenced in package.json.
+
+Assets
+- Logo: `mite_io_logo.png` — original artwork included in repo. If the logo was created by a third party, please credit the artist here.
+- Sound effects and music — ensure third-party audio assets have proper attribution and license details. If you added sounds from free libraries (e.g., freesound.org, opengameart.org), list them with author and URL here.
+
+Contributors
+- MeowDev1011 — primary author and maintainer (code, design, game rules).
+- Additional contributors (please add your GitHub handle and role):
+  - @your-contributor-handle — role / what they contributed
+
+Acknowledgements
+- Community testers and early playtesters that provided bug reports and balance feedback.
+- Inspiration: .io games that mix growth and splitting mechanics.
+
+How to add credits
+- If you contributed art, music, or code, please open a PR to add your name and what you contributed under "Contributors" above. Include links to your portfolio or license if required.
+
+Third-party licenses
+- This project bundles or references third-party libraries. Check each package.json dependency for license details. When redistributing assets, ensure you comply with their license terms.
 
 ---
 
