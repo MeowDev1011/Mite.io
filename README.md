@@ -3,7 +3,7 @@
 ![Logo Mite.io](mite_io_logo.png)
 
 [![Play Online](https://img.shields.io/badge/Play%20Online-mite--io.ai.studio-brightgreen)](https://mite-io.pages.dev/)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/MeowDev1011/Mite.io/blob/main/LICENSE)
+[![License: Apache-2.0](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/MeowDev1011/Mite.io/blob/main/LICENSE)
 [![Top Language](https://img.shields.io/github/languages/top/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io)
 [![Repo Size](https://img.shields.io/github/repo-size/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io)
 [![TypeScript](https://img.shields.io/badge/TypeScript-%E2%9D%A4-blue)](https://www.typescriptlang.org/)
