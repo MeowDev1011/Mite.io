@@ -2,7 +2,7 @@
 
 ![Logo Mite.io](mite_io_logo.png)
 
-[![Play Online](https://img.shields.io/badge/Play%20Online-mite--io.ai.studio-brightgreen)](https://mite-io.pages.dev/)
+[![Play Online](https://img.shields.io/badge/Play%20Online-mite--io.pages.dev-brightgreen)](https://mite-io.pages.dev/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/MeowDev1011/Mite.io/blob/main/LICENSE)
 [![Top Language](https://img.shields.io/github/languages/top/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io)
 [![Repo Size](https://img.shields.io/github/repo-size/MeowDev1011/Mite.io)](https://github.com/MeowDev1011/Mite.io)
@@ -201,7 +201,6 @@ Before opening a PR:
 
 ## Troubleshooting 🐞
 - 🎧 Audio on mobile may require a user interaction before playback
-- 🏷️ License badge may show outdated cache from shields.io; wait a few minutes after adding LICENSE to the default branch
 - 🧭 Canvas blank issues: open DevTools and inspect console errors and verify the root mount in index.html
 - 💾 Profile persistence issues: check localStorage permissions in your browser
 
