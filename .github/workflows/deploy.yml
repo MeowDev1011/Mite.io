@@ -1,4 +1,4 @@
-namename: Deploy to Cloudflare Pages
+name: Deploy to Cloudflare Pages
 
 on:
   push:
@@ -24,7 +24,7 @@ jobs:
 
       - name: Install & Build
         run: |
-          npm ci
+          npm install
           npm run build
 
       - name: Deploy to Cloudflare Pages
