@@ -216,4 +216,4 @@ Before opening a PR:
 ---
 
 Mite.io is small, fast and chaotic in the best possible way. 🧫⚡🎉
-If you enjoy the project, give it a star and help it grow. ⭐
+If you enjoy the project, give it a star and help it grow. ⭐ :D
