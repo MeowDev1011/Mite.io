@@ -26,9 +26,11 @@ jobs:
           npm install --legacy-peer-deps
           npm run build
 
+      - name: Install Wrangler
+        run: npm install -g wrangler --legacy-peer-deps
+
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=mite-io --branch=main
+        run: wrangler pages deploy dist --project-name=mite-io --branch=main
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
