@@ -1,0 +1,221 @@
+import React, { useState, useEffect } from 'react';
+import { Users, X, RefreshCw, Send, Shield, Skull, MapPin, Sparkles, UserCheck } from 'lucide-react';
+import { ActivePlayer } from '../game/types';
+import { profileStorage } from '../storage/profileStorage';
+import { InviteModal } from './InviteModal';
+
+interface ActivePlayersModalProps {
+  onClose: () => void;
+  onInviteSent: (msg: string) => void;
+}
+
+export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose, onInviteSent }) => {
+  const [players, setPlayers] = useState<ActivePlayer[]>([]);
+  const [filter, setFilter] = useState<'all' | 'immune' | 'pathogen'>('all');
+  const [search, setSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedTarget, setSelectedTarget] = useState<ActivePlayer | null>(null);
+
+  const fetchActivePlayers = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/players/active');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.players) {
+          setPlayers(json.players);
+        }
+      }
+    } catch {
+      // offline fallback
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchActivePlayers();
+    const interval = setInterval(fetchActivePlayers, 6000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const myDeviceId = profileStorage.getDeviceId();
+
+  const filteredPlayers = players.filter((p) => {
+    if (p.deviceId === myDeviceId) return false; // don't invite oneself
+    if (filter !== 'all' && p.faction !== filter) return false;
+    if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md pointer-events-auto select-none">
+        <div className="w-full max-w-3xl max-h-[90vh] p-5 sm:p-7 rounded-3xl bg-neutral-900 border border-cyan-500/30 shadow-[0_0_50px_rgba(6,182,212,0.2)] flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-white/10 gap-2 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl sm:text-2xl font-black text-white">Jugadores Activos</h2>
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-bold font-mono">
+                    {players.length} En Línea
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-400">
+                  Explorá los microbios activos en el torrente e invitalos a tu sala
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={fetchActivePlayers}
+                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-cyan-300 transition-colors cursor-pointer"
+                title="Actualizar lista"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              </button>
+
+              <button
+                onClick={onClose}
+                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Search & Filter Bar */}
+          <div className="flex items-center gap-2 pt-3 pb-2 flex-wrap shrink-0">
+            <input
+              type="text"
+              placeholder="Buscar por nombre de microbio..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 min-w-[200px] px-3.5 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+            />
+
+            <div className="flex items-center gap-1.5 text-xs font-bold">
+              <button
+                onClick={() => setFilter('all')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                  filter === 'all'
+                    ? 'bg-cyan-500 text-neutral-950 font-black shadow-sm'
+                    : 'bg-white/5 text-neutral-400 hover:text-white'
+                }`}
+              >
+                Todos
+              </button>
+              <button
+                onClick={() => setFilter('immune')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 ${
+                  filter === 'immune'
+                    ? 'bg-cyan-600 text-white font-black shadow-sm'
+                    : 'bg-white/5 text-neutral-400 hover:text-white'
+                }`}
+              >
+                <Shield className="w-3 h-3 text-cyan-400" />
+                <span>Defensores</span>
+              </button>
+              <button
+                onClick={() => setFilter('pathogen')}
+                className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1 ${
+                  filter === 'pathogen'
+                    ? 'bg-rose-600 text-white font-black shadow-sm'
+                    : 'bg-white/5 text-neutral-400 hover:text-white'
+                }`}
+              >
+                <Skull className="w-3 h-3 text-rose-400" />
+                <span>Patógenos</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Players List Grid */}
+          <div className="overflow-y-auto py-2 flex-1 pr-1 space-y-2.5">
+            {filteredPlayers.length === 0 ? (
+              <div className="text-center py-12 text-neutral-400 text-xs">
+                No se encontraron otros microbios activos en esta categoría.
+              </div>
+            ) : (
+              filteredPlayers.map((player) => {
+                const isImmune = player.faction === 'immune';
+                return (
+                  <div
+                    key={player.deviceId}
+                    className="p-3.5 rounded-2xl bg-black/40 border border-white/10 hover:border-cyan-500/40 transition-all flex items-center justify-between gap-3 flex-wrap"
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* Faction & Status Badge */}
+                      <div
+                        className={`w-10 h-10 rounded-2xl flex items-center justify-center border shadow-inner shrink-0 ${
+                          isImmune
+                            ? 'bg-cyan-950/60 border-cyan-400/50 text-cyan-300'
+                            : 'bg-rose-950/60 border-rose-400/50 text-rose-300'
+                        }`}
+                      >
+                        {isImmune ? <Shield className="w-5 h-5" /> : <Skull className="w-5 h-5" />}
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-black text-white">{player.name}</h4>
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${
+                              isImmune
+                                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/30'
+                                : 'bg-rose-500/20 text-rose-300 border-rose-400/30'
+                            }`}
+                          >
+                            {isImmune ? 'Defensor' : 'Patógeno'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-[11px] text-neutral-400 font-mono mt-0.5 flex-wrap">
+                          <span className="flex items-center gap-1 text-rose-300 font-sans">
+                            <MapPin className="w-3 h-3 text-rose-400" />
+                            <span>{player.currentOrgan}</span>
+                          </span>
+                          <span>·</span>
+                          <span>Masa: <strong className="text-white">{player.mass}</strong></span>
+                          <span>·</span>
+                          <span className="text-[10px] text-neutral-500">ID: {player.deviceId.slice(-6).toUpperCase()}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Invite Button */}
+                    <button
+                      onClick={() => setSelectedTarget(player)}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-neutral-950 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(6,182,212,0.35)] transition-all transform active:scale-95 cursor-pointer shrink-0"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Invitar a Sala</span>
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Nested Invite Configuration Dialog */}
+      {selectedTarget && (
+        <InviteModal
+          targetPlayer={selectedTarget}
+          onClose={() => setSelectedTarget(null)}
+          onInviteSent={(msg) => {
+            onInviteSent(msg);
+            setSelectedTarget(null);
+          }}
+        />
+      )}
+    </>
+  );
+};

@@ -41,6 +41,9 @@ export interface CellPiece {
   impulseY: number;
 }
 
+export type GameMode = 'ffa' | 'team';
+export type Faction = 'immune' | 'pathogen';
+
 export interface Organism {
   id: string;
   name: string;
@@ -55,6 +58,10 @@ export interface Organism {
   isAlive: boolean;
   score: number;
   kills: number;
+  mode?: GameMode;
+  faction?: Faction;
+  hasCrown?: boolean;
+  crownType?: 'gold' | 'immune' | 'pathogen';
   // Bot AI specific fields
   aiPersonality?: 'aggressive' | 'scavenger' | 'balanced' | 'cautious';
   aiDecisionTimer?: number;
@@ -143,6 +150,9 @@ export interface LeaderboardEntry {
   name: string;
   mass: number;
   isPlayer: boolean;
+  faction?: Faction;
+  hasCrown?: boolean;
+  crownType?: 'gold' | 'immune' | 'pathogen';
 }
 
 export interface GameStats {
@@ -156,4 +166,103 @@ export interface GameStats {
   rivalsEaten: number;
   timeAliveSec: number;
   causeOfDeath: string;
+  canConquer?: boolean;
+  conqueredOrgansCount?: number;
+  immunePercentage?: number;
+  pathogenPercentage?: number;
+  gameMode?: GameMode;
+  playerFaction?: Faction;
+  activeSuperpower?: ActiveSuperpower | null;
+  hostStatus?: HostHumanStatus;
+}
+
+export interface HostHumanStatus {
+  health: number; // 0 to 100%
+  temperature: number; // e.g. 36.8 to 41.2 °C
+  hydration: number; // e.g. 40 to 75%
+  energyATP: number; // e.g. 30 to 95%
+  pusLevel: number; // e.g. 0 to 100 ml de pus/exudado purulento
+  activeSymptoms: string[];
+}
+
+export type SuperpowerType =
+  | 'magnet_pill'      // Mega-atracción de nutrientes (15s)
+  | 'speed_capsule'    // Hiper-velocidad & fisión instantánea (15s)
+  | 'shield_capsule'   // Escudo inmunológico e invulnerabilidad (15s)
+  | 'toxic_nanobot'    // Fisión lítica & choque ácido contra rivales (15s)
+  | 'mega_shield'      // Mega-Escudo de Plasma & Regeneración Continua (15s)
+  | 'growth_serum'     // Suero de Hiper-Crecimiento x3 & Aura Titán (15s)
+  | 'frost_blast'      // Crio-Espora Glacial & Ralentización Masiva (15s)
+  | 'cloaking_ghost'   // Camuflaje Bio-Fantasma & Evasión de Anticuerpos (15s)
+  | 'quantum_fission'; // Fisión Cuántica Instantánea & Remitosis Cero (15s);
+
+export interface SuperpowerEntity {
+  id: string;
+  type: SuperpowerType;
+  x: number;
+  y: number;
+  radius: number;
+  color: string;
+  glowColor: string;
+  name: string;
+  desc: string;
+  rotation: number;
+  respawnTimer: number;
+  isAvailable: boolean;
+}
+
+export interface ActiveSuperpower {
+  type: SuperpowerType;
+  name: string;
+  desc: string;
+  color: string;
+  remainingTime: number; // in seconds (starts at 15.0)
+  totalDuration: number; // 15.0
+}
+
+export interface PlayerUpgrades {
+  attraction: number;    // Level 0 - 1500 (Atracción Magnética)
+  speed: number;         // Level 0 - 1500 (Velocidad e Hidrodinámica)
+  armor: number;         // Level 0 - 1500 (Armadura Inmunológica)
+  metabolism: number;    // Level 0 - 1500 (Metabolismo y Digestión)
+  sporesFission: number; // Level 0 - 1500 (Capacidad de Esporas y Fisión Mitótica)
+  fissionBlast?: number;
+  cyteHarvest?: number;
+}
+
+export interface TacticalBooster {
+  id: string;
+  name: string;
+  description: string;
+  effect: string;
+  priceCytes: number;
+  durationLabel: string;
+  iconName: string;
+  themeColor: string;
+}
+
+export interface ActivePlayer {
+  deviceId: string;
+  name: string;
+  status: 'online' | 'in_game' | 'in_room';
+  currentOrgan: string;
+  mass: number;
+  faction: 'immune' | 'pathogen' | 'neutral';
+  isRealDevice: boolean;
+  lastSeen: number;
+}
+
+export interface RoomInvitation {
+  id: string;
+  fromDeviceId: string;
+  fromPlayerName: string;
+  toDeviceId: string;
+  toPlayerName: string;
+  mode: 'team' | 'ffa' | 'bots';
+  factionRule: 'host_decides' | 'guest_chooses';
+  hostFaction: 'immune' | 'pathogen';
+  guestFaction?: 'immune' | 'pathogen';
+  roomId: string;
+  status: 'pending' | 'accepted' | 'declined';
+  createdAt: number;
 }

@@ -14,6 +14,13 @@ import {
   LeaderboardEntry,
   GameStats,
   MutationId,
+  GameMode,
+  Faction,
+  SuperpowerEntity,
+  ActiveSuperpower,
+  SuperpowerType,
+  PlayerUpgrades,
+  HostHumanStatus,
 } from './types';
 import {
   WORLD_RADIUS,
@@ -43,8 +50,12 @@ import {
   ANTIBODY_HUNT_SPEED,
   ANTIBODY_DAMAGE_RATIO,
   PROTEIN_COLORS,
+  SUPERPOWER_DURATION_SEC,
+  SUPERPOWER_RESPAWN_SEC,
+  SUPERPOWER_DEFS,
 } from './constants';
-import { BOT_PRESETS } from './botNames';
+import { BOT_PRESETS, IMMUNE_BOT_PRESETS, PATHOGEN_BOT_PRESETS } from './botNames';
+import { BACTERIA_STRAINS } from './bacteria';
 
 export class GameEngine {
   private canvas: HTMLCanvasElement;
@@ -67,6 +78,8 @@ export class GameEngine {
   public currentOrgan: string = 'Corazón (Aorta)';
   public sporesFiredCount: number = 0;
   public territoryExplored: Set<string> = new Set();
+  public gameMode: GameMode = 'ffa';
+  public playerFaction: Faction = 'immune';
 
   // Entities
   public player: Organism | null = null;
@@ -77,6 +90,28 @@ export class GameEngine {
   public antibodies: AntibodyPatrol[] = [];
   public particles: BiologicalParticle[] = [];
   public floatingTexts: FloatingText[] = [];
+  public superpowers: SuperpowerEntity[] = [];
+  public activeSuperpower: ActiveSuperpower | null = null;
+  public playerUpgrades: PlayerUpgrades = { attraction: 0, speed: 0, armor: 0, metabolism: 0, sporesFission: 0 };
+  public pusPustules: {
+    id: string;
+    x: number;
+    y: number;
+    radius: number;
+    mass: number;
+    wobble: number;
+    wobbleSpeed: number;
+    pulseTimer: number;
+  }[] = [];
+  public hostStatus: HostHumanStatus = {
+    health: 100,
+    temperature: 37.0,
+    hydration: 75,
+    energyATP: 95,
+    pusLevel: 0,
+    activeSymptoms: [],
+  };
+  private toxicPulseCooldown: number = 0;
 
   // Camera & Viewport
   public cameraX: number = 0;
@@ -90,6 +125,8 @@ export class GameEngine {
   public keysHeld: Record<string, boolean> = {};
   public isTouchActive: boolean = false;
   public touchHeading: { x: number; y: number } = { x: 0, y: 0 };
+  public joystickHeading: { x: number; y: number } | null = null;
+  public humansOnly: boolean = false;
 
   // Runtime stats
   private startTime: number = 0;
@@ -169,6 +206,142 @@ export class GameEngine {
     for (let i = 0; i < BOT_COUNT; i++) {
       this.spawnBot(i);
     }
+
+    // Initialize the 4 Central Map Superpowers
+    this.initSuperpowers();
+  }
+
+  public initSuperpowers() {
+    this.superpowers = [
+      // 4 Central Bloodstream Superpowers
+      {
+        id: 'super_magnet',
+        type: 'magnet_pill',
+        x: 0,
+        y: -320,
+        radius: 34,
+        color: SUPERPOWER_DEFS.magnet_pill.color,
+        glowColor: SUPERPOWER_DEFS.magnet_pill.glowColor,
+        name: SUPERPOWER_DEFS.magnet_pill.name,
+        desc: SUPERPOWER_DEFS.magnet_pill.desc,
+        rotation: 0,
+        respawnTimer: 0,
+        isAvailable: true,
+      },
+      {
+        id: 'super_speed',
+        type: 'speed_capsule',
+        x: -280,
+        y: 0,
+        radius: 34,
+        color: SUPERPOWER_DEFS.speed_capsule.color,
+        glowColor: SUPERPOWER_DEFS.speed_capsule.glowColor,
+        name: SUPERPOWER_DEFS.speed_capsule.name,
+        desc: SUPERPOWER_DEFS.speed_capsule.desc,
+        rotation: 0,
+        respawnTimer: 0,
+        isAvailable: true,
+      },
+      {
+        id: 'super_shield',
+        type: 'shield_capsule',
+        x: 280,
+        y: 0,
+        radius: 34,
+        color: SUPERPOWER_DEFS.shield_capsule.color,
+        glowColor: SUPERPOWER_DEFS.shield_capsule.glowColor,
+        name: SUPERPOWER_DEFS.shield_capsule.name,
+        desc: SUPERPOWER_DEFS.shield_capsule.desc,
+        rotation: 0,
+        respawnTimer: 0,
+        isAvailable: true,
+      },
+      {
+        id: 'super_toxic',
+        type: 'toxic_nanobot',
+        x: 0,
+        y: 320,
+        radius: 34,
+        color: SUPERPOWER_DEFS.toxic_nanobot.color,
+        glowColor: SUPERPOWER_DEFS.toxic_nanobot.glowColor,
+        name: SUPERPOWER_DEFS.toxic_nanobot.name,
+        desc: SUPERPOWER_DEFS.toxic_nanobot.desc,
+        rotation: 0,
+        respawnTimer: 0,
+        isAvailable: true,
+      },
+      // 5 Organ Zone Superpowers Across Anatomy
+      {
+        id: 'super_mega_shield',
+        type: 'mega_shield',
+        x: 1450,
+        y: 250, // Spleen (Bazo)
+        radius: 36,
+        color: SUPERPOWER_DEFS.mega_shield.color,
+        glowColor: SUPERPOWER_DEFS.mega_shield.glowColor,
+        name: SUPERPOWER_DEFS.mega_shield.name,
+        desc: SUPERPOWER_DEFS.mega_shield.desc,
+        rotation: 0,
+        respawnTimer: 0,
+        isAvailable: true,
+      },
+      {
+        id: 'super_growth',
+        type: 'growth_serum',
+        x: -1050,
+        y: -400, // Heart (Corazón)
+        radius: 36,
+        color: SUPERPOWER_DEFS.growth_serum.color,
+        glowColor: SUPERPOWER_DEFS.growth_serum.glowColor,
+        name: SUPERPOWER_DEFS.growth_serum.name,
+        desc: SUPERPOWER_DEFS.growth_serum.desc,
+        rotation: 0,
+        respawnTimer: 0,
+        isAvailable: true,
+      },
+      {
+        id: 'super_frost',
+        type: 'frost_blast',
+        x: -1050,
+        y: -1900, // Brain (Cerebro)
+        radius: 36,
+        color: SUPERPOWER_DEFS.frost_blast.color,
+        glowColor: SUPERPOWER_DEFS.frost_blast.glowColor,
+        name: SUPERPOWER_DEFS.frost_blast.name,
+        desc: SUPERPOWER_DEFS.frost_blast.desc,
+        rotation: 0,
+        respawnTimer: 0,
+        isAvailable: true,
+      },
+      {
+        id: 'super_cloaking',
+        type: 'cloaking_ghost',
+        x: -800,
+        y: -900, // Lungs (Pulmones)
+        radius: 36,
+        color: SUPERPOWER_DEFS.cloaking_ghost.color,
+        glowColor: SUPERPOWER_DEFS.cloaking_ghost.glowColor,
+        name: SUPERPOWER_DEFS.cloaking_ghost.name,
+        desc: SUPERPOWER_DEFS.cloaking_ghost.desc,
+        rotation: 0,
+        respawnTimer: 0,
+        isAvailable: true,
+      },
+      {
+        id: 'super_quantum',
+        type: 'quantum_fission',
+        x: -850,
+        y: 0, // Liver (Hígado)
+        radius: 36,
+        color: SUPERPOWER_DEFS.quantum_fission.color,
+        glowColor: SUPERPOWER_DEFS.quantum_fission.glowColor,
+        name: SUPERPOWER_DEFS.quantum_fission.name,
+        desc: SUPERPOWER_DEFS.quantum_fission.desc,
+        rotation: 0,
+        respawnTimer: 0,
+        isAvailable: true,
+      },
+    ];
   }
 
   public spawnProtein(): Protein {
@@ -242,6 +415,9 @@ export class GameEngine {
   }
 
   public spawnBot(index: number): Organism {
+    if (this.humansOnly) {
+      return null as any;
+    }
     const preset = BOT_PRESETS[index % BOT_PRESETS.length];
     const angle = Math.random() * Math.PI * 2;
     const dist = 300 + Math.random() * (WORLD_RADIUS - 600);
@@ -290,8 +466,16 @@ export class GameEngine {
   }
 
   // Start the actual player match
-  public startGame(playerName: string = 'Mite-Alfa') {
+  public startGame(
+    playerName: string = 'Mite-Alfa',
+    mode: GameMode = 'ffa',
+    faction: Faction = 'immune',
+    humansOnly: boolean = false
+  ) {
     this.state = 'PLAYING';
+    this.gameMode = mode;
+    this.playerFaction = faction;
+    this.humansOnly = humansOnly;
     this.startTime = Date.now();
     this.peakMass = MIN_START_MASS;
     this.proteinsEaten = 0;
@@ -304,27 +488,97 @@ export class GameEngine {
     this.secretZoneDiscoveredThisGame = false;
     this.sporesFiredCount = 0;
     this.territoryExplored.clear();
+    this.playerUpgrades = profileStorage.getUpgrades();
+    this.activeSuperpower = null;
+    this.initSuperpowers();
 
-    // Get equipped skin from profile
+    // Re-initialize bots according to mode and player preferences
+    this.initBotsForMode(mode, faction, humansOnly);
+
+    // Get equipped skin and bacteria strain
     const profile = profileStorage.getProfile();
     const equippedSkin = MICROBE_SKINS.find((s) => s.id === profile.selectedSkinId) || MICROBE_SKINS[0];
+    const bacteria = BACTERIA_STRAINS.find((b) => b.id === profile.selectedBacteriaId) || BACTERIA_STRAINS[0];
+    const bacteriaSpeed = bacteria.speedBonus || 1.0;
+    const upgradeSpeedBonus = 1.0 + (this.playerUpgrades?.speed || 0) * 0.06;
 
-    // Spawn player near center with safe buffer
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 250 + Math.random() * 300;
-    const px = Math.cos(angle) * dist;
-    const py = Math.sin(angle) * dist;
+    let playerColor = equippedSkin.color;
+    let playerSecondary = equippedSkin.secondaryColor;
+    let playerCilia = equippedSkin.ciliaColor;
+
+    if (mode === 'team') {
+      if (faction === 'immune') {
+        playerColor = '#06b6d4';
+        playerSecondary = '#0284c7';
+        playerCilia = '#7dd3fc';
+      } else {
+        playerColor = '#f43f5e';
+        playerSecondary = '#be123c';
+        playerCilia = '#fda4af';
+      }
+
+      this.hostStatus = {
+        health: 80,
+        temperature: 37.6,
+        hydration: 72,
+        energyATP: 88,
+        pusLevel: 20,
+        activeSymptoms: ['symptomInflammation', 'symptomPurulentExudate'],
+      };
+      this.pusPustules = [];
+      for (let i = 0; i < 18; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 350 + Math.random() * 2100;
+        this.pusPustules.push({
+          id: `pus-start-${i}`,
+          x: Math.cos(angle) * dist,
+          y: Math.sin(angle) * dist,
+          radius: 12 + Math.random() * 8,
+          mass: 30,
+          wobble: Math.random() * Math.PI * 2,
+          wobbleSpeed: 2 + Math.random() * 3,
+          pulseTimer: 0,
+        });
+      }
+    } else {
+      this.pusPustules = [];
+      this.hostStatus = {
+        health: 100,
+        temperature: 37.0,
+        hydration: 75,
+        energyATP: 95,
+        pusLevel: 0,
+        activeSymptoms: [],
+      };
+    }
+
+    // Spawn player in corresponding anatomical body:
+    // Immune starts in Body 1 (Anterior / Heart), Pathogen starts in Body 2 (Posterior / Spleen)
+    let px = (Math.random() - 0.5) * 350;
+    let py = -400 + (Math.random() - 0.5) * 350;
+    if (mode === 'team') {
+      if (faction === 'immune') {
+        px = -1050 + (Math.random() - 0.5) * 300;
+        py = -400 + (Math.random() - 0.5) * 300;
+      } else {
+        px = 1050 + (Math.random() - 0.5) * 300;
+        py = 250 + (Math.random() - 0.5) * 300;
+      }
+    }
+
     const r = GameEngine.massToRadius(MIN_START_MASS);
 
     this.player = {
       id: 'player',
       name: playerName.trim() || profile.name || 'Mite-Alfa',
       isPlayer: true,
-      color: equippedSkin.color,
-      secondaryColor: equippedSkin.secondaryColor,
-      ciliaColor: equippedSkin.ciliaColor,
+      mode,
+      faction,
+      color: playerColor,
+      secondaryColor: playerSecondary,
+      ciliaColor: playerCilia,
       targetHeading: { x: 0, y: 0 },
-      speedMultiplier: 1.0,
+      speedMultiplier: bacteriaSpeed * upgradeSpeedBonus,
       mutations: this.unlockedMutations,
       isAlive: true,
       score: MIN_START_MASS,
@@ -353,7 +607,268 @@ export class GameEngine {
     this.cameraY = py;
 
     soundEngine.startHeartbeat();
+    soundEngine.startBGM();
     if (this.onStateChange) this.onStateChange('PLAYING');
+  }
+
+  // Populate room with up to 50 players (Bots or Human Matchmaking)
+  public initBotsForMode(mode: GameMode, playerFaction: Faction, humansOnly: boolean = false) {
+    this.bots = [];
+    if (humansOnly) {
+      // In humans-only mode, room only contains real connected humans
+      return;
+    }
+
+    const botTotal = BOT_COUNT; // 49 bots + 1 player = 50 in room!
+
+    if (mode === 'ffa') {
+      for (let i = 0; i < botTotal; i++) {
+        const preset = BOT_PRESETS[i % BOT_PRESETS.length];
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 300 + Math.random() * (WORLD_RADIUS - 600);
+        const x = Math.cos(angle) * dist;
+        const y = Math.sin(angle) * dist;
+        const startMass = 16 + Math.random() * 55;
+        const r = GameEngine.massToRadius(startMass);
+
+        this.bots.push({
+          id: 'bot_' + i + '_' + Math.random().toString(36).substring(2, 6),
+          name: `${preset.name}-${i + 1}`,
+          isPlayer: false,
+          mode: 'ffa',
+          color: preset.color,
+          secondaryColor: preset.secondaryColor,
+          ciliaColor: preset.ciliaColor,
+          aiPersonality: preset.personality,
+          aiDecisionTimer: Math.random() * 2,
+          targetHeading: { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2 },
+          speedMultiplier: 1.0,
+          mutations: new Set(),
+          isAlive: true,
+          score: Math.floor(startMass),
+          kills: 0,
+          pieces: [
+            {
+              id: `bp_${i}_0`,
+              x,
+              y,
+              vx: 0,
+              vy: 0,
+              mass: startMass,
+              targetRadius: r,
+              radius: r,
+              remergeTimer: 0,
+              totalRemergeTime: 1,
+              wobbleOffsets: Array.from({ length: 16 }, () => 0),
+              wobbleSpeed: 2 + Math.random() * 2,
+              impulseX: 0,
+              impulseY: 0,
+            },
+          ],
+        });
+      }
+    } else {
+      // Team Battle: 24 teammates + 25 rivals = 50 players in room
+      const sameTeamCount = 24;
+      const rivalTeamCount = 25;
+      const samePresets = playerFaction === 'immune' ? IMMUNE_BOT_PRESETS : PATHOGEN_BOT_PRESETS;
+      const rivalPresets = playerFaction === 'immune' ? PATHOGEN_BOT_PRESETS : IMMUNE_BOT_PRESETS;
+      const rivalFaction: Faction = playerFaction === 'immune' ? 'pathogen' : 'immune';
+
+      // Spawn teammates
+      for (let i = 0; i < sameTeamCount; i++) {
+        const preset = samePresets[i % samePresets.length];
+        const baseX = playerFaction === 'immune' ? -1050 : 1050;
+        const x = baseX + (Math.random() - 0.5) * 1100;
+        const y = (Math.random() - 0.5) * 3200;
+        const startMass = 18 + Math.random() * 60;
+        const r = GameEngine.massToRadius(startMass);
+
+        this.bots.push({
+          id: `bot_team_${i}`,
+          name: preset.name,
+          isPlayer: false,
+          mode: 'team',
+          faction: playerFaction,
+          color: preset.color,
+          secondaryColor: preset.secondaryColor,
+          ciliaColor: preset.ciliaColor,
+          aiPersonality: preset.personality,
+          aiDecisionTimer: Math.random() * 2,
+          targetHeading: { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2 },
+          speedMultiplier: 1.0,
+          mutations: new Set(),
+          isAlive: true,
+          score: Math.floor(startMass),
+          kills: 0,
+          pieces: [
+            {
+              id: `bp_t_${i}_0`,
+              x,
+              y,
+              vx: 0,
+              vy: 0,
+              mass: startMass,
+              targetRadius: r,
+              radius: r,
+              remergeTimer: 0,
+              totalRemergeTime: 1,
+              wobbleOffsets: Array.from({ length: 16 }, () => 0),
+              wobbleSpeed: 2 + Math.random() * 2,
+              impulseX: 0,
+              impulseY: 0,
+            },
+          ],
+        });
+      }
+
+      // Spawn rivals
+      for (let i = 0; i < rivalTeamCount; i++) {
+        const preset = rivalPresets[i % rivalPresets.length];
+        const baseX = rivalFaction === 'immune' ? -1050 : 1050;
+        const x = baseX + (Math.random() - 0.5) * 1100;
+        const y = (Math.random() - 0.5) * 3200;
+        const startMass = 18 + Math.random() * 60;
+        const r = GameEngine.massToRadius(startMass);
+
+        this.bots.push({
+          id: `bot_rival_${i}`,
+          name: preset.name,
+          isPlayer: false,
+          mode: 'team',
+          faction: rivalFaction,
+          color: preset.color,
+          secondaryColor: preset.secondaryColor,
+          ciliaColor: preset.ciliaColor,
+          aiPersonality: preset.personality,
+          aiDecisionTimer: Math.random() * 2,
+          targetHeading: { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2 },
+          speedMultiplier: 1.0,
+          mutations: new Set(),
+          isAlive: true,
+          score: Math.floor(startMass),
+          kills: 0,
+          pieces: [
+            {
+              id: `bp_r_${i}_0`,
+              x,
+              y,
+              vx: 0,
+              vy: 0,
+              mass: startMass,
+              targetRadius: r,
+              radius: r,
+              remergeTimer: 0,
+              totalRemergeTime: 1,
+              wobbleOffsets: Array.from({ length: 16 }, () => 0),
+              wobbleSpeed: 2 + Math.random() * 2,
+              impulseX: 0,
+              impulseY: 0,
+            },
+          ],
+        });
+      }
+    }
+  }
+
+  public canConquerTerritory(): boolean {
+    if (!this.player || !this.player.isAlive) return false;
+    return this.calculateTotalMass(this.player) >= 100;
+  }
+
+  // Conquer Organ Territory: Player sacrifices mass ("te haces chiquito"), gains +80 Cytes and speed boost!
+  public conquerTerritory(): { success: boolean; organName: string; cytesEarned: number } | null {
+    if (!this.canConquerTerritory() || !this.player) return null;
+
+    const centroid = this.calculateCentroid(this.player);
+    let closestOrgan = ANATOMICAL_ORGANS[0];
+    let minDist = Infinity;
+    for (const organ of ANATOMICAL_ORGANS) {
+      const d = Math.hypot(centroid.x - organ.x, centroid.y - organ.y);
+      if (d < minDist) {
+        minDist = d;
+        closestOrgan = organ;
+      }
+    }
+
+    const profile = profileStorage.getProfile();
+    const strain = BACTERIA_STRAINS.find((b) => b.id === profile.selectedBacteriaId);
+    const multiplier = strain?.conquestCytesMultiplier || 1.0;
+    const cytesEarned = Math.round(80 * multiplier);
+
+    // "Te haces chiquito": shrink player down to base mass 20
+    const mainPiece = this.player.pieces[0];
+    mainPiece.mass = 20;
+    mainPiece.radius = GameEngine.massToRadius(20);
+    mainPiece.targetRadius = mainPiece.radius;
+    mainPiece.vx = 0;
+    mainPiece.vy = 0;
+    this.player.pieces = [mainPiece];
+
+    // Grant temporary Agility Boost (2.2x speed for 8s)
+    this.player.speedMultiplier = 2.2;
+    setTimeout(() => {
+      if (this.player) this.player.speedMultiplier = strain?.speedBonus || 1.0;
+    }, 8000);
+
+    // Play triumphant conquest fanfare
+    soundEngine.playConquestFanfare();
+    this.screenShake = 18;
+
+    // Burst of 70 bioluminescent conquest particles
+    for (let i = 0; i < 70; i++) {
+      const angle = (i / 70) * Math.PI * 2;
+      const speed = 140 + Math.random() * 240;
+      this.particles.push({
+        x: centroid.x,
+        y: centroid.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        radius: 4 + Math.random() * 4,
+        color: this.player.color,
+        alpha: 1.0,
+        life: 0,
+        maxLife: 2.0 + Math.random() * 0.8,
+      });
+    }
+
+    // Floating text alert
+    this.addFloatingText(centroid.x, centroid.y - 45, `¡${closestOrgan.name.toUpperCase()} COLONIZADO! +${cytesEarned} CYTES`, '#34d399');
+
+    // Update profile and DB
+    profileStorage.addCytes(cytesEarned);
+    profileStorage.conquerOrgan(closestOrgan.id, this.playerFaction);
+    this.checkAchievement('territory_conqueror');
+
+    return { success: true, organName: closestOrgan.name, cytesEarned };
+  }
+
+  public calculateTeamPercentage(targetFaction: Faction): number {
+    let immuneMass = 0;
+    let pathogenMass = 0;
+
+    if (this.player && this.player.isAlive) {
+      const m = this.calculateTotalMass(this.player);
+      if (this.playerFaction === 'immune') immuneMass += m;
+      else pathogenMass += m;
+    }
+
+    for (const bot of this.bots) {
+      if (bot.isAlive) {
+        const m = this.calculateTotalMass(bot);
+        if (bot.faction === 'immune') immuneMass += m;
+        else pathogenMass += m;
+      }
+    }
+
+    const total = immuneMass + pathogenMass;
+    if (total === 0) return 50;
+
+    if (targetFaction === 'immune') {
+      return Math.round((immuneMass / total) * 100);
+    } else {
+      return Math.round((pathogenMass / total) * 100);
+    }
   }
 
   public pauseGame() {
@@ -374,6 +889,21 @@ export class GameEngine {
     this.initWorld();
     const name = this.player ? this.player.name : 'Mite-Alfa';
     this.startGame(name);
+  }
+
+  public returnToMenu() {
+    this.state = 'TITLE_MENU';
+    this.initWorld();
+    if (this.onStateChange) this.onStateChange('TITLE_MENU');
+  }
+
+  // Joystick steering input from on-screen virtual joystick
+  public setJoystickHeading(x: number, y: number) {
+    this.joystickHeading = { x, y };
+  }
+
+  public clearJoystickHeading() {
+    this.joystickHeading = null;
   }
 
   // Player split mechanic (Spacebar / Split button)
@@ -424,6 +954,10 @@ export class GameEngine {
         const newRadius = GameEngine.massToRadius(halfMass);
         const impulse = SPLIT_IMPULSE;
 
+        const splitImpulseBonus = organism.isPlayer
+          ? 1.0 + Math.min(2.0, Math.log10(1 + (this.playerUpgrades?.sporesFission || 0)) * 0.6)
+          : 1.0;
+
         const newPiece: CellPiece = {
           id: 'piece_' + Math.random().toString(36).substring(2, 9),
           x: piece.x + dirX * (piece.targetRadius + newRadius * 0.6),
@@ -437,8 +971,8 @@ export class GameEngine {
           totalRemergeTime: cooldown,
           wobbleOffsets: Array.from({ length: 16 }, () => 0),
           wobbleSpeed: 3.5,
-          impulseX: dirX * impulse,
-          impulseY: dirY * impulse,
+          impulseX: dirX * (impulse * splitImpulseBonus),
+          impulseY: dirY * (impulse * splitImpulseBonus),
         };
 
         // Recoil on original piece
@@ -506,13 +1040,16 @@ export class GameEngine {
         }
 
         const sporeRadius = 7;
+        const sporeImpulseBonus = organism.isPlayer
+          ? 1.0 + Math.min(2.5, Math.log10(1 + (this.playerUpgrades?.sporesFission || 0)) * 0.75)
+          : 1.0;
         const spore: EjectedSpore = {
           id: 'spore_' + Math.random().toString(36).substring(2, 9),
           ownerId: organism.id,
           x: piece.x + dirX * (piece.radius + sporeRadius + 4),
           y: piece.y + dirY * (piece.radius + sporeRadius + 4),
-          vx: dirX * EJECT_IMPULSE + piece.vx * 0.4,
-          vy: dirY * EJECT_IMPULSE + piece.vy * 0.4,
+          vx: dirX * (EJECT_IMPULSE * sporeImpulseBonus) + piece.vx * 0.4,
+          vy: dirY * (EJECT_IMPULSE * sporeImpulseBonus) + piece.vy * 0.4,
           mass: EJECT_MASS_COST,
           radius: sporeRadius,
           color: isToxic ? '#a855f7' : sporeColor,
@@ -738,6 +1275,12 @@ export class GameEngine {
       }
     }
 
+    // 7c. Update 4 Central Superpowers (Respawn, Collisions & 15s Active Effects)
+    this.updateSuperpowers(dt);
+
+    // 7d. Update Pus Pustules and Host Human Status (Battle Mode)
+    this.updatePusAndHostStatus(dt);
+
     // 8. Respawn missing food & bots
     while (this.proteins.length < PROTEIN_COUNT) {
       this.spawnProtein();
@@ -745,8 +1288,10 @@ export class GameEngine {
     while (this.redBloodCells.length < RED_BLOOD_CELL_COUNT) {
       this.spawnRedBloodCell();
     }
-    while (this.bots.length < BOT_COUNT) {
-      this.spawnBot(this.bots.length);
+    if (!this.humansOnly) {
+      while (this.bots.length < BOT_COUNT) {
+        this.spawnBot(this.bots.length);
+      }
     }
 
     // 9. Update Particles & Floating Text
@@ -781,6 +1326,12 @@ export class GameEngine {
 
   private updatePlayerHeading() {
     if (!this.player || this.player.pieces.length === 0) return;
+
+    // 1. Virtual Joystick on-screen panel has top priority
+    if (this.joystickHeading !== null) {
+      this.player.targetHeading = { ...this.joystickHeading };
+      return;
+    }
 
     // Check keyboard continuous directional input
     let kx = 0;
@@ -818,7 +1369,8 @@ export class GameEngine {
 
   private updateOrganismPhysics(organism: Organism, dt: number) {
     const hasFlagella = organism.mutations.has('flagella_boost');
-    const speedMult = organism.speedMultiplier * (hasFlagella ? 1.18 : 1.0);
+    const isPlayerSpeedBoost = organism.isPlayer && this.activeSuperpower?.type === 'speed_capsule';
+    const speedMult = organism.speedMultiplier * (hasFlagella ? 1.18 : 1.0) * (isPlayerSpeedBoost ? 1.85 : 1.0);
 
     for (const piece of organism.pieces) {
       // Smoothly interpolate radius to target radius based on mass
@@ -853,9 +1405,10 @@ export class GameEngine {
         piece.vy *= 0.5;
       }
 
-      // Decrement remerge timer
+      // Decrement remerge timer (accelerated by speed superpower and metabolism upgrade)
       if (piece.remergeTimer > 0) {
-        piece.remergeTimer = Math.max(0, piece.remergeTimer - dt);
+        const remergeSpeed = (isPlayerSpeedBoost ? 2.5 : 1.0) * (1 + (organism.isPlayer ? (this.playerUpgrades?.metabolism || 0) * 0.1 : 0));
+        piece.remergeTimer = Math.max(0, piece.remergeTimer - dt * remergeSpeed);
       }
 
       // Wobble animation on membrane
@@ -1081,6 +1634,11 @@ export class GameEngine {
         }
       }
 
+      if (threatTarget?.isPlayer && this.activeSuperpower?.type === 'cloaking_ghost') {
+        threatTarget = null;
+        threatPiece = null;
+      }
+
       if (threatTarget && threatPiece) {
         // High alert state: home in on the oversized invader
         ab.targetOrganismId = threatTarget.id;
@@ -1146,8 +1704,19 @@ export class GameEngine {
 
   // When a giant Mite impacts a thorny Antibody
   private triggerAntibodyCollision(ab: AntibodyPatrol, target: Organism, piece: CellPiece) {
+    if (target.isPlayer && (this.activeSuperpower?.type === 'shield_capsule' || this.activeSuperpower?.type === 'mega_shield')) {
+      const nx = (piece.x - ab.x) / (Math.hypot(piece.x - ab.x, piece.y - ab.y) || 1);
+      const ny = (piece.y - ab.y) / (Math.hypot(piece.x - ab.x, piece.y - ab.y) || 1);
+      ab.vx = -nx * 400;
+      ab.vy = -ny * 400;
+      this.addFloatingText(piece.x, piece.y - 35, '¡ESCUDO ACTIVO! 0 DAÑO', '#10b981');
+      soundEngine.playSecretDiscovery();
+      return;
+    }
+
     const hasDenseMembrane = target.mutations.has('dense_membrane');
-    const damageRatio = hasDenseMembrane ? ANTIBODY_DAMAGE_RATIO * 0.75 : ANTIBODY_DAMAGE_RATIO;
+    const armorReduction = target.isPlayer ? (this.playerUpgrades?.armor || 0) * 0.12 : 0;
+    const damageRatio = (hasDenseMembrane ? ANTIBODY_DAMAGE_RATIO * 0.75 : ANTIBODY_DAMAGE_RATIO) * Math.max(0.4, 1.0 - armorReduction);
 
     const lostMass = piece.mass * damageRatio;
     piece.mass = Math.max(MIN_START_MASS, piece.mass - lostMass);
@@ -1200,14 +1769,25 @@ export class GameEngine {
       if (!org.isAlive) continue;
 
       for (const piece of org.pieces) {
+        const superGrowthBonus =
+          this.activeSuperpower?.type === 'growth_serum'
+            ? 2.8
+            : this.activeSuperpower?.type === 'toxic_nanobot'
+            ? 1.5
+            : 1.0;
+        const metabolismMultiplier = org.isPlayer
+          ? (1 + (this.playerUpgrades?.metabolism || 0) * 0.1) * superGrowthBonus
+          : 1.0;
+
         // 1. Eat Proteins
         for (let i = this.proteins.length - 1; i >= 0; i--) {
           const protein = this.proteins[i];
           const dist = Math.hypot(protein.x - piece.x, protein.y - piece.y);
 
           if (dist < piece.radius) {
-            piece.mass += protein.mass;
-            org.score += Math.round(protein.mass);
+            const gained = protein.mass * metabolismMultiplier;
+            piece.mass += gained;
+            org.score += Math.round(gained);
             this.proteins.splice(i, 1);
 
             if (org.isPlayer) {
@@ -1226,7 +1806,7 @@ export class GameEngine {
           const dist = Math.hypot(rbc.x - piece.x, rbc.y - piece.y);
 
           if (dist < piece.radius && piece.mass > rbc.mass * 1.15) {
-            const gainedMass = rbc.mass * massBonus;
+            const gainedMass = rbc.mass * massBonus * metabolismMultiplier;
             piece.mass += gainedMass;
             org.score += Math.round(gainedMass);
             this.redBloodCells.splice(i, 1);
@@ -1284,6 +1864,10 @@ export class GameEngine {
         // 4. Devour Other Microbes
         for (const rival of organisms) {
           if (rival.id === org.id || !rival.isAlive) continue;
+          // In Team Battle, teammates cannot eat each other
+          if (this.gameMode === 'team' && rival.faction === org.faction) continue;
+          // Player is invulnerable while Shield Capsule superpower is active!
+          if (rival.isPlayer && this.activeSuperpower?.type === 'shield_capsule') continue;
 
           for (let rIdx = rival.pieces.length - 1; rIdx >= 0; rIdx--) {
             const rivalPiece = rival.pieces[rIdx];
@@ -1311,6 +1895,43 @@ export class GameEngine {
                   this.causeOfDeath = `Devorado por ${org.name}`;
                   this.triggerGameOver();
                   return;
+                } else {
+                  // Respawn bot after 3 seconds to keep room populated at 50 capacity
+                  setTimeout(() => {
+                    if (this.state === 'PLAYING' && !this.humansOnly) {
+                      const faction = rival.faction || (Math.random() < 0.5 ? 'immune' : 'pathogen');
+                      const presets = faction === 'immune' ? IMMUNE_BOT_PRESETS : PATHOGEN_BOT_PRESETS;
+                      const preset = presets[Math.floor(Math.random() * presets.length)];
+                      const baseX = faction === 'immune' ? -1050 : 1050;
+                      const x = baseX + (Math.random() - 0.5) * 800;
+                      const y = (Math.random() - 0.5) * 2400;
+                      const startMass = 18 + Math.random() * 45;
+                      const r = GameEngine.massToRadius(startMass);
+                      rival.name = preset.name;
+                      rival.faction = faction;
+                      rival.color = preset.color;
+                      rival.secondaryColor = preset.secondaryColor;
+                      rival.ciliaColor = preset.ciliaColor;
+                      rival.isAlive = true;
+                      rival.score = Math.floor(startMass);
+                      rival.pieces = [{
+                        id: `bp_respawn_${Date.now()}`,
+                        x,
+                        y,
+                        vx: 0,
+                        vy: 0,
+                        mass: startMass,
+                        targetRadius: r,
+                        radius: r,
+                        remergeTimer: 0,
+                        totalRemergeTime: 1,
+                        wobbleOffsets: Array.from({ length: 16 }, () => 0),
+                        wobbleSpeed: 2.5,
+                        impulseX: 0,
+                        impulseY: 0,
+                      }];
+                    }
+                  }, 3000);
                 }
               }
             }
@@ -1413,11 +2034,39 @@ export class GameEngine {
       this.checkAchievement('mass_500');
     }
 
+    // Reset all crown flags
+    for (const org of allOrganisms) {
+      org.hasCrown = false;
+      org.crownType = undefined;
+    }
+
+    if (this.gameMode === 'ffa') {
+      if (allOrganisms.length > 0) {
+        allOrganisms[0].hasCrown = true;
+        allOrganisms[0].crownType = 'gold';
+      }
+    } else {
+      // Team Battle: 1 King for Immune, 1 King for Pathogen
+      const topImmune = allOrganisms.find((o) => o.faction === 'immune');
+      const topPathogen = allOrganisms.find((o) => o.faction === 'pathogen');
+      if (topImmune) {
+        topImmune.hasCrown = true;
+        topImmune.crownType = 'immune';
+      }
+      if (topPathogen) {
+        topPathogen.hasCrown = true;
+        topPathogen.crownType = 'pathogen';
+      }
+    }
+
     const leaderboard: LeaderboardEntry[] = allOrganisms.slice(0, 10).map((o) => ({
       id: o.id,
       name: o.name,
       mass: Math.round(this.calculateTotalMass(o)),
       isPlayer: o.isPlayer,
+      faction: o.faction,
+      hasCrown: o.hasCrown,
+      crownType: o.crownType,
     }));
 
     if (this.onLeaderboardUpdate) {
@@ -1436,6 +2085,14 @@ export class GameEngine {
         rivalsEaten: this.rivalsEaten,
         timeAliveSec: Math.floor((Date.now() - this.startTime) / 1000),
         causeOfDeath: this.causeOfDeath,
+        canConquer: this.canConquerTerritory(),
+        conqueredOrgansCount: profileStorage.getProfile().conqueredOrgans.length,
+        immunePercentage: this.calculateTeamPercentage('immune'),
+        pathogenPercentage: this.calculateTeamPercentage('pathogen'),
+        gameMode: this.gameMode,
+        playerFaction: this.playerFaction,
+        activeSuperpower: this.activeSuperpower,
+        hostStatus: this.hostStatus,
       });
     }
   }
@@ -1484,6 +2141,12 @@ export class GameEngine {
 
     // 5. Draw Ejected Spores
     this.renderSpores(ctx);
+
+    // 5b. Draw 4 Central Map Superpowers (Medicine Capsules)
+    this.renderSuperpowers(ctx);
+
+    // 5c. Draw Battle Mode Pus Pustules
+    this.renderPusPustules(ctx);
 
     // 6. Draw AI Bot Microbes
     for (const bot of this.bots) {
@@ -2040,6 +2703,553 @@ export class GameEngine {
     ctx.restore();
   }
 
+  // Update 4 Central Superpowers (Respawn, Collisions, Attraction & 15s Active Effects)
+  private updateSuperpowers(dt: number) {
+    // 1. Update Map Superpowers (respawn timer, rotation, availability)
+    for (const sp of this.superpowers) {
+      sp.rotation += dt * 1.8;
+
+      if (!sp.isAvailable) {
+        sp.respawnTimer -= dt;
+        if (sp.respawnTimer <= 0) {
+          sp.isAvailable = true;
+          sp.respawnTimer = 0;
+          // Spawn respawn flash particles
+          for (let p = 0; p < 12; p++) {
+            const angle = (p / 12) * Math.PI * 2;
+            this.particles.push({
+              x: sp.x + Math.cos(angle) * sp.radius,
+              y: sp.y + Math.sin(angle) * sp.radius,
+              vx: Math.cos(angle) * 70,
+              vy: Math.sin(angle) * 70,
+              radius: 4,
+              color: sp.color,
+              alpha: 0.9,
+              life: 0.7,
+              maxLife: 0.7,
+            });
+          }
+        }
+      } else {
+        // Check collection collision with any cell piece
+        const organisms = this.player && this.player.isAlive ? [this.player, ...this.bots] : [...this.bots];
+        for (const org of organisms) {
+          if (!org.isAlive) continue;
+          for (const piece of org.pieces) {
+            const dist = Math.hypot(piece.x - sp.x, piece.y - sp.y);
+            if (dist < piece.radius + sp.radius) {
+              sp.isAvailable = false;
+              sp.respawnTimer = SUPERPOWER_RESPAWN_SEC; // 24s respawn
+
+              // Particle burst on pickup
+              for (let p = 0; p < 24; p++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 60 + Math.random() * 180;
+                this.particles.push({
+                  x: sp.x,
+                  y: sp.y,
+                  vx: Math.cos(angle) * speed,
+                  vy: Math.sin(angle) * speed,
+                  radius: 3 + Math.random() * 4,
+                  color: sp.color,
+                  alpha: 1.0,
+                  life: 0.8,
+                  maxLife: 0.8,
+                });
+              }
+
+              if (org.isPlayer) {
+                this.activeSuperpower = {
+                  type: sp.type,
+                  name: sp.name,
+                  desc: sp.desc,
+                  color: sp.color,
+                  remainingTime: SUPERPOWER_DURATION_SEC,
+                  totalDuration: SUPERPOWER_DURATION_SEC,
+                };
+                soundEngine.playLevelUp();
+                this.screenShake = 12;
+                this.addFloatingText(sp.x, sp.y - 45, `¡${sp.name.toUpperCase()}!`, sp.color);
+                this.addFloatingText(sp.x, sp.y - 20, '+15 SEGUNDOS DE SUPERPODER', '#ffffff');
+              } else {
+                this.addFloatingText(sp.x, sp.y - 30, `¡${org.name} tomó ${sp.name}!`, sp.color);
+              }
+              break;
+            }
+          }
+          if (!sp.isAvailable) break;
+        }
+      }
+    }
+
+    // 2. Active Superpower & Permanent Attraction logic for Player
+    if (this.player && this.player.isAlive) {
+      // 2a. Attraction Upgrade Gravitational Field (Permanent) + Super Magnet Pill
+      const attractionLvl = this.playerUpgrades?.attraction || 0;
+      const isMagnetPill = this.activeSuperpower?.type === 'magnet_pill';
+
+      if (attractionLvl > 0 || isMagnetPill) {
+        for (const piece of this.player.pieces) {
+          const suctionRadius = isMagnetPill ? 650 : piece.radius + 35 + attractionLvl * 30;
+          const suctionForce = isMagnetPill ? 480 : 180 + attractionLvl * 35;
+
+          // Pull proteins
+          for (const protein of this.proteins) {
+            const dx = piece.x - protein.x;
+            const dy = piece.y - protein.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < suctionRadius && dist > 2) {
+              const pull = (suctionForce / (dist * 0.4 + 40)) * dt * 100;
+              protein.x += (dx / dist) * Math.min(dist, pull);
+              protein.y += (dy / dist) * Math.min(dist, pull);
+            }
+          }
+
+          // Pull red blood cells if larger or magnet active
+          for (const rbc of this.redBloodCells) {
+            const dx = piece.x - rbc.x;
+            const dy = piece.y - rbc.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < suctionRadius * 0.75 && dist > 5) {
+              const pull = (suctionForce * 0.4 / (dist * 0.5 + 50)) * dt * 80;
+              rbc.x += (dx / dist) * Math.min(dist, pull);
+              rbc.y += (dy / dist) * Math.min(dist, pull);
+            }
+          }
+
+          // Pull spores
+          for (const spore of this.spores) {
+            const dx = piece.x - spore.x;
+            const dy = piece.y - spore.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < suctionRadius && dist > 2) {
+              const pull = (suctionForce / (dist * 0.4 + 40)) * dt * 100;
+              spore.x += (dx / dist) * Math.min(dist, pull);
+              spore.y += (dy / dist) * Math.min(dist, pull);
+            }
+          }
+        }
+      }
+
+      // 2b. Decrement active superpower timer
+      if (this.activeSuperpower) {
+        this.activeSuperpower.remainingTime -= dt;
+
+        // Toxic nanobot pulse logic (every 1.3s)
+        if (this.activeSuperpower.type === 'toxic_nanobot') {
+          this.toxicPulseCooldown -= dt;
+          if (this.toxicPulseCooldown <= 0) {
+            this.toxicPulseCooldown = 1.3;
+            for (const piece of this.player.pieces) {
+              // Pulse wave particle effect
+              for (let p = 0; p < 16; p++) {
+                const angle = (p / 16) * Math.PI * 2;
+                this.particles.push({
+                  x: piece.x + Math.cos(angle) * (piece.radius * 0.9),
+                  y: piece.y + Math.sin(angle) * (piece.radius * 0.9),
+                  vx: Math.cos(angle) * 160,
+                  vy: Math.sin(angle) * 160,
+                  radius: 4,
+                  color: '#ec4899',
+                  alpha: 0.9,
+                  life: 0.5,
+                  maxLife: 0.5,
+                });
+              }
+
+              // Knockback nearby rival microbes
+              for (const bot of this.bots) {
+                if (!bot.isAlive) continue;
+                if (this.gameMode === 'team' && bot.faction === this.player.faction) continue;
+                for (const bPiece of bot.pieces) {
+                  const dx = bPiece.x - piece.x;
+                  const dy = bPiece.y - piece.y;
+                  const dist = Math.hypot(dx, dy);
+                  if (dist < piece.radius + bPiece.radius + 150) {
+                    const nx = dx / (dist || 1);
+                    const ny = dy / (dist || 1);
+                    bPiece.impulseX += nx * 380;
+                    bPiece.impulseY += ny * 380;
+                    bPiece.mass = Math.max(MIN_START_MASS, bPiece.mass * 0.95);
+                    this.addFloatingText(bPiece.x, bPiece.y - 20, '-Ácido Lítico', '#f472b6');
+                  }
+                }
+              }
+            }
+            soundEngine.playEatProtein(1.4);
+          }
+        }
+
+        // Mega Shield: continuous +4 mass/sec regeneration
+        if (this.activeSuperpower.type === 'mega_shield') {
+          for (const piece of this.player.pieces) {
+            piece.mass += 4 * dt;
+            piece.radius = GameEngine.massToRadius(piece.mass);
+          }
+        }
+
+        // Frost Blast: slow down nearby rival bots and antibodies
+        if (this.activeSuperpower.type === 'frost_blast') {
+          for (const piece of this.player.pieces) {
+            for (const bot of this.bots) {
+              if (!bot.isAlive) continue;
+              const bDist = Math.hypot((bot.pieces[0]?.x || 0) - piece.x, (bot.pieces[0]?.y || 0) - piece.y);
+              if (bDist < 700) {
+                bot.speedMultiplier = 0.35;
+              }
+            }
+            for (const ab of this.antibodies) {
+              const abDist = Math.hypot(ab.x - piece.x, ab.y - piece.y);
+              if (abDist < 700) {
+                ab.vx *= 0.55;
+                ab.vy *= 0.55;
+              }
+            }
+          }
+        }
+
+        // Quantum Fission: instant recombine timer (0s cooldown)
+        if (this.activeSuperpower.type === 'quantum_fission') {
+          for (const piece of this.player.pieces) {
+            piece.remergeTimer = 0;
+          }
+        }
+
+        // Cloaking Ghost: clear antibody locks from player
+        if (this.activeSuperpower.type === 'cloaking_ghost') {
+          for (const ab of this.antibodies) {
+            if (ab.targetOrganismId === this.player.id) {
+              ab.targetOrganismId = null;
+              ab.alertLevel = 0;
+            }
+          }
+        }
+
+        if (this.activeSuperpower.remainingTime <= 0) {
+          const finishedName = this.activeSuperpower.name;
+          this.activeSuperpower = null;
+          if (this.player.pieces.length > 0) {
+            this.addFloatingText(this.player.pieces[0].x, this.player.pieces[0].y - 35, `¡${finishedName} agotado!`, '#94a3b8');
+          }
+        }
+      }
+    }
+  }
+
+  // Update Pus Pustules and Host Human Status (Battle Mode)
+  private updatePusAndHostStatus(dt: number) {
+    if (this.gameMode !== 'team') return;
+
+    // 1. Maintain Pus Pustules in the vascular system
+    if (this.pusPustules.length < 22 && Math.random() < 0.25) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 350 + Math.random() * 2200;
+      this.pusPustules.push({
+        id: `pus-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        x: Math.cos(angle) * dist,
+        y: Math.sin(angle) * dist,
+        radius: 13 + Math.random() * 9,
+        mass: 30,
+        wobble: Math.random() * Math.PI * 2,
+        wobbleSpeed: 2 + Math.random() * 3,
+        pulseTimer: 0,
+      });
+    }
+
+    // Wobble animation
+    for (const p of this.pusPustules) {
+      p.wobble += p.wobbleSpeed * dt;
+      p.pulseTimer += dt;
+    }
+
+    // 2. Collisions with player and bot organisms
+    const allOrganisms: Organism[] = [];
+    if (this.player && this.player.isAlive) allOrganisms.push(this.player);
+    for (const b of this.bots) {
+      if (b.isAlive) allOrganisms.push(b);
+    }
+
+    for (let i = this.pusPustules.length - 1; i >= 0; i--) {
+      const pus = this.pusPustules[i];
+      let consumed = false;
+
+      for (const org of allOrganisms) {
+        if (!org.isAlive) continue;
+        for (const piece of org.pieces) {
+          const d = Math.hypot(piece.x - pus.x, piece.y - pus.y);
+          if (d < piece.radius + pus.radius) {
+            consumed = true;
+
+            if (org.faction === 'pathogen') {
+              // Pathogen absorbs pus to grow and fuel infection
+              piece.mass += 35;
+              piece.targetRadius = GameEngine.massToRadius(piece.mass);
+              this.hostStatus.pusLevel = Math.min(100, +(this.hostStatus.pusLevel + 2.5).toFixed(1));
+              this.hostStatus.health = Math.max(0, +(this.hostStatus.health - 0.8).toFixed(1));
+
+              if (org.isPlayer) {
+                soundEngine.playEjectSpore();
+                this.addFloatingText(pus.x, pus.y - 25, '+35 PUS (INFECCIÓN)', '#a3e635');
+              }
+            } else {
+              // Immune cell phagocytoses & sanitizes pus
+              this.hostStatus.health = Math.min(100, +(this.hostStatus.health + 3.0).toFixed(1));
+              this.hostStatus.pusLevel = Math.max(0, +(this.hostStatus.pusLevel - 3.5).toFixed(1));
+              this.hostStatus.temperature = Math.max(37.0, +(this.hostStatus.temperature - 0.1).toFixed(1));
+
+              if (org.isPlayer) {
+                soundEngine.playCollect();
+                profileStorage.addCytes(5);
+                this.addFloatingText(pus.x, pus.y - 25, '¡PUS SANADO! +3% SALUD (+5 Cytes)', '#22d3ee');
+              }
+            }
+
+            // Burst bio pus particles
+            for (let k = 0; k < 8; k++) {
+              this.particles.push({
+                x: pus.x,
+                y: pus.y,
+                vx: (Math.random() - 0.5) * 140,
+                vy: (Math.random() - 0.5) * 140,
+                radius: 3 + Math.random() * 3,
+                color: org.faction === 'pathogen' ? '#a3e635' : '#38bdf8',
+                alpha: 0.9,
+                life: 0.5,
+                maxLife: 0.5,
+              });
+            }
+            break;
+          }
+        }
+        if (consumed) break;
+      }
+
+      if (consumed) {
+        this.pusPustules.splice(i, 1);
+      }
+    }
+
+    // 3. Faction Dominance Pressure on Human Host
+    const pathogenPct = this.calculateTeamPercentage('pathogen');
+    const immunePct = this.calculateTeamPercentage('immune');
+
+    if (pathogenPct > 50) {
+      const delta = (pathogenPct - 50) * 0.02 * dt;
+      this.hostStatus.health = Math.max(0, +(this.hostStatus.health - delta).toFixed(2));
+    } else {
+      const delta = (immunePct - 50) * 0.015 * dt;
+      this.hostStatus.health = Math.min(100, +(this.hostStatus.health + delta).toFixed(2));
+    }
+
+    // 4. Update Host Telemetry based on health
+    this.hostStatus.temperature = +(37.0 + (100 - this.hostStatus.health) * 0.042).toFixed(1);
+    this.hostStatus.hydration = Math.max(20, Math.round(75 - (100 - this.hostStatus.health) * 0.45));
+    this.hostStatus.energyATP = Math.max(10, Math.round(95 - (100 - this.hostStatus.health) * 0.65));
+
+    // Dynamic symptoms
+    const symptoms: string[] = [];
+    if (this.hostStatus.pusLevel > 15) symptoms.push('symptomPurulentExudate');
+    if (this.hostStatus.temperature >= 38.3) symptoms.push('symptomFeverPeak');
+    if (this.hostStatus.health < 75) symptoms.push('symptomInflammation');
+    if (this.hostStatus.health < 45) symptoms.push('symptomCytokineStorm');
+    if (this.hostStatus.health < 25) symptoms.push('symptomCellNecrosis');
+    if (this.hostStatus.health < 15) symptoms.push('symptomSepticShock');
+    if (immunePct >= 65) symptoms.push('symptomImmuneSurge');
+    this.hostStatus.activeSymptoms = symptoms;
+  }
+
+  // Render Battle Mode Pus Pustules on the canvas
+  private renderPusPustules(ctx: CanvasRenderingContext2D) {
+    if (this.gameMode !== 'team') return;
+    for (const pus of this.pusPustules) {
+      if (this.isOutsideViewport(pus.x, pus.y, pus.radius * 3)) continue;
+      ctx.save();
+      ctx.translate(pus.x, pus.y);
+      const wobble = Math.sin(pus.wobble) * 2;
+      const r = pus.radius + wobble;
+
+      // Toxic viscous chartreuse halo
+      ctx.shadowColor = '#84cc16';
+      ctx.shadowBlur = 16;
+
+      const grad = ctx.createRadialGradient(0, 0, r * 0.2, 0, 0, r);
+      grad.addColorStop(0, '#fef08a'); // inner creamy pus center
+      grad.addColorStop(0.5, '#a3e635'); // viscous lime pus
+      grad.addColorStop(0.85, '#65a30d'); // dark biological exudate
+      grad.addColorStop(1.0, 'rgba(101, 163, 13, 0)');
+
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Inner purulent vesicles
+      ctx.fillStyle = '#fef9c3';
+      ctx.beginPath();
+      ctx.arc(-r * 0.3, -r * 0.25, r * 0.22, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ca8a04';
+      ctx.beginPath();
+      ctx.arc(r * 0.35, r * 0.2, r * 0.18, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+  }
+
+  // Render 4 Central Map Superpowers (Medicine Capsules / Pills)
+  private renderSuperpowers(ctx: CanvasRenderingContext2D) {
+    const time = performance.now() * 0.003;
+
+    for (const sp of this.superpowers) {
+      if (this.isOutsideViewport(sp.x, sp.y, sp.radius * 3.5)) continue;
+
+      ctx.save();
+      ctx.translate(sp.x, sp.y);
+
+      if (sp.isAvailable) {
+        const floatY = Math.sin(time * 2 + sp.x) * 6;
+        ctx.translate(0, floatY);
+
+        // 1. Radial glow halo
+        const haloPulse = sp.radius * 1.8 + Math.sin(time * 3) * 6;
+        const grad = ctx.createRadialGradient(0, 0, 5, 0, 0, haloPulse);
+        grad.addColorStop(0, sp.glowColor);
+        grad.addColorStop(0.4, sp.color + '66');
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+        ctx.beginPath();
+        ctx.arc(0, 0, haloPulse, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // 2. Rotating orbital energy ring
+        ctx.save();
+        ctx.rotate(sp.rotation);
+        ctx.beginPath();
+        ctx.arc(0, 0, sp.radius * 1.35, 0, Math.PI * 2);
+        ctx.strokeStyle = sp.glowColor;
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([8, 8]);
+        ctx.stroke();
+
+        // Small orbital energy satellites
+        for (let i = 0; i < 3; i++) {
+          const orbAngle = (i / 3) * Math.PI * 2;
+          ctx.beginPath();
+          ctx.arc(
+            Math.cos(orbAngle) * (sp.radius * 1.35),
+            Math.sin(orbAngle) * (sp.radius * 1.35),
+            3,
+            0,
+            Math.PI * 2
+          );
+          ctx.fillStyle = '#ffffff';
+          ctx.shadowColor = sp.glowColor;
+          ctx.shadowBlur = 8;
+          ctx.fill();
+        }
+        ctx.restore();
+
+        // 3. Render 3D Pill / Medicine Capsule Shape (Tilted at -25 degrees)
+        ctx.save();
+        ctx.rotate(-0.4);
+
+        const pillW = sp.radius * 1.9;
+        const pillH = sp.radius * 0.95;
+        const halfW = pillW / 2;
+        const halfH = pillH / 2;
+
+        // Shadow under capsule
+        ctx.shadowColor = sp.glowColor;
+        ctx.shadowBlur = 18;
+
+        // Left Half of Capsule (Vibrant Theme Color)
+        ctx.beginPath();
+        ctx.arc(-halfW + halfH, 0, halfH, Math.PI * 0.5, Math.PI * 1.5);
+        ctx.lineTo(0, -halfH);
+        ctx.lineTo(0, halfH);
+        ctx.closePath();
+        ctx.fillStyle = sp.color;
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.stroke();
+
+        // Right Half of Capsule (Bright Medicine White)
+        ctx.beginPath();
+        ctx.arc(halfW - halfH, 0, halfH, -Math.PI * 0.5, Math.PI * 0.5);
+        ctx.lineTo(0, halfH);
+        ctx.lineTo(0, -halfH);
+        ctx.closePath();
+        ctx.fillStyle = '#f8fafc';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.stroke();
+
+        // Capsule Center Seam
+        ctx.beginPath();
+        ctx.moveTo(0, -halfH);
+        ctx.lineTo(0, halfH);
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+        ctx.stroke();
+
+        // Specular highlight gloss across top
+        ctx.beginPath();
+        ctx.ellipse(-halfW * 0.3, -halfH * 0.45, halfW * 0.5, halfH * 0.25, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+        ctx.fill();
+
+        ctx.restore();
+
+        // 4. Floating Name & 15s Duration Badge
+        ctx.font = "800 11px 'Plus Jakarta Sans', sans-serif";
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#000000';
+        ctx.shadowBlur = 6;
+        ctx.fillText(sp.name.toUpperCase(), 0, -sp.radius - 16);
+
+        ctx.font = "700 9px 'JetBrains Mono', monospace";
+        ctx.fillStyle = sp.glowColor;
+        ctx.fillText('15s SUPERPODER', 0, -sp.radius - 5);
+      } else {
+        // Holographic cooldown outline & ring
+        ctx.beginPath();
+        ctx.arc(0, 0, sp.radius * 0.8, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Circular cooldown progress
+        const cooldownProgress = (SUPERPOWER_RESPAWN_SEC - sp.respawnTimer) / SUPERPOWER_RESPAWN_SEC;
+        ctx.beginPath();
+        ctx.arc(0, 0, sp.radius * 0.8, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * cooldownProgress);
+        ctx.strokeStyle = sp.glowColor;
+        ctx.lineWidth = 3;
+        ctx.shadowColor = sp.color;
+        ctx.shadowBlur = 8;
+        ctx.stroke();
+
+        // Countdown text
+        ctx.font = "700 11px 'JetBrains Mono', monospace";
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fillText(`${Math.ceil(sp.respawnTimer)}s`, 0, 0);
+
+        ctx.font = "600 9px 'Plus Jakarta Sans', sans-serif";
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.fillText(sp.name, 0, sp.radius + 12);
+      }
+
+      ctx.restore();
+    }
+  }
+
   // Render soft-body undulating cellular microbe
   private renderOrganism(ctx: CanvasRenderingContext2D, org: Organism) {
     const time = performance.now() * 0.002;
@@ -2113,7 +3323,7 @@ export class GameEngine {
         ctx.textAlign = 'center';
         ctx.fillStyle = '#6ee7b7';
         ctx.shadowBlur = 4;
-        ctx.fillText(`🔄 ${Math.ceil(piece.remergeTimer)}s`, 0, -ringRadius - 6);
+        ctx.fillText(`${Math.ceil(piece.remergeTimer)}s`, 0, -ringRadius - 6);
 
         ctx.restore();
       }
@@ -2241,10 +3451,192 @@ export class GameEngine {
 
       // Mass numeral underneath
       const massFontSize = Math.max(10, Math.min(16, fontSize * 0.8));
-      ctx.font = `600 ${massFontSize}px 'JetBrains Mono', monospace`;
       ctx.strokeText(Math.round(piece.mass).toString(), 0, fontSize * 0.9);
       ctx.fillStyle = '#fde047';
       ctx.fillText(Math.round(piece.mass).toString(), 0, fontSize * 0.9);
+
+      // 5. Royal Crown floating above leader cell
+      if (org.hasCrown && piece === org.pieces[0]) {
+        const crownY = -piece.radius - 22 + Math.sin(performance.now() * 0.0035) * 4;
+        ctx.save();
+        ctx.translate(0, crownY);
+
+        let crownGlow = '#f59e0b';
+        let crownFill = '#fbbf24';
+        let crownStroke = '#fef08a';
+        if (org.crownType === 'immune') {
+          crownGlow = '#06b6d4';
+          crownFill = '#38bdf8';
+          crownStroke = '#e0f2fe';
+        } else if (org.crownType === 'pathogen') {
+          crownGlow = '#e11d48';
+          crownFill = '#f43f5e';
+          crownStroke = '#ffe4e6';
+        }
+
+        ctx.shadowColor = crownGlow;
+        ctx.shadowBlur = 14;
+
+        // 5-Pointed Royal Crown
+        ctx.beginPath();
+        ctx.moveTo(-16, 7);
+        ctx.lineTo(-20, -7);
+        ctx.lineTo(-10, -2);
+        ctx.lineTo(0, -14);
+        ctx.lineTo(10, -2);
+        ctx.lineTo(20, -7);
+        ctx.lineTo(16, 7);
+        ctx.closePath();
+        ctx.fillStyle = crownFill;
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = crownStroke;
+        ctx.stroke();
+
+        // Crown Jewels / Pearls
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-20, -7, 2.5, 0, Math.PI * 2);
+        ctx.arc(0, -14, 3, 0, Math.PI * 2);
+        ctx.arc(20, -7, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      // 6. Active Superpower Bioluminescent Visual Aura around player cell
+      if (org.isPlayer && this.activeSuperpower) {
+        ctx.save();
+        const superTime = performance.now() * 0.004;
+
+        if (this.activeSuperpower.type === 'shield_capsule') {
+          // Emerald Forcefield Barrier
+          const shieldRadius = piece.radius * 1.25 + Math.sin(superTime * 4) * 4;
+          ctx.beginPath();
+          ctx.arc(0, 0, shieldRadius, 0, Math.PI * 2);
+          ctx.strokeStyle = '#34d399';
+          ctx.lineWidth = 3;
+          ctx.shadowColor = '#10b981';
+          ctx.shadowBlur = 18;
+          ctx.stroke();
+
+          // Hexagonal forcefield shield segments
+          ctx.beginPath();
+          for (let s = 0; s < 6; s++) {
+            const sAngle = (s / 6) * Math.PI * 2 + superTime;
+            const sx = Math.cos(sAngle) * shieldRadius;
+            const sy = Math.sin(sAngle) * shieldRadius;
+            if (s === 0) ctx.moveTo(sx, sy);
+            else ctx.lineTo(sx, sy);
+          }
+          ctx.closePath();
+          ctx.strokeStyle = 'rgba(52, 211, 153, 0.4)';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        } else if (this.activeSuperpower.type === 'magnet_pill') {
+          // Cyan Magnetic Flux Whirlpool
+          const ringR = piece.radius * 1.35 + Math.sin(superTime * 3) * 5;
+          ctx.beginPath();
+          ctx.arc(0, 0, ringR, 0, Math.PI * 2);
+          ctx.strokeStyle = '#22d3ee';
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([6, 8]);
+          ctx.shadowColor = '#06b6d4';
+          ctx.shadowBlur = 14;
+          ctx.stroke();
+        } else if (this.activeSuperpower.type === 'speed_capsule') {
+          // Amber Sonic Speed Streaks
+          const speedR = piece.radius * 1.2;
+          ctx.beginPath();
+          ctx.arc(0, 0, speedR, 0, Math.PI * 2);
+          ctx.strokeStyle = '#fbbf24';
+          ctx.lineWidth = 3;
+          ctx.shadowColor = '#f59e0b';
+          ctx.shadowBlur = 20;
+          ctx.stroke();
+        } else if (this.activeSuperpower.type === 'toxic_nanobot') {
+          // Magenta Acidic Pulse Aura
+          const toxicR = piece.radius * 1.28 + Math.sin(superTime * 6) * 5;
+          ctx.beginPath();
+          ctx.arc(0, 0, toxicR, 0, Math.PI * 2);
+          ctx.strokeStyle = '#f472b6';
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([4, 6]);
+          ctx.shadowColor = '#ec4899';
+          ctx.shadowBlur = 16;
+          ctx.stroke();
+        } else if (this.activeSuperpower.type === 'mega_shield') {
+          // Sapphire Plasma Mega-Shield Barrier
+          const megaR = piece.radius * 1.35 + Math.sin(superTime * 3) * 6;
+          ctx.beginPath();
+          ctx.arc(0, 0, megaR, 0, Math.PI * 2);
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 3.5;
+          ctx.shadowColor = '#0284c7';
+          ctx.shadowBlur = 25;
+          ctx.stroke();
+          // Hexagon shield matrix
+          ctx.beginPath();
+          for (let s = 0; s < 6; s++) {
+            const sAngle = (s / 6) * Math.PI * 2 - superTime * 0.8;
+            const sx = Math.cos(sAngle) * megaR;
+            const sy = Math.sin(sAngle) * megaR;
+            if (s === 0) ctx.moveTo(sx, sy);
+            else ctx.lineTo(sx, sy);
+          }
+          ctx.closePath();
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else if (this.activeSuperpower.type === 'growth_serum') {
+          // Golden Titan Solar Halo
+          const titanR = piece.radius * 1.25 + Math.sin(superTime * 5) * 5;
+          ctx.beginPath();
+          ctx.arc(0, 0, titanR, 0, Math.PI * 2);
+          ctx.strokeStyle = '#facc15';
+          ctx.lineWidth = 3;
+          ctx.shadowColor = '#ca8a04';
+          ctx.shadowBlur = 22;
+          ctx.stroke();
+        } else if (this.activeSuperpower.type === 'frost_blast') {
+          // Crystalline Glacial Frost Aura
+          const frostR = piece.radius * 1.3 + Math.sin(superTime * 4) * 4;
+          ctx.beginPath();
+          ctx.arc(0, 0, frostR, 0, Math.PI * 2);
+          ctx.strokeStyle = '#7dd3fc';
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([3, 5]);
+          ctx.shadowColor = '#0ea5e9';
+          ctx.shadowBlur = 18;
+          ctx.stroke();
+        } else if (this.activeSuperpower.type === 'cloaking_ghost') {
+          // Violet Ghost Phasing Ring
+          const ghostR = piece.radius * 1.22 + Math.sin(superTime * 2.5) * 6;
+          ctx.beginPath();
+          ctx.arc(0, 0, ghostR, 0, Math.PI * 2);
+          ctx.strokeStyle = '#c4b5fd';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([8, 6]);
+          ctx.shadowColor = '#8b5cf6';
+          ctx.shadowBlur = 20;
+          ctx.stroke();
+        } else if (this.activeSuperpower.type === 'quantum_fission') {
+          // Teal Atomic Mitosis Orbital Rings
+          const quantR = piece.radius * 1.26;
+          ctx.save();
+          ctx.rotate(superTime * 2);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, quantR * 1.2, quantR * 0.7, 0, 0, Math.PI * 2);
+          ctx.strokeStyle = '#5eead4';
+          ctx.lineWidth = 2;
+          ctx.shadowColor = '#14b8a6';
+          ctx.shadowBlur = 15;
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        ctx.restore();
+      }
 
       ctx.restore();
     }

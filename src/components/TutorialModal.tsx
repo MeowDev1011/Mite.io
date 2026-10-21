@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Dna, ShieldAlert, Heart, Zap, ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { Sparkles, Dna, ShieldAlert, Heart, Zap, ChevronRight, ChevronLeft, Check, RefreshCw } from 'lucide-react';
 import { TranslationStrings } from '../i18n/languages';
 
 interface TutorialModalProps {
@@ -52,10 +52,13 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ t, onClose }) => {
       visual: (
         <div className="relative w-56 h-32 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center overflow-hidden">
           {/* Split cells with connecting mitosis spindle and countdown ring */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             <div className="relative w-10 h-10 rounded-full bg-emerald-600 border border-emerald-300 flex items-center justify-center text-[9px] font-bold text-white shadow-md">
               50%
-              <div className="absolute -top-4 text-[9px] font-mono text-emerald-300">🔄 12s</div>
+              <div className="absolute -top-4 text-[9px] font-mono text-emerald-300 flex items-center gap-0.5">
+                <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                <span>12s</span>
+              </div>
             </div>
             {/* Connecting spindle filament */}
             <div className="w-10 h-0.5 bg-emerald-400/80 dashed animate-pulse" />
@@ -94,7 +97,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ t, onClose }) => {
       visual: (
         <div className="relative w-48 h-32 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center overflow-hidden">
           <div className="w-16 h-16 rounded-full bg-cyan-600/30 border border-cyan-400 shadow-[0_0_25px_#06b6d4] flex items-center justify-center">
-            <span className="text-xl">🔮</span>
+            <Sparkles className="w-8 h-8 text-cyan-300 animate-pulse" />
           </div>
           <div className="absolute text-[10px] text-cyan-300 bottom-2 font-mono">Nódulo Linfático Oculto</div>
         </div>

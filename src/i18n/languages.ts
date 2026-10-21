@@ -129,6 +129,95 @@ export interface TranslationStrings {
   selectBacteria: string;
   bacteriaTab: string;
   freeLabel: string;
+  // Game Over & Return
+  backToHome: string;
+  shareBtn: string;
+  shareModalTitle: string;
+  shareModalDesc: string;
+  shareNativeBtn: string;
+  copyLinkBtn: string;
+  linkCopied: string;
+  // Human Host Status (Battle Mode)
+  hostStatusTitle: string;
+  hostStatusDesc: string;
+  hostHealthLabel: string;
+  hostFeverLabel: string;
+  hostHydrationLabel: string;
+  hostEnergyLabel: string;
+  hostPusLabel: string;
+  hostSymptomsTitle: string;
+  symptomInflammation: string;
+  symptomPurulentExudate: string;
+  symptomFeverPeak: string;
+  symptomCytokineStorm: string;
+  symptomImmuneSurge: string;
+  // Battle Mode Tutorial
+  battleTutorialBtn: string;
+  battleTutorialTitle: string;
+  battleStep1Title: string;
+  battleStep1Desc: string;
+  battleStep2Title: string;
+  battleStep2Desc: string;
+  battleStep3Title: string;
+  battleStep3Desc: string;
+  battleStep4Title: string;
+  battleStep4Desc: string;
+  // 5 Aspect Upgrades up to Level 1500
+  upgradeTabTitle: string;
+  upgradeLevelLabel: string;
+  upgradeCostLabel: string;
+  upgradeMaxReached: string;
+  statAttractionTitle: string;
+  statAttractionDesc: string;
+  statSpeedTitle: string;
+  statSpeedDesc: string;
+  statArmorTitle: string;
+  statArmorDesc: string;
+  statMetabolismTitle: string;
+  statMetabolismDesc: string;
+  statSporesFissionTitle: string;
+  statSporesFissionDesc: string;
+  quickUpgrade10: string;
+  quickUpgrade50: string;
+  quickUpgradeMax: string;
+  // Boosters tab in Shop
+  boostersTab: string;
+  boostersTitle: string;
+  boostersSubtitle: string;
+  activeBooster: string;
+  // Sharing options (Rich Social & Device Share)
+  shareWhatsApp: string;
+  shareTelegram: string;
+  shareTwitter: string;
+  shareFacebook: string;
+  shareReddit: string;
+  shareQrCode: string;
+  scanQrToPlay: string;
+  shareTitle: string;
+  shareMessageText: string;
+  // Radar 2D Mobile Controls
+  radarToggleBtn: string;
+  radarMinimizeBtn: string;
+  radarShowBtn: string;
+  // Battle Mode & Pus & Symptoms
+  pusPustules: string;
+  cleansePus: string;
+  absorbPus: string;
+  symptomSepticShock: string;
+  symptomCellNecrosis: string;
+  hostStatusBadge: string;
+  humanTemperature: string;
+  humanHydration: string;
+  humanEnergy: string;
+  humanHealth: string;
+  pusLevelLabel: string;
+  // Home Upgrades
+  homeUpgradesBtn: string;
+  upgradesHeroTitle: string;
+  upgradesHeroSubtitle: string;
+  quickUpgrade1: string;
+  quickUpgrade100: string;
+  totalAffordable: string;
 }
 
 // Translations dictionary
@@ -213,6 +302,95 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     selectBacteria: 'Elegir Bacteria',
     bacteriaTab: 'Bacterias',
     freeLabel: 'Gratis',
+    // Game Over & Return
+    backToHome: 'Regresar al Inicio',
+    shareBtn: 'Compartir Juego',
+    shareModalTitle: 'Compartir Mite.io',
+    shareModalDesc: 'Invitá a tus amigos al torrente sanguíneo mediante cualquier red o app de tu dispositivo.',
+    shareNativeBtn: 'Compartir en tu Dispositivo',
+    copyLinkBtn: 'Copiar Enlace',
+    linkCopied: '¡Enlace copiado al portapapeles!',
+    // Human Host Status (Battle Mode)
+    hostStatusTitle: 'Fisiología del Huésped',
+    hostStatusDesc: 'Biometría en tiempo real del cuerpo humano infectado',
+    hostHealthLabel: 'Salud del Huésped',
+    hostFeverLabel: 'Temperatura / Fiebre',
+    hostHydrationLabel: 'Hidratación',
+    hostEnergyLabel: 'Energía Celular (ATP)',
+    hostPusLabel: 'Exudado de Pus',
+    hostSymptomsTitle: 'Síntomas Activos del Huésped',
+    symptomInflammation: 'Inflamación Tisular',
+    symptomPurulentExudate: 'Exudado Purulento (Pus Activo)',
+    symptomFeverPeak: 'Pico Febril Vasodilatador',
+    symptomCytokineStorm: 'Tormenta de Citoquinas',
+    symptomImmuneSurge: 'Respuesta Inmunológica Alta',
+    // Battle Mode Tutorial
+    battleTutorialBtn: 'Tutorial Modo Batalla',
+    battleTutorialTitle: 'Guía de Batalla: Inmune vs Infección',
+    battleStep1Title: '1. Dos Bandos en Guerra',
+    battleStep1Desc: 'El Sistema Inmune defiende los tejidos y purga la infección. Los Patógenos colonizan órganos y desatan toxinas.',
+    battleStep2Title: '2. Fiebre y Pus en el Huésped',
+    battleStep2Desc: 'Al chocar leucocitos y bacterias, se genera exudado purulento (pus) y la temperatura del cuerpo humano se eleva en picos de fiebre.',
+    battleStep3Title: '3. Colonización de Órganos',
+    battleStep3Desc: 'Alcanzá 100 de masa sobre un órgano (Corazón, Cerebro, Pulmones, Hígado, Bazo) para reclamarlo y asegurar bonificaciones estratégicas.',
+    battleStep4Title: '4. Condición de Victoria',
+    battleStep4Desc: 'El bando que logre 100% de dominancia en el torrente asegura el destino del huésped humano.',
+    // 5 Aspect Upgrades up to Level 1500
+    upgradeTabTitle: 'Mejoras Celulares (Nivel 1500)',
+    upgradeLevelLabel: 'Nivel',
+    upgradeCostLabel: 'Costo',
+    upgradeMaxReached: 'Nivel Máximo (1500)',
+    statAttractionTitle: 'Atracción Magnética',
+    statAttractionDesc: 'Aumenta el alcance y la fuerza gravitacional para succionar nutrientes y glóbulos rojos.',
+    statSpeedTitle: 'Velocidad e Hidrodinámica',
+    statSpeedDesc: 'Incrementa la velocidad de nado por el plasma y la aceleración en capilares estrechos.',
+    statArmorTitle: 'Armadura Inmunológica',
+    statArmorDesc: 'Refuerza la membrana plasmática, reduciendo drásticamente el daño de choques y anticuerpos.',
+    statMetabolismTitle: 'Metabolismo Digestivo',
+    statMetabolismDesc: 'Mayor ganancia de masa al devorar nutrientes y fusión celular acelerada tras dividirte.',
+    statSporesFissionTitle: 'Esporas y Fisión Balística',
+    statSporesFissionDesc: 'Incrementa el alcance y velocidad de eyección [W] y la propulsión de mitosis [Espacio].',
+    quickUpgrade10: '+10 Niveles',
+    quickUpgrade50: '+50 Niveles',
+    quickUpgradeMax: 'Máximo',
+    // Boosters tab in Shop
+    boostersTab: 'Potenciadores',
+    boostersTitle: 'Consumibles Tácticos de Arranque',
+    boostersSubtitle: 'Inyectores y sueros de biomasa para activar ventajas instantáneas en tus partidas',
+    activeBooster: 'Activo para próxima partida',
+    // Sharing options (Rich Social & Device Share)
+    shareWhatsApp: 'WhatsApp',
+    shareTelegram: 'Telegram',
+    shareTwitter: 'X (Twitter)',
+    shareFacebook: 'Facebook',
+    shareReddit: 'Reddit',
+    shareQrCode: 'Código QR Móvil',
+    scanQrToPlay: 'Escaneá con tu celular para unirte al torrente',
+    shareTitle: '¡Unite a la invasión celular en Mite.io!',
+    shareMessageText: '¡Entrá a jugar Mite.io conmigo! Invadí el torrente sanguíneo, devorá glóbulos rojos y evolucioná en tiempo real: ',
+    // Radar 2D Mobile Controls
+    radarToggleBtn: 'Radar Anatómico 2D',
+    radarMinimizeBtn: 'Minimizar Radar',
+    radarShowBtn: 'Mostrar Mapa 2D',
+    // Battle Mode & Pus & Symptoms
+    pusPustules: 'Pústulas de Pus',
+    cleansePus: 'Neutralizar Pus (+3% Salud)',
+    absorbPus: 'Absorber Pus (+35 Masa)',
+    symptomSepticShock: 'Shock Séptico Terminal',
+    symptomCellNecrosis: 'Necrosis Celular Tisular',
+    hostStatusBadge: 'Estado del Humano',
+    humanTemperature: 'Temperatura',
+    humanHydration: 'Hidratación',
+    humanEnergy: 'Energía ATP',
+    humanHealth: 'Salud',
+    pusLevelLabel: 'Exudado de Pus',
+    // Home Upgrades
+    homeUpgradesBtn: 'Mejoras (Nivel 1500)',
+    upgradesHeroTitle: 'Evolución & Mejoras Celulares',
+    upgradesHeroSubtitle: 'Subí hasta el nivel 1500 en los 5 aspectos biológicos para dominar el torrente',
+    quickUpgrade1: '+1 Nivel',
+    quickUpgrade100: '+100 Niveles',
+    totalAffordable: 'Máximo Posible',
   },
   en: {
     title: 'Mite.io',
@@ -294,6 +472,94 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     selectBacteria: 'Select Bacteria',
     bacteriaTab: 'Bacteria',
     freeLabel: 'Free',
+    // Game Over & Return
+    backToHome: 'Return to Home',
+    shareBtn: 'Share Game',
+    shareModalTitle: 'Share Mite.io',
+    shareModalDesc: 'Invite friends to the bloodstream through any social network or native device app.',
+    shareNativeBtn: 'Share via Device',
+    copyLinkBtn: 'Copy Link',
+    linkCopied: 'Link copied to clipboard!',
+    // Human Host Status (Battle Mode)
+    hostStatusTitle: 'Host Human Physiology',
+    hostStatusDesc: 'Real-time telemetry of the infected human body',
+    hostHealthLabel: 'Host Health',
+    hostFeverLabel: 'Temperature / Fever',
+    hostHydrationLabel: 'Hydration',
+    hostEnergyLabel: 'Cellular Energy (ATP)',
+    hostPusLabel: 'Purulent Exudate (Pus)',
+    hostSymptomsTitle: 'Active Host Symptoms',
+    symptomInflammation: 'Tissue Inflammation',
+    symptomPurulentExudate: 'Purulent Exudate (Active Pus)',
+    symptomFeverPeak: 'Vasodilator Fever Spike',
+    symptomCytokineStorm: 'Cytokine Storm',
+    symptomImmuneSurge: 'Elevated Immune Surge',
+    symptomSepticShock: 'Terminal Septic Shock',
+    symptomCellNecrosis: 'Tissue Cell Necrosis',
+    hostStatusBadge: 'Human Host State',
+    humanTemperature: 'Temperature',
+    humanHydration: 'Hydration',
+    humanEnergy: 'ATP Energy',
+    humanHealth: 'Health',
+    pusLevelLabel: 'Pus Exudate',
+    // Battle Mode Tutorial
+    battleTutorialBtn: 'Battle Mode Tutorial',
+    battleTutorialTitle: 'Battle Guide: Immune vs Infection',
+    battleStep1Title: '1. Two Warring Factions',
+    battleStep1Desc: 'The Immune System defends tissues and purges infection. Pathogens colonize organs and unleash cytotoxic toxins.',
+    battleStep2Title: '2. Fever & Pus in the Host',
+    battleStep2Desc: 'When leukocytes and bacteria clash, purulent exudate (pus) pools form and the human body temperature spikes in fever.',
+    battleStep3Title: '3. Organ Colonization',
+    battleStep3Desc: 'Reach 100 mass over an organ (Heart, Brain, Lungs, Liver, Kidneys) to claim it and secure tactical perks.',
+    battleStep4Title: '4. Victory Condition',
+    battleStep4Desc: 'The faction that secures 100% bloodstream dominance decides the fate of the human host.',
+    // 5 Aspect Upgrades up to Level 1500
+    upgradeTabTitle: 'Cellular Upgrades (Level 1500)',
+    upgradeLevelLabel: 'Level',
+    upgradeCostLabel: 'Cost',
+    upgradeMaxReached: 'Max Level (1500)',
+    statAttractionTitle: 'Magnetic Bio-Attraction',
+    statAttractionDesc: 'Increases gravitational suction reach to pull proteins and red cells from greater distance.',
+    statSpeedTitle: 'Speed & Hydrodynamics',
+    statSpeedDesc: 'Boosts swimming velocity through plasma and acceleration in narrow capillaries.',
+    statArmorTitle: 'Immune Armor Membrane',
+    statArmorDesc: 'Reinforces cell wall density, drastically reducing collision knockback and antibody damage.',
+    statMetabolismTitle: 'Metabolism & Digestion',
+    statMetabolismDesc: 'Greater mass yield per devoured nutrient and accelerated mitosis recombination.',
+    statSporesFissionTitle: 'Spores & Ballistic Fission',
+    statSporesFissionDesc: 'Boosts ejection speed/range [W] and mitotic burst propulsion [Space].',
+    quickUpgrade1: '+1 Level',
+    quickUpgrade10: '+10 Levels',
+    quickUpgrade50: '+50 Levels',
+    quickUpgrade100: '+100 Levels',
+    quickUpgradeMax: 'Max',
+    totalAffordable: 'Max Affordable',
+    homeUpgradesBtn: 'Upgrades (Level 1500)',
+    upgradesHeroTitle: 'Cellular Evolution & Upgrades',
+    upgradesHeroSubtitle: 'Upgrade up to level 1500 across 5 biological traits to rule the bloodstream',
+    // Boosters tab in Shop
+    boostersTab: 'Bio-Boosters',
+    boostersTitle: 'Tactical Starter Consumables',
+    boostersSubtitle: 'Biomass injectors and serums to trigger instant match perks',
+    activeBooster: 'Active for next match',
+    // Sharing options (Rich Social & Device Share)
+    shareWhatsApp: 'WhatsApp',
+    shareTelegram: 'Telegram',
+    shareTwitter: 'X (Twitter)',
+    shareFacebook: 'Facebook',
+    shareReddit: 'Reddit',
+    shareQrCode: 'Mobile QR Code',
+    scanQrToPlay: 'Scan with your phone to join the bloodstream',
+    shareTitle: 'Join the cellular invasion in Mite.io!',
+    shareMessageText: 'Come play Mite.io with me! Invade the bloodstream, devour red cells, and evolve live: ',
+    // Radar 2D Mobile Controls
+    radarToggleBtn: '2D Anatomy Radar',
+    radarMinimizeBtn: 'Minimize Radar',
+    radarShowBtn: 'Show 2D Map',
+    // Battle Mode & Pus & Symptoms
+    pusPustules: 'Pus Pustules',
+    cleansePus: 'Sanitize Pus (+3% Health)',
+    absorbPus: 'Absorb Pus (+35 Mass)',
   },
   pt: {
     title: 'Mite.io',
@@ -813,18 +1079,17 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
 
 // Fallback generator for all 35 languages so every supported language has working strings
 export function getTranslations(langCode: string): TranslationStrings {
-  const en = TRANSLATIONS['en'] as TranslationStrings;
-  // Direct match
-  if (TRANSLATIONS[langCode]) {
-    return { ...en, ...TRANSLATIONS[langCode] };
+  const es = TRANSLATIONS['es'] as TranslationStrings;
+  const en = (TRANSLATIONS['en'] || {}) as Partial<TranslationStrings>;
+  const base = (langCode || '').split('-')[0];
+  const baseTrans = (TRANSLATIONS[base] || {}) as Partial<TranslationStrings>;
+  const exactTrans = (TRANSLATIONS[langCode] || {}) as Partial<TranslationStrings>;
+
+  // If user is in Spanish locale, use Spanish as top priority, else English default with translations
+  if (langCode.toLowerCase().startsWith('es')) {
+    return { ...en, ...es, ...baseTrans, ...exactTrans };
   }
-  // Base language match (e.g. 'es-AR' -> 'es')
-  const base = langCode.split('-')[0];
-  if (TRANSLATIONS[base]) {
-    return { ...en, ...TRANSLATIONS[base] };
-  }
-  // For the remaining languages, create a localized display based on English
-  return en;
+  return { ...es, ...en, ...baseTrans, ...exactTrans };
 }
 
 // Detect user's device language automatically

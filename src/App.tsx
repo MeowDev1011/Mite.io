@@ -7,7 +7,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { GameEngine } from './game/engine';
 import { soundEngine } from './audio/soundEngine';
 import { profileStorage, CytesRewardBreakdown } from './storage/profileStorage';
-import { GameState, GameStats, LeaderboardEntry, MutationId } from './game/types';
+import { GameState, GameStats, LeaderboardEntry, MutationId, GameMode, Faction, RoomInvitation } from './game/types';
 import { detectDeviceLanguage, getTranslations } from './i18n/languages';
 import { TitleScreen } from './components/TitleScreen';
 import { GameHUD } from './components/GameHUD';
@@ -19,6 +19,9 @@ import { AchievementsModal } from './components/AchievementsModal';
 import { SkinsModal } from './components/SkinsModal';
 import { ShopModal } from './components/ShopModal';
 import { AchievementToast } from './components/AchievementToast';
+import { ActivePlayersModal } from './components/ActivePlayersModal';
+import { InvitationToast } from './components/InvitationToast';
+import { VirtualJoystick } from './components/VirtualJoystick';
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -41,11 +44,15 @@ export default function App() {
   const [pendingMilestone, setPendingMilestone] = useState<number | null>(null);
   const [currentMutations, setCurrentMutations] = useState<Set<MutationId>>(new Set());
 
-  // Additional Modals
+  // Additional Modals & Multiplayer State
   const [showTutorial, setShowTutorial] = useState<boolean>(false);
   const [showAchievements, setShowAchievements] = useState<boolean>(false);
   const [showSkins, setShowSkins] = useState<boolean>(false);
   const [showShop, setShowShop] = useState<boolean>(false);
+  const [showActivePlayers, setShowActivePlayers] = useState<boolean>(false);
+  const [activeInvitation, setActiveInvitation] = useState<RoomInvitation | null>(null);
+  const [activePlayerCount, setActivePlayerCount] = useState<number>(1);
+  const [inviteToast, setInviteToast] = useState<string | null>(null);
   const [achievementToastId, setAchievementToastId] = useState<string | null>(null);
   const [currentOrgan, setCurrentOrgan] = useState<string>('Corazón (Aorta)');
   const [lastReward, setLastReward] = useState<CytesRewardBreakdown | null>(null);
@@ -140,6 +147,8 @@ export default function App() {
         engineRef.current.splitPlayer();
       } else if (e.code === 'KeyW') {
         engineRef.current.ejectPlayerSpore();
+      } else if (e.code === 'KeyC') {
+        engineRef.current.conquerTerritory();
       } else if (e.code === 'Escape') {
         e.preventDefault();
         if (engineRef.current.state === 'PLAYING') {
@@ -204,10 +213,113 @@ export default function App() {
     };
   }, []);
 
-  const handleStartGame = useCallback((playerName: string) => {
+  // Heartbeat and Room Invitations Polling with Live Server DB
+  useEffect(() => {
+    const deviceId = profileStorage.getDeviceId();
+
+    const checkInvitations = async () => {
+      try {
+        const res = await fetch(`/api/invitations/poll/${deviceId}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.invitation) {
+            setActiveInvitation(json.invitation);
+          }
+        }
+      } catch {}
+    };
+
+    const sendHeartbeat = async () => {
+      try {
+        const profile = profileStorage.getProfile();
+        await fetch('/api/players/heartbeat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            deviceId,
+            name: profile.name,
+            status: gameState === 'PLAYING' ? 'in_game' : 'online',
+            currentOrgan,
+            mass: stats?.currentMass || 18,
+            faction: engineRef.current?.playerFaction || 'immune',
+          }),
+        });
+
+        const activeRes = await fetch('/api/players/active');
+        if (activeRes.ok) {
+          const activeJson = await activeRes.json();
+          if (activeJson.players) {
+            setActivePlayerCount(activeJson.players.length);
+          }
+        }
+      } catch {}
+    };
+
+    const invInterval = setInterval(checkInvitations, 3500);
+    const hbInterval = setInterval(sendHeartbeat, 7000);
+    sendHeartbeat();
+
+    return () => {
+      clearInterval(invInterval);
+      clearInterval(hbInterval);
+    };
+  }, [gameState, currentOrgan, stats?.currentMass]);
+
+  const handleStartGame = useCallback(
+    (playerName: string, mode: GameMode = 'ffa', faction: Faction = 'immune', humansOnly: boolean = false) => {
+      soundEngine.startBGM();
+      if (engineRef.current) {
+        engineRef.current.startGame(playerName, mode, faction, humansOnly);
+      }
+    },
+    []
+  );
+
+  const handleConquerTerritory = useCallback(() => {
     if (engineRef.current) {
-      engineRef.current.startGame(playerName);
+      engineRef.current.conquerTerritory();
     }
+  }, []);
+
+  const handleAcceptInvitation = useCallback(
+    async (invitation: RoomInvitation, selectedFaction?: Faction) => {
+      try {
+        await fetch('/api/invitations/respond', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            invitationId: invitation.id,
+            accepted: true,
+            guestFaction: selectedFaction,
+          }),
+        });
+      } catch {}
+
+      setActiveInvitation(null);
+      const faction = selectedFaction || invitation.guestFaction || 'immune';
+      const profile = profileStorage.getProfile();
+      handleStartGame(profile.name, invitation.mode as GameMode, faction, invitation.mode !== 'bots');
+    },
+    [handleStartGame]
+  );
+
+  const handleDeclineInvitation = useCallback(async (invitationId: string) => {
+    try {
+      await fetch('/api/invitations/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          invitationId,
+          accepted: false,
+        }),
+      });
+    } catch {}
+    setActiveInvitation(null);
+  }, []);
+
+  const handleInviteSent = useCallback((msg: string) => {
+    setInviteToast(msg);
+    setTimeout(() => setInviteToast(null), 4000);
   }, []);
 
   const handlePause = useCallback(() => {
@@ -243,6 +355,18 @@ export default function App() {
   const handleToggleMute = useCallback(() => {
     const nextMuted = soundEngine.toggleMute();
     setIsMuted(nextMuted);
+  }, []);
+
+  const handleJoystickMove = useCallback((heading: { x: number; y: number }, _intensity: number) => {
+    if (engineRef.current) {
+      engineRef.current.setJoystickHeading(heading.x, heading.y);
+    }
+  }, []);
+
+  const handleJoystickRelease = useCallback(() => {
+    if (engineRef.current) {
+      engineRef.current.clearJoystickHeading();
+    }
   }, []);
 
   const handleSelectLanguage = useCallback((lang: string) => {
@@ -304,6 +428,8 @@ export default function App() {
           onOpenAchievements={() => setShowAchievements(true)}
           onOpenSkins={() => setShowSkins(true)}
           onOpenShop={() => setShowShop(true)}
+          onOpenActivePlayers={() => setShowActivePlayers(true)}
+          activePlayerCount={activePlayerCount}
         />
       )}
 
@@ -320,6 +446,7 @@ export default function App() {
           onEject={handleEject}
           onOpenTutorial={() => setShowTutorial(true)}
           onOpenShop={() => setShowShop(true)}
+          onConquerTerritory={handleConquerTerritory}
           currentLang={currentLang}
           onSelectLanguage={handleSelectLanguage}
           t={t}
@@ -329,6 +456,28 @@ export default function App() {
           antibodies={radarData.antibodies}
           otherMicrobes={radarData.otherMicrobes}
         />
+      )}
+
+      {/* Virtual On-Screen Joystick Control Panel (drag inner ball to move and slide in map) */}
+      {(gameState === 'PLAYING' || gameState === 'PAUSED') && (
+        <VirtualJoystick
+          onMove={handleJoystickMove}
+          onRelease={handleJoystickRelease}
+        />
+      )}
+
+      {/* Real-Time Room Invitation Toast */}
+      <InvitationToast
+        invitation={activeInvitation}
+        onAccept={handleAcceptInvitation}
+        onDecline={handleDeclineInvitation}
+      />
+
+      {/* Outgoing Invitation Confirmation Toast */}
+      {inviteToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl bg-cyan-950/95 border border-cyan-400 text-cyan-200 text-xs font-bold shadow-[0_0_25px_rgba(6,182,212,0.5)] backdrop-blur-md animate-fade-in pointer-events-auto">
+          {inviteToast}
+        </div>
       )}
 
       {/* Pause Modal */}
@@ -389,6 +538,14 @@ export default function App() {
         <ShopModal
           onClose={() => setShowShop(false)}
           onSkinChanged={handleSkinChanged}
+        />
+      )}
+
+      {/* Live Active Players & Room Invitation Modal */}
+      {showActivePlayers && (
+        <ActivePlayersModal
+          onClose={() => setShowActivePlayers(false)}
+          onInviteSent={handleInviteSent}
         />
       )}
     </div>

@@ -1,5 +1,5 @@
 // World map dimensions (Human body vascular anatomy)
-import { Mutation } from './types';
+import { Mutation, SuperpowerType } from './types';
 
 export const WORLD_RADIUS = 2800; // 5600px full body circulation
 export const WORLD_CENTER_X = 0;
@@ -19,21 +19,22 @@ export interface OrganZone {
 }
 
 export const ANATOMICAL_ORGANS: OrganZone[] = [
+  // Body 1 (Left: Anterior - Circulation & Digestion, Center X = -1050)
   {
     id: 'brain',
-    name: 'Cerebro',
-    x: 0,
+    name: 'Cerebro (Hemisferio Anterior)',
+    x: -1050,
     y: -1900,
-    radius: 650,
+    radius: 550,
     color: '#8b5cf6',
     glowColor: '#a78bfa',
-    description: 'Sinapsis neurales y líquido cefalorraquídeo. Velocidad aumentada.',
+    description: 'Sinapsis neurales y líquido cefalorraquídeo frontal. +15% velocidad.',
     nutrientBonus: 1.2,
   },
   {
     id: 'heart',
     name: 'Corazón (Aorta)',
-    x: 0,
+    x: -1050,
     y: -400,
     radius: 540,
     color: '#ef4444',
@@ -43,30 +44,19 @@ export const ANATOMICAL_ORGANS: OrganZone[] = [
   },
   {
     id: 'left_lung',
-    name: 'Pulmón Izquierdo',
-    x: -650,
-    y: -950,
+    name: 'Pulmones (Alvéolos)',
+    x: -1450,
+    y: -750,
     radius: 460,
     color: '#06b6d4',
     glowColor: '#38bdf8',
-    description: 'Alvéolos oxigenados. Movimiento suave y plasma límpido.',
-    nutrientBonus: 1.1,
-  },
-  {
-    id: 'right_lung',
-    name: 'Pulmón Derecho',
-    x: 650,
-    y: -950,
-    radius: 460,
-    color: '#06b6d4',
-    glowColor: '#38bdf8',
-    description: 'Alvéolos oxigenados. Movimiento suave y plasma límpido.',
+    description: 'Red alveolar oxigenada y plasma fluido de alta oxigenación.',
     nutrientBonus: 1.1,
   },
   {
     id: 'liver',
-    name: 'Hígado',
-    x: 550,
+    name: 'Hígado (Metabolismo)',
+    x: -750,
     y: 350,
     radius: 540,
     color: '#d97706',
@@ -77,9 +67,9 @@ export const ANATOMICAL_ORGANS: OrganZone[] = [
   {
     id: 'stomach',
     name: 'Estómago e Intestino',
-    x: -450,
-    y: 500,
-    radius: 560,
+    x: -1250,
+    y: 550,
+    radius: 520,
     color: '#10b981',
     glowColor: '#34d399',
     description: 'Área rica en aminoácidos y nutrientes absorbidos.',
@@ -87,25 +77,82 @@ export const ANATOMICAL_ORGANS: OrganZone[] = [
   },
   {
     id: 'kidneys',
-    name: 'Riñones',
-    x: 0,
-    y: 1300,
-    radius: 520,
+    name: 'Riñones (Filtración)',
+    x: -1050,
+    y: 1250,
+    radius: 480,
     color: '#e11d48',
     glowColor: '#fb7185',
-    description: 'Filtración celular y depuración de toxinas.',
+    description: 'Filtración celular y depuración de toxinas en la nefrona.',
     nutrientBonus: 1.2,
   },
   {
     id: 'femoral',
     name: 'Vasos Femorales',
-    x: 0,
+    x: -1050,
     y: 2250,
     radius: 480,
     color: '#be123c',
     glowColor: '#f43f5e',
     description: 'Extremidades y válvulas venosas profundas.',
     nutrientBonus: 1.0,
+  },
+
+  // Body 2 (Right: Posterior - Immune & Lymphatic System, Center X = +1050)
+  {
+    id: 'cerebellum',
+    name: 'Cerebelo & Médula Espinal',
+    x: 1050,
+    y: -1900,
+    radius: 550,
+    color: '#6366f1',
+    glowColor: '#818cf8',
+    description: 'Centro de control postural dorsal y columna vertebral.',
+    nutrientBonus: 1.2,
+  },
+  {
+    id: 'thymus',
+    name: 'Timo & Nódulos Torácicos',
+    x: 1050,
+    y: -400,
+    radius: 520,
+    color: '#3b82f6',
+    glowColor: '#60a5fa',
+    description: 'Maduración de linfocitos T y vigilancia inmunológica activa.',
+    nutrientBonus: 1.4,
+  },
+  {
+    id: 'spleen',
+    name: 'Bazo (Filtro Linfático)',
+    x: 1450,
+    y: 250,
+    radius: 500,
+    color: '#a855f7',
+    glowColor: '#c084fc',
+    description: 'Cementerio de eritrocitos y reserva concentrada de macrófagos.',
+    nutrientBonus: 1.5,
+  },
+  {
+    id: 'lymph_nodes',
+    name: 'Ganglios Linfáticos Lumbares',
+    x: 1050,
+    y: 1100,
+    radius: 480,
+    color: '#14b8a6',
+    glowColor: '#2dd4bf',
+    description: 'Filtro linfa dorsal y barrera contra patógenos invasores.',
+    nutrientBonus: 1.3,
+  },
+  {
+    id: 'dorsal_popliteal',
+    name: 'Vasos Poplíteos Dorsales',
+    x: 1050,
+    y: 2250,
+    radius: 480,
+    color: '#9333ea',
+    glowColor: '#c084fc',
+    description: 'Red venosa dorsal y retorno circulatorio de extremidades.',
+    nutrientBonus: 1.1,
   },
 ];
 
@@ -118,7 +165,7 @@ export const SECRET_ZONE_RADIUS = 360;
 export const PROTEIN_COUNT = 900;
 export const RED_BLOOD_CELL_COUNT = 75;
 export const ANTIBODY_COUNT = 14;
-export const BOT_COUNT = 20;
+export const BOT_COUNT = 49; // 49 bots + 1 player = 50 maximum players per room
 
 // Mass & size physics
 export const MIN_START_MASS = 18;
@@ -193,3 +240,101 @@ export const MUTATION_DEFINITIONS: Mutation[] = [
     unlocked: false,
   },
 ];
+
+// Superpowers in the Middle of the Map (15s duration)
+export const SUPERPOWER_DURATION_SEC = 15;
+export const SUPERPOWER_RESPAWN_SEC = 24;
+
+export interface SuperpowerConfig {
+  type: SuperpowerType;
+  name: string;
+  desc: string;
+  color: string;
+  glowColor: string;
+  pillColorA: string;
+  pillColorB: string;
+}
+
+export const SUPERPOWER_DEFS: Record<SuperpowerType, SuperpowerConfig> = {
+  magnet_pill: {
+    type: 'magnet_pill',
+    name: 'Pastilla Hiper-Atracción',
+    desc: 'Mega-imán celular: absorbe nutrientes y proteínas desde enorme distancia por 15s.',
+    color: '#06b6d4',
+    glowColor: '#22d3ee',
+    pillColorA: '#0891b2',
+    pillColorB: '#67e8f9',
+  },
+  speed_capsule: {
+    type: 'speed_capsule',
+    name: 'Ampolla de Adrenalina',
+    desc: 'Impulso turbo: +85% de velocidad y fisión acelerada instantánea por 15s.',
+    color: '#eab308',
+    glowColor: '#facc15',
+    pillColorA: '#ca8a04',
+    pillColorB: '#fef08a',
+  },
+  shield_capsule: {
+    type: 'shield_capsule',
+    name: 'Cápsula Escudo Inmune',
+    desc: 'Blindaje plasmático: invulnerable ante anticuerpos y microbios gigantes por 15s.',
+    color: '#10b981',
+    glowColor: '#34d399',
+    pillColorA: '#059669',
+    pillColorB: '#a7f3d0',
+  },
+  toxic_nanobot: {
+    type: 'toxic_nanobot',
+    name: 'Nanobot Lítico Viral',
+    desc: 'Descarga lítica: pulsos de bio-ácido que debilitan y encogen a los rivales por 15s.',
+    color: '#ec4899',
+    glowColor: '#f472b6',
+    pillColorA: '#db2777',
+    pillColorB: '#fbcfe8',
+  },
+  mega_shield: {
+    type: 'mega_shield',
+    name: 'Burbuja Mega-Escudo',
+    desc: 'Escudo impenetrable de plasma: 100% invulnerable y regenera +4 masa/seg por 15s.',
+    color: '#0284c7',
+    glowColor: '#38bdf8',
+    pillColorA: '#0369a1',
+    pillColorB: '#bae6fd',
+  },
+  growth_serum: {
+    type: 'growth_serum',
+    name: 'Suero Hiper-Crecimiento',
+    desc: 'Metabolismo de Titán: 2.8x ganancia de masa de nutrientes y tamaño aumentado por 15s.',
+    color: '#ca8a04',
+    glowColor: '#facc15',
+    pillColorA: '#a16207',
+    pillColorB: '#fef08a',
+  },
+  frost_blast: {
+    type: 'frost_blast',
+    name: 'Crio-Espora Glacial',
+    desc: 'Vórtice bajo cero: congela el plasma y ralentiza un 70% a rivales y anticuerpos por 15s.',
+    color: '#0ea5e9',
+    glowColor: '#7dd3fc',
+    pillColorA: '#0284c7',
+    pillColorB: '#e0f2fe',
+  },
+  cloaking_ghost: {
+    type: 'cloaking_ghost',
+    name: 'Camuflaje Bio-Fantasma',
+    desc: 'Invisibilidad celular: membrana translúcida que evade el rastreo de anticuerpos por 15s.',
+    color: '#8b5cf6',
+    glowColor: '#c4b5fd',
+    pillColorA: '#7c3aed',
+    pillColorB: '#ede9fe',
+  },
+  quantum_fission: {
+    type: 'quantum_fission',
+    name: 'Fisión Cuántica Turbo',
+    desc: 'Mitosis instantánea sin límite y recombinación celular magnética inmediata (0s) por 15s.',
+    color: '#14b8a6',
+    glowColor: '#5eead4',
+    pillColorA: '#0d9488',
+    pillColorB: '#ccfbf1',
+  },
+};

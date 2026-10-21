@@ -1,0 +1,112 @@
+{
+  "profiles": {
+    "test_device_fresh_99": {
+      "deviceId": "test_device_fresh_99",
+      "name": "Microbio-H_99",
+      "cytes": 0,
+      "totalCytesEarned": 0,
+      "selectedSkinId": "emerald_mite",
+      "selectedSporeId": "spore_plasma",
+      "selectedBacteriaId": "bacillus_subtilis",
+      "achievements": {},
+      "unlockedSkinIds": [
+        "emerald_mite"
+      ],
+      "unlockedSporeIds": [
+        "spore_plasma"
+      ],
+      "unlockedBacteriaIds": [
+        "bacillus_subtilis",
+        "escherichia_coli",
+        "lactobacillus_casei"
+      ],
+      "conqueredOrgans": [],
+      "stats": {
+        "gamesPlayed": 0,
+        "highestMass": 18,
+        "totalKills": 0,
+        "totalRBCDevoured": 0,
+        "secretZoneFound": false
+      },
+      "preferredLanguage": "es",
+      "createdAt": "2026-10-17T13:39:20.899Z"
+    }
+  },
+  "territories": {},
+  "rooms": {
+    "room-human-ffa": {
+      "id": "room-human-ffa",
+      "mode": "ffa",
+      "humansOnly": true,
+      "playerCount": 18,
+      "maxPlayers": 50,
+      "leaderName": "Alpha-Leuko",
+      "leaderMass": 2450
+    },
+    "room-human-team": {
+      "id": "room-human-team",
+      "mode": "team",
+      "humansOnly": true,
+      "playerCount": 26,
+      "maxPlayers": 50,
+      "leaderName": "Titan-Macrophage",
+      "leaderMass": 3100,
+      "factionScores": {
+        "immune": 54,
+        "pathogen": 46
+      }
+    },
+    "room-bot-practice": {
+      "id": "room-bot-practice",
+      "mode": "bots",
+      "humansOnly": false,
+      "playerCount": 50,
+      "maxPlayers": 50,
+      "leaderName": "Bacillus-Prime",
+      "leaderMass": 1850
+    },
+    "room-test": {
+      "id": "room-test",
+      "mode": "team",
+      "humansOnly": true,
+      "playerCount": 2,
+      "maxPlayers": 50,
+      "leaderName": "HostPlayer",
+      "leaderMass": 100,
+      "factionScores": {
+        "immune": 50,
+        "pathogen": 50
+      }
+    }
+  },
+  "invitations": {
+    "inv_oddq4e3": {
+      "id": "inv_oddq4e3",
+      "fromDeviceId": "dev_host",
+      "fromPlayerName": "HostPlayer",
+      "toDeviceId": "dev_guest",
+      "toPlayerName": "GuestPlayer",
+      "mode": "team",
+      "factionRule": "host_decides",
+      "hostFaction": "immune",
+      "guestFaction": "pathogen",
+      "roomId": "room-test",
+      "status": "pending",
+      "createdAt": 1792244365207
+    },
+    "inv_3u0s34k": {
+      "id": "inv_3u0s34k",
+      "fromDeviceId": "dev_host",
+      "fromPlayerName": "HostPlayer",
+      "toDeviceId": "dev_guest",
+      "toPlayerName": "GuestPlayer",
+      "mode": "team",
+      "factionRule": "host_decides",
+      "hostFaction": "immune",
+      "guestFaction": "pathogen",
+      "roomId": "room-test",
+      "status": "pending",
+      "createdAt": 1792244387211
+    }
+  }
+}
