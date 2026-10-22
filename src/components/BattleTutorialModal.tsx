@@ -15,7 +15,7 @@ export const BattleTutorialModal: React.FC<BattleTutorialModalProps> = ({ onClos
       title: t.battleStep1Title,
       desc: t.battleStep1Desc,
       icon: <Swords className="w-8 h-8 text-rose-400" />,
-      badge: 'Facciones en Conflicto',
+      badge: t.factionsConflictBadge,
       badgeColor: 'border-rose-500/40 bg-rose-500/10 text-rose-300',
       illustration: (
         <div className="grid grid-cols-2 gap-3 w-full py-2">
@@ -23,34 +23,34 @@ export const BattleTutorialModal: React.FC<BattleTutorialModalProps> = ({ onClos
             <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center text-cyan-300 mb-1.5">
               <Shield className="w-5 h-5" />
             </div>
-            <span className="text-xs font-black text-cyan-200 uppercase">Sistema Inmune</span>
+            <span className="text-xs font-black text-cyan-200 uppercase">{t.factionImmuneTitle}</span>
             <span className="text-[10px] text-cyan-300/80 mt-1">
-              Defiende al huésped, purga bacterias y neutraliza el pus para curar al humano.
+              {t.immuneFactionTutorial}
             </span>
           </div>
           <div className="p-3 rounded-2xl bg-rose-950/40 border border-rose-400/40 flex flex-col items-center text-center">
             <div className="w-10 h-10 rounded-xl bg-rose-500/20 flex items-center justify-center text-rose-300 mb-1.5">
               <Skull className="w-5 h-5" />
             </div>
-            <span className="text-xs font-black text-rose-200 uppercase">Infección Patógena</span>
+            <span className="text-xs font-black text-rose-200 uppercase">{t.factionPathogenTitle}</span>
             <span className="text-[10px] text-rose-300/80 mt-1">
-              Drena la salud del cuerpo humano, genera exudado de pus y prolifera en masa.
+              {t.pathogenFactionTutorial}
             </span>
           </div>
         </div>
       ),
     },
     {
-      title: '2. Estado del Humano (Ventana Superior)',
-      desc: 'En la esquina superior de la pantalla monitoreás los signos vitales del huésped humano en tiempo real: Salud, Temperatura / Fiebre, Hidratación, Energía ATP y Nivel de Pus.',
+      title: t.battleStep2Title,
+      desc: t.battleHostModalDesc,
       icon: <HeartPulse className="w-8 h-8 text-amber-400" />,
-      badge: 'Biometría Fisiológica',
+      badge: t.hostBiometricsBadge,
       badgeColor: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
       illustration: (
         <div className="w-full p-3 rounded-2xl bg-black/60 border border-white/10 space-y-2 text-left">
           <div className="flex items-center justify-between text-xs font-bold text-neutral-300">
             <span className="flex items-center gap-1.5 text-rose-300">
-              <HeartPulse className="w-3.5 h-3.5" /> Salud del Huésped
+              <HeartPulse className="w-3.5 h-3.5" /> {t.hostHealthLabel}
             </span>
             <span className="font-mono text-emerald-400">100% → 0%</span>
           </div>
@@ -65,21 +65,21 @@ export const BattleTutorialModal: React.FC<BattleTutorialModalProps> = ({ onClos
             </div>
             <div className="p-1.5 rounded-lg bg-white/5 border border-white/10 flex items-center gap-1 text-cyan-300">
               <Droplets className="w-3 h-3" />
-              <span>Agua 75%</span>
+              <span>{t.hostHydrationLabel}</span>
             </div>
             <div className="p-1.5 rounded-lg bg-white/5 border border-white/10 flex items-center gap-1 text-yellow-300">
               <Flame className="w-3 h-3" />
-              <span>ATP 95%</span>
+              <span>{t.hostEnergyLabel}</span>
             </div>
           </div>
         </div>
       ),
     },
     {
-      title: t.battleStep2Title,
-      desc: 'Las pústulas de pus biológico son glóbulos viscosos amarillos-verdosos que brotan en el torrente. Si eres Patógeno, absorbelas para ganar +35 de masa y aumentar la infección. Si eres Inmune, higienizalas para devolver salud al humano (+3%).',
+      title: t.battleStep3Title,
+      desc: t.battlePusModalDesc,
       icon: <Droplets className="w-8 h-8 text-lime-400" />,
-      badge: 'Pústulas de Pus & Supuración',
+      badge: t.pusPustules,
       badgeColor: 'border-lime-500/40 bg-lime-500/10 text-lime-300',
       illustration: (
         <div className="p-4 rounded-2xl bg-neutral-900 border border-lime-500/30 flex items-center justify-around gap-2">
@@ -88,17 +88,15 @@ export const BattleTutorialModal: React.FC<BattleTutorialModalProps> = ({ onClos
             <div className="w-14 h-14 rounded-full bg-lime-500/20 border-2 border-lime-400 flex items-center justify-center shadow-[0_0_20px_rgba(163,230,53,0.5)] animate-bounce">
               <div className="w-6 h-6 rounded-full bg-yellow-400/80 animate-pulse" />
             </div>
-            <span className="text-[10px] font-bold text-lime-300 mt-1.5">Pústula de Pus</span>
+            <span className="text-[10px] font-bold text-lime-300 mt-1.5">{t.pusTitle}</span>
           </div>
 
           <div className="text-left text-xs space-y-1.5 max-w-[200px]">
             <div className="flex items-center gap-1 text-rose-300 font-bold text-[11px]">
-              <span>🦠 Patógenos:</span>
-              <span className="text-lime-400">+35 Masa</span>
+              <span>{t.pusPathogenEffect}</span>
             </div>
             <div className="flex items-center gap-1 text-cyan-300 font-bold text-[11px]">
-              <span>🛡️ Inmune:</span>
-              <span className="text-cyan-400">+3% Salud +Cytes</span>
+              <span>{t.pusImmuneEffect}</span>
             </div>
           </div>
         </div>
@@ -108,12 +106,12 @@ export const BattleTutorialModal: React.FC<BattleTutorialModalProps> = ({ onClos
       title: t.battleStep4Title,
       desc: t.battleStep4Desc,
       icon: <Sparkles className="w-8 h-8 text-amber-400" />,
-      badge: 'Condición de Victoria',
+      badge: t.battleWinConditionTitle,
       badgeColor: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
       illustration: (
         <div className="p-3.5 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-purple-950/30 to-rose-950/40 border border-white/10 text-center">
           <p className="text-xs text-neutral-200 leading-relaxed">
-            Colonizá órganos con 100 de masa, acumulá Cytes, superá a la facción enemiga y decidí el destino biológico del cuerpo humano.
+            {t.battleWinConditionDesc}
           </p>
         </div>
       ),
@@ -136,7 +134,7 @@ export const BattleTutorialModal: React.FC<BattleTutorialModalProps> = ({ onClos
             </div>
             <div>
               <h3 className="text-lg sm:text-xl font-black text-white">{t.battleTutorialTitle}</h3>
-              <p className="text-xs text-neutral-400">Guía Táctica de Fisiología & Infección</p>
+              <p className="text-xs text-neutral-400">{t.battleTacticalGuide}</p>
             </div>
           </div>
 

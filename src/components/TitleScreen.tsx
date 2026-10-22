@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Play, ShieldAlert, Zap, Dna, BookOpen, Award, Palette, Globe, Smartphone, Monitor, Tablet, Users, Shield, Skull, Crown, Download, Check, Share2, Sparkles } from 'lucide-react';
+import { Volume2, VolumeX, Play, ShieldAlert, Zap, Dna, BookOpen, Award, Palette, Globe, Smartphone, Monitor, Tablet, Users, Shield, Skull, Crown, Download, Check, Share2, Sparkles, X } from 'lucide-react';
 import { SUPPORTED_LANGUAGES, TranslationStrings } from '../i18n/languages';
 import { profileStorage, getDefaultLocalizedName } from '../storage/profileStorage';
 import { BACTERIA_STRAINS, BacteriaStrain } from '../game/bacteria';
@@ -63,6 +63,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   // PWA Install prompt handler
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false);
+  const [showPwaGuideModal, setShowPwaGuideModal] = useState<boolean>(false);
 
   useEffect(() => {
     const handleBeforeInstall = (e: Event) => {
@@ -90,7 +91,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
       }
       setDeferredPrompt(null);
     } else {
-      alert('Para instalar en tu dispositivo:\nEn Chrome/Android: Menú > Instalar App o Añadir a pantalla principal.\nEn iOS Safari: Compartir > Añadir a pantalla de inicio.');
+      setShowPwaGuideModal(true);
     }
   };
 
@@ -256,7 +257,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>Multijugador (Solo Humanos)</span>
+            <span>{t.realMultiplayerToggle}</span>
           </button>
 
           <button
@@ -269,7 +270,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             }`}
           >
             <Zap className="w-3.5 h-3.5" />
-            <span>Modo con BOTs</span>
+            <span>{t.modeBots}</span>
           </button>
         </div>
 
@@ -278,10 +279,10 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           <div className="w-full max-w-md px-3 py-1.5 rounded-xl bg-cyan-950/60 border border-cyan-400/40 text-[10px] text-cyan-200 mb-2 flex items-center justify-between gap-1 backdrop-blur-sm">
             <span className="flex items-center gap-1.5 font-semibold">
               <span className={`w-2 h-2 rounded-full ${activePlayerCount >= (selectedMode === 'team' ? 4 : 3) ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`} />
-              <span>{activePlayerCount} {activePlayerCount === 1 ? 'jugador humano en línea' : 'jugadores humanos en línea'}</span>
+              <span>{activePlayerCount} {t.realMultiplayerDesc}</span>
             </span>
             <span className={`font-mono text-[10px] px-2 py-0.5 rounded-md font-bold ${activePlayerCount >= (selectedMode === 'team' ? 4 : 3) ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>
-              {activePlayerCount >= (selectedMode === 'team' ? 4 : 3) ? '¡Suficientes Humanos!' : `Mín. ${selectedMode === 'team' ? 4 : 3} Requeridos`}
+              {activePlayerCount >= (selectedMode === 'team' ? 4 : 3) ? 'OK' : `Min: ${selectedMode === 'team' ? 4 : 3}`}
             </span>
           </div>
         )}
@@ -298,7 +299,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             }`}
           >
             <Crown className="w-3.5 h-3.5" />
-            <span>Individual (FFA)</span>
+            <span>{t.modeFfa}</span>
           </button>
 
           <button
@@ -311,7 +312,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>Batalla en Equipo</span>
+            <span>{t.modeTeam}</span>
           </button>
         </div>
 
@@ -330,10 +331,10 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             >
               <div className="flex items-center gap-2 mb-1">
                 <Shield className="w-4 h-4 text-cyan-400" />
-                <span className="text-xs font-black text-white uppercase">Sistema Inmune</span>
+                <span className="text-xs font-black text-white uppercase">{t.factionImmuneTitle}</span>
               </div>
               <p className="text-[10px] text-neutral-300 leading-tight">
-                Glóbulos blancos, macrófagos y probióticos benéficos.
+                {t.factionImmuneDesc}
               </p>
             </button>
 
@@ -349,10 +350,10 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             >
               <div className="flex items-center gap-2 mb-1">
                 <Skull className="w-4 h-4 text-rose-400" />
-                <span className="text-xs font-black text-white uppercase">Infección</span>
+                <span className="text-xs font-black text-white uppercase">{t.factionPathogenTitle}</span>
               </div>
               <p className="text-[10px] text-neutral-300 leading-tight">
-                Bacterias malas, virus agresivos y toxinas celulares.
+                {t.factionPathogenDesc}
               </p>
             </button>
           </div>
@@ -381,11 +382,11 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                 <span className="text-xs font-black text-white">{currentBacteria.name}</span>
                 {currentBacteria.isFreeStarter ? (
                   <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-bold">
-                    Gratis
+                    {t.freeLabel}
                   </span>
                 ) : (
                   <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold">
-                    {currentBacteria.priceCytes} Cytes
+                    {currentBacteria.priceCytes} {t.cytes}
                   </span>
                 )}
               </div>
@@ -400,7 +401,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             onClick={onOpenShop}
             className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold shrink-0 transition-colors cursor-pointer"
           >
-            Cambiar Cepa
+            {t.changeBacteriaBtn}
           </button>
         </div>
 
@@ -532,6 +533,70 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           }}
           currentLang={currentLang}
         />
+      )}
+
+      {/* PWA Install Guide Modal */}
+      {showPwaGuideModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in pointer-events-auto">
+          <div className="w-full max-w-md p-5 sm:p-6 rounded-3xl bg-neutral-900 border border-emerald-500/40 shadow-[0_0_50px_rgba(16,185,129,0.25)] flex flex-col text-left">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                  <Download className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">{t.installPwaTitle}</h3>
+                  <p className="text-[11px] text-neutral-400">{t.installPwaSubtitle}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPwaGuideModal(false)}
+                className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-2 font-bold text-emerald-300 mb-1">
+                  <Smartphone className="w-4 h-4 text-emerald-400" />
+                  <span>{t.installAndroidTitle}</span>
+                </div>
+                <p className="text-neutral-300 text-[11px] leading-relaxed">
+                  {t.installAndroidDesc}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-2 font-bold text-cyan-300 mb-1">
+                  <Smartphone className="w-4 h-4 text-cyan-400" />
+                  <span>{t.installIosTitle}</span>
+                </div>
+                <p className="text-neutral-300 text-[11px] leading-relaxed">
+                  {t.installIosDesc}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-2 font-bold text-amber-300 mb-1">
+                  <Monitor className="w-4 h-4 text-amber-400" />
+                  <span>{t.installDesktopTitle}</span>
+                </div>
+                <p className="text-neutral-300 text-[11px] leading-relaxed">
+                  {t.installDesktopDesc}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowPwaGuideModal(false)}
+              className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-neutral-950 font-black text-xs uppercase tracking-wider transition-all cursor-pointer text-center"
+            >
+              {t.understoodBtn}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

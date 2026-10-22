@@ -218,6 +218,112 @@ export interface TranslationStrings {
   quickUpgrade1: string;
   quickUpgrade100: string;
   totalAffordable: string;
+  // Expanded Social Sharing
+  shareLinkedIn: string;
+  shareDiscord: string;
+  shareEmail: string;
+  shareSMS: string;
+  sharePinterest: string;
+  shareDownloadCard: string;
+  shareCardDownloaded: string;
+  shareDiscordCopied: string;
+  shareDirectTitle: string;
+  shareSocialTitle: string;
+  shareCardTitle: string;
+  shareCardSubtitle: string;
+  // Game modes & factions
+  modeFfa: string;
+  modeTeam: string;
+  modeBots: string;
+  factionImmuneTitle: string;
+  factionImmuneDesc: string;
+  factionPathogenTitle: string;
+  factionPathogenDesc: string;
+  changeBacteriaBtn: string;
+  realMultiplayerToggle: string;
+  realMultiplayerDesc: string;
+  // PWA Modal
+  installPwaBtn: string;
+  installPwaTitle: string;
+  installPwaSubtitle: string;
+  installAndroidTitle: string;
+  installAndroidDesc: string;
+  installIosTitle: string;
+  installIosDesc: string;
+  installDesktopTitle: string;
+  installDesktopDesc: string;
+  understoodBtn: string;
+  // In-Game HUD & Leaderboard
+  leaderboardFaction: string;
+  foldTable: string;
+  conquerExtraCytes: string;
+  anteriorLabel: string;
+  posteriorLabel: string;
+  hiddenCrypt: string;
+  ejectSporeHint: string;
+  splitTwoHint: string;
+  immuneDefenders: string;
+  pathogenInfection: string;
+  // Shop tabs & details
+  totalInvested: string;
+  levelsLabel: string;
+  bacteriaTabTitle: string;
+  bundlesTabTitle: string;
+  skinsTabTitle: string;
+  sporesTabTitle: string;
+  territoryTabTitle: string;
+  // Upgrades and Battle Tutorial extra keys
+  upgradeSuccessLevel: string;
+  sporesRangeBase: string;
+  speedBase: string;
+  armorBase: string;
+  metabolismBase: string;
+  attractionBase: string;
+  sporesRangeBonus: string;
+  speedBonusLabel: string;
+  armorBonusLabel: string;
+  metabolismBonusLabel: string;
+  attractionBonusLabel: string;
+  pusPathogenEffect: string;
+  pusImmuneEffect: string;
+  pusTitle: string;
+  battleWinConditionTitle: string;
+  battleWinConditionDesc: string;
+  factionsConflictBadge: string;
+  hostBiometricsBadge: string;
+  quickBuyMode: string;
+  bioProgressLabel: string;
+  battleTacticalGuide: string;
+  immuneFactionTutorial: string;
+  pathogenFactionTutorial: string;
+  battlePusModalDesc: string;
+  battleHostModalDesc: string;
+  bioMarketTitle: string;
+  bioMarketSubtitle: string;
+  currentlyEquipped: string;
+  equipThisStrain: string;
+  unlockForCytes: string;
+  statPerkSpeed: string;
+  statPerkArmor: string;
+  statPerkConquest: string;
+  colonizedColonies: string;
+  bundleEquipped: string;
+  equipBundle: string;
+  acquireBundle: string;
+  upgradeFunctionsTitle: string;
+  upgradeFunctionsSubtitle: string;
+  maxLevelReached5: string;
+  upgradeToLevel: string;
+  inUse: string;
+  equip: string;
+  unlock: string;
+  humanBodyDominance: string;
+  conquerOrganTip: string;
+  colonizedOrgansLabel: string;
+  colonizedStatus: string;
+  unconqueredStatus: string;
+  conquestRewardLabel: string;
+  conquestRewardValue: string;
 }
 
 // Translations dictionary
@@ -391,6 +497,111 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     quickUpgrade1: '+1 Nivel',
     quickUpgrade100: '+100 Niveles',
     totalAffordable: 'Máximo Posible',
+    // Expanded Social Sharing
+    shareLinkedIn: 'LinkedIn',
+    shareDiscord: 'Discord',
+    shareEmail: 'Correo Electrónico',
+    shareSMS: 'Mensaje SMS',
+    sharePinterest: 'Pinterest',
+    shareDownloadCard: 'Descargar Tarjeta Bio',
+    shareCardDownloaded: '¡Tarjeta Bio Guardada!',
+    shareDiscordCopied: '¡Formato para Discord copiado al portapapeles!',
+    shareDirectTitle: 'Enlace Directo & Dispositivo',
+    shareSocialTitle: 'Redes Sociales & Mensajería',
+    shareCardTitle: 'Tarjeta de Identidad Microbiana',
+    shareCardSubtitle: 'Comparte tu tarjeta con código QR para invitar a amigos',
+    // Game modes & factions
+    modeFfa: 'Individual (FFA)',
+    modeTeam: 'Batalla en Equipo',
+    modeBots: 'Práctica con Bots',
+    factionImmuneTitle: 'Sistema Inmune',
+    factionImmuneDesc: 'Glóbulos blancos, macrófagos y probióticos benéficos.',
+    factionPathogenTitle: 'Infección',
+    factionPathogenDesc: 'Bacterias malas, virus agresivos y toxinas celulares.',
+    changeBacteriaBtn: 'Cambiar Cepa',
+    realMultiplayerToggle: 'Multijugador Real',
+    realMultiplayerDesc: 'Solo humanos en línea',
+    // PWA Modal
+    installPwaBtn: 'Instalar App',
+    installPwaTitle: 'Instalar Mite.io (PWA)',
+    installPwaSubtitle: 'Juega a pantalla completa sin barras de navegador',
+    installAndroidTitle: 'Android & Google Chrome',
+    installAndroidDesc: 'Toca los tres puntos ⋮ en la esquina superior derecha y selecciona "Instalar aplicación" o "Añadir a pantalla de inicio".',
+    installIosTitle: 'iPhone / iPad (iOS Safari)',
+    installIosDesc: 'Toca el botón Compartir (cuadrado con flecha hacia arriba) en la barra inferior de Safari y elige "Añadir a pantalla de inicio".',
+    installDesktopTitle: 'PC / Mac / Chrome / Edge',
+    installDesktopDesc: 'Haz clic en el icono de Instalar en la barra de direcciones o en el menú de tres puntos > "Instalar Mite.io".',
+    understoodBtn: 'Entendido',
+    // In-Game HUD & Leaderboard
+    leaderboardFaction: 'Líderes de Bando',
+    foldTable: 'Plegar / Desplegar Tabla',
+    conquerExtraCytes: '(+80 Cytes e impulso)',
+    anteriorLabel: 'ANT',
+    posteriorLabel: 'POST',
+    hiddenCrypt: 'Cripta Linfática Oculta',
+    ejectSporeHint: 'Eyectar Esporas [W]',
+    splitTwoHint: 'Dividirse en dos [ESPACIO]',
+    immuneDefenders: 'Defensores / Inmune',
+    pathogenInfection: 'Infección / Patógenos',
+    // Shop tabs & details
+    totalInvested: 'Total Invertido',
+    levelsLabel: 'Niveles',
+    bacteriaTabTitle: 'Cepas de Bacteria',
+    bundlesTabTitle: 'Conjuntos / Packs',
+    skinsTabTitle: 'Aspectos Celulares',
+    sporesTabTitle: 'Estilos de Esporas',
+    territoryTabTitle: 'Conquista de Órganos',
+    // Upgrades and Battle Tutorial extra keys
+    upgradeSuccessLevel: '¡nivel(es) mejorado(s)! Nivel actual:',
+    sporesRangeBase: 'Fisión base',
+    speedBase: 'Velocidad base',
+    armorBase: 'Blindaje estándar',
+    metabolismBase: 'Metabolismo estándar',
+    attractionBase: 'Atracción estándar',
+    sporesRangeBonus: '% Alcance de Esporas & Mitosis',
+    speedBonusLabel: '% Velocidad Base en Plasma',
+    armorBonusLabel: '% Resistencia a Impactos & Anticuerpos',
+    metabolismBonusLabel: '% Masa Extra al Comer',
+    attractionBonusLabel: '% Radio de Atracción Magnética',
+    pusPathogenEffect: 'Patógenos: +35 Masa',
+    pusImmuneEffect: 'Inmune: +3% Salud +Cytes',
+    pusTitle: 'Pústula de Pus',
+    battleWinConditionTitle: 'Condición de Victoria',
+    factionsConflictBadge: 'Facciones en Conflicto',
+    hostBiometricsBadge: 'Biometría Fisiológica',
+    quickBuyMode: 'Modo de Compra Rápida:',
+    bioProgressLabel: 'Progreso Biológico',
+    battleTacticalGuide: 'Guía Táctica de Fisiología & Infección',
+    immuneFactionTutorial: 'Defiende al huésped, purga bacterias y neutraliza el pus para curar al humano.',
+    pathogenFactionTutorial: 'Drena la salud del cuerpo humano, genera exudado de pus y prolifera en masa.',
+    battlePusModalDesc: 'Las pústulas de pus biológico son glóbulos viscosos amarillos-verdosos que brotan en el torrente. Si eres Patógeno, absorbelas para ganar +35 de masa y aumentar la infección. Si eres Inmune, higienizalas para devolver salud al humano (+3%).',
+    battleHostModalDesc: 'En la esquina superior de la pantalla monitoreás los signos vitales del huésped humano en tiempo real: Salud, Temperatura / Fiebre, Hidratación, Energía ATP y Nivel de Pus.',
+    bioMarketTitle: 'Mercado Biológico',
+    bioMarketSubtitle: 'Canjeá tus Cytes por cepas bacterianas, aspectos y esporas',
+    currentlyEquipped: 'Equipada Actualmente',
+    equipThisStrain: 'Equipar Esta Cepa',
+    unlockForCytes: 'Desbloquear por',
+    statPerkSpeed: 'Velocidad',
+    statPerkArmor: 'Blindaje',
+    statPerkConquest: 'Conquista',
+    colonizedColonies: 'Colonias Anatómicas',
+    bundleEquipped: 'Conjunto Equipado',
+    equipBundle: 'Equipar Conjunto',
+    acquireBundle: 'Adquirir Conjunto',
+    upgradeFunctionsTitle: 'Funciones de Mejora Biológica',
+    upgradeFunctionsSubtitle: 'Aumentá la atracción de nutrientes, velocidad, resistencia y metabolismo permanente con tus Cytes.',
+    maxLevelReached5: 'Nivel Máximo (5/5)',
+    upgradeToLevel: 'Mejorar a Nivel',
+    inUse: 'En Uso',
+    equip: 'Equipar',
+    unlock: 'Desbloquear',
+    humanBodyDominance: 'Dominio del Cuerpo Humano',
+    conquerOrganTip: 'Alcanzá 100 de Masa durante una partida para activar el botón de Conquistar Territorio.',
+    colonizedOrgansLabel: 'Órganos Colonizados',
+    colonizedStatus: 'Colonizado',
+    unconqueredStatus: 'Sin Conquistar',
+    conquestRewardLabel: 'Recompensa de Conquista:',
+    conquestRewardValue: '+80 Cytes & Impulso',
   },
   en: {
     title: 'Mite.io',
@@ -560,6 +771,112 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     pusPustules: 'Pus Pustules',
     cleansePus: 'Sanitize Pus (+3% Health)',
     absorbPus: 'Absorb Pus (+35 Mass)',
+    // Expanded Social Sharing
+    shareLinkedIn: 'LinkedIn',
+    shareDiscord: 'Discord',
+    shareEmail: 'Email',
+    shareSMS: 'SMS Text Message',
+    sharePinterest: 'Pinterest',
+    shareDownloadCard: 'Download Bio Card',
+    shareCardDownloaded: 'Bio Card Saved!',
+    shareDiscordCopied: 'Discord invite markdown copied to clipboard!',
+    shareDirectTitle: 'Direct Link & Device',
+    shareSocialTitle: 'Social Networks & Direct Messaging',
+    shareCardTitle: 'Microbial Identity Card',
+    shareCardSubtitle: 'Share your player identity card with QR code to invite friends',
+    // Game modes & factions
+    modeFfa: 'Free For All (FFA)',
+    modeTeam: 'Team Battle',
+    modeBots: 'Bot Practice',
+    factionImmuneTitle: 'Immune System',
+    factionImmuneDesc: 'White blood cells, macrophages and beneficial probiotics.',
+    factionPathogenTitle: 'Pathogen Infection',
+    factionPathogenDesc: 'Aggressive bacteria, harmful viruses and cellular toxins.',
+    changeBacteriaBtn: 'Change Strain',
+    realMultiplayerToggle: 'Real Multiplayer',
+    realMultiplayerDesc: 'Humans only online',
+    // PWA Modal
+    installPwaBtn: 'Install App',
+    installPwaTitle: 'Install Mite.io (PWA)',
+    installPwaSubtitle: 'Play full-screen with no browser address bar',
+    installAndroidTitle: 'Android & Google Chrome',
+    installAndroidDesc: 'Tap the three dots ⋮ in the top right corner and select "Install app" or "Add to Home screen".',
+    installIosTitle: 'iPhone / iPad (iOS Safari)',
+    installIosDesc: 'Tap the Share button (square with arrow up) in Safari bottom bar and choose "Add to Home Screen".',
+    installDesktopTitle: 'PC / Mac / Chrome / Edge',
+    installDesktopDesc: 'Click the Install icon in the address bar or via the three dots menu > "Install Mite.io".',
+    understoodBtn: 'Got it',
+    // In-Game HUD & Leaderboard
+    leaderboardFaction: 'Faction Leaders',
+    foldTable: 'Collapse / Expand Table',
+    conquerExtraCytes: '(+80 Cytes & impulse boost)',
+    anteriorLabel: 'ANT',
+    posteriorLabel: 'POST',
+    hiddenCrypt: 'Hidden Lymphatic Crypt',
+    ejectSporeHint: 'Eject Spores [W]',
+    splitTwoHint: 'Split into two [SPACE]',
+    immuneDefenders: 'Defenders / Immune',
+    pathogenInfection: 'Infection / Pathogens',
+    // Shop tabs & details
+    totalInvested: 'Total Invested',
+    levelsLabel: 'Levels',
+    bacteriaTabTitle: 'Bacteria Strains',
+    bundlesTabTitle: 'Bundles & Packs',
+    skinsTabTitle: 'Cellular Skins',
+    sporesTabTitle: 'Spore Styles',
+    territoryTabTitle: 'Organ Conquest',
+    // Upgrades and Battle Tutorial extra keys
+    upgradeSuccessLevel: 'level(s) upgraded! Current level:',
+    sporesRangeBase: 'Base fission',
+    speedBase: 'Base speed',
+    armorBase: 'Standard membrane',
+    metabolismBase: 'Standard metabolism',
+    attractionBase: 'Standard suction',
+    sporesRangeBonus: '% Spore Range & Mitosis Burst',
+    speedBonusLabel: '% Base Velocity in Plasma',
+    armorBonusLabel: '% Impact & Antibody Resistance',
+    metabolismBonusLabel: '% Extra Mass from RBCs',
+    attractionBonusLabel: '% Magnetic Suction Reach',
+    pusPathogenEffect: 'Pathogens: +35 Mass',
+    pusImmuneEffect: 'Immune: +3% Health +Cytes',
+    pusTitle: 'Pus Pustule',
+    battleWinConditionTitle: 'Victory Condition',
+    battleWinConditionDesc: 'Colonize organs at 100 mass, collect Cytes, overcome the enemy faction and decide the fate of the human body.',
+    factionsConflictBadge: 'Factions in Conflict',
+    hostBiometricsBadge: 'Physiological Biometrics',
+    quickBuyMode: 'Quick Buy Mode:',
+    bioProgressLabel: 'Biological Progress',
+    battleTacticalGuide: 'Tactical Guide: Physiology & Infection',
+    immuneFactionTutorial: 'Defends host, purges bacteria and cleanses pus to heal the human.',
+    pathogenFactionTutorial: 'Drains human host health, secretes pus exudate and proliferates in mass.',
+    battlePusModalDesc: 'Biological pus pustules are viscous yellow-green globules that erupt in the bloodstream. If Pathogen, absorb them for +35 mass. If Immune, cleanse them to restore host health (+3%).',
+    battleHostModalDesc: 'In the upper corner of the screen, monitor the human host\'s vital signs in real time: Health, Temperature / Fever, Hydration, ATP Energy, and Pus Exudate.',
+    bioMarketTitle: 'Biological Market',
+    bioMarketSubtitle: 'Exchange your Cytes for bacterial strains, skins and spores',
+    currentlyEquipped: 'Currently Equipped',
+    equipThisStrain: 'Equip This Strain',
+    unlockForCytes: 'Unlock for',
+    statPerkSpeed: 'Speed',
+    statPerkArmor: 'Armor',
+    statPerkConquest: 'Conquest',
+    colonizedColonies: 'Anatomical Colonies',
+    bundleEquipped: 'Bundle Equipped',
+    equipBundle: 'Equip Bundle',
+    acquireBundle: 'Acquire Bundle',
+    upgradeFunctionsTitle: 'Biological Upgrade Functions',
+    upgradeFunctionsSubtitle: 'Increase nutrient suction, speed, resistance and permanent metabolism with your Cytes.',
+    maxLevelReached5: 'Max Level (5/5)',
+    upgradeToLevel: 'Upgrade to Level',
+    inUse: 'In Use',
+    equip: 'Equip',
+    unlock: 'Unlock',
+    humanBodyDominance: 'Human Body Dominance',
+    conquerOrganTip: 'Reach 100 Mass during a match to activate the Conquer Territory button.',
+    colonizedOrgansLabel: 'Colonized Organs',
+    colonizedStatus: 'Colonized',
+    unconqueredStatus: 'Unconquered',
+    conquestRewardLabel: 'Conquest Reward:',
+    conquestRewardValue: '+80 Cytes & Boost',
   },
   pt: {
     title: 'Mite.io',

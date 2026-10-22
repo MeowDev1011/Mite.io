@@ -78,6 +78,10 @@ class SoundEngine {
   }
 
   // Rich juicy sound when devouring a red blood cell
+  public playCollect() {
+    this.playEatRedBloodCell();
+  }
+
   public playEatRedBloodCell() {
     if (this.isMuted) return;
     this.initContext();

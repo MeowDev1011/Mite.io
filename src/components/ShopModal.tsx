@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { ShoppingBag, Sparkles, Check, Lock, X, Zap, Shield, Target, Compass, Award, Magnet, Flame, HeartPulse, Droplets, ChevronUp } from 'lucide-react';
-import { profileStorage, PlayerProfile, UPGRADE_MAX_LEVEL, getTotalUpgradeCost, getUpgradeCost } from '../storage/profileStorage';
+import { profileStorage, PlayerProfile, UPGRADE_MAX_LEVEL, getTotalUpgradeCost, getUpgradeCost, UPGRADE_TIERS } from '../storage/profileStorage';
 import { PlayerUpgrades } from '../game/types';
 import { MICROBE_SKINS, SPORE_STYLES, BUNDLE_PACKS, MicrobeSkin, SporeStyle, SkinBundle } from '../game/skins';
 import { BACTERIA_STRAINS, BacteriaStrain } from '../game/bacteria';
 import { ANATOMICAL_ORGANS } from '../game/constants';
 import { soundEngine } from '../audio/soundEngine';
 import { BacteriaIllustrationSvg, CyteCoinSvg, ConqueredFlagSvg } from './BioSvgIcons';
-import { TranslationStrings } from '../i18n/languages';
+import { TranslationStrings, getTranslations } from '../i18n/languages';
 
 interface ShopModalProps {
   onClose: () => void;
@@ -15,7 +15,8 @@ interface ShopModalProps {
   t?: TranslationStrings;
 }
 
-export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t }) => {
+export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t: propT }) => {
+  const t = propT || getTranslations('es');
   const [profile, setProfile] = useState<PlayerProfile>(() => profileStorage.getProfile());
   const [activeTab, setActiveTab] = useState<'bacteria' | 'bundles' | 'upgrades' | 'skins' | 'spores' | 'territory'>('bacteria');
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
@@ -219,8 +220,8 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
               <ShoppingBag className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl sm:text-2xl font-black text-white">Mercado Biológico</h2>
-              <p className="text-xs text-neutral-400">Canjeá tus Cytes por cepas bacterianas, aspectos y esporas</p>
+              <h2 className="text-xl sm:text-2xl font-black text-white">{t.bioMarketTitle}</h2>
+              <p className="text-xs text-neutral-400">{t.bioMarketSubtitle}</p>
             </div>
           </div>
 
@@ -231,7 +232,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
               <span className="text-base sm:text-lg font-black text-white font-mono tabular-nums leading-none">
                 {profile.cytes}
               </span>
-              <span className="text-[11px] font-bold text-rose-300 uppercase tracking-wider">Cytes</span>
+              <span className="text-[11px] font-bold text-rose-300 uppercase tracking-wider">{t.cytes}</span>
             </div>
 
             <button
@@ -261,7 +262,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Cepas de Bacteria</span>
+            <span>{t.bacteriaTabTitle}</span>
           </button>
 
           <button
@@ -273,7 +274,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
             }`}
           >
             <Shield className="w-3.5 h-3.5" />
-            <span>Conjuntos / Packs</span>
+            <span>{t.bundlesTabTitle}</span>
           </button>
 
           <button
@@ -285,7 +286,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
             }`}
           >
             <Zap className="w-3.5 h-3.5" />
-            <span>Mejoras con Cytes</span>
+            <span>{t.upgradeTabTitle}</span>
           </button>
 
           <button
@@ -296,7 +297,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
                 : 'bg-white/5 text-neutral-400 hover:text-white'
             }`}
           >
-            Skins de Membrana
+            {t.skinsTabTitle}
           </button>
 
           <button
@@ -307,7 +308,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
                 : 'bg-white/5 text-neutral-400 hover:text-white'
             }`}
           >
-            Estilos de Espora [W]
+            {t.sporesTabTitle}
           </button>
 
           <button
@@ -319,7 +320,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
             }`}
           >
             <Compass className="w-3.5 h-3.5" />
-            <span>Colonias Anatómicas ({conquestPercent}%)</span>
+            <span>{t.colonizedColonies} ({conquestPercent}%)</span>
           </button>
         </div>
 
@@ -367,7 +368,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
                             <h3 className="text-sm font-black text-white truncate">{b.name}</h3>
                             {b.isFreeStarter && (
                               <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider border border-emerald-400/30">
-                                Gratis
+                                {t.freeLabel}
                               </span>
                             )}
                           </div>
@@ -387,15 +388,15 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
                       {/* Stat multipliers */}
                       <div className="grid grid-cols-3 gap-1.5 text-[10px] font-mono text-neutral-400 mb-3 text-center">
                         <div className="p-1 rounded-lg bg-white/5">
-                          <span>Velocidad</span>
+                          <span>{t.statPerkSpeed}</span>
                           <span className="block font-bold text-white">x{b.speedBonus}</span>
                         </div>
                         <div className="p-1 rounded-lg bg-white/5">
-                          <span>Blindaje</span>
+                          <span>{t.statPerkArmor}</span>
                           <span className="block font-bold text-white">x{b.armorBonus}</span>
                         </div>
                         <div className="p-1 rounded-lg bg-white/5">
-                          <span>Conquista</span>
+                          <span>{t.statPerkConquest}</span>
                           <span className="block font-bold text-white">x{b.conquestCytesMultiplier}</span>
                         </div>
                       </div>
@@ -415,14 +416,14 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
                       {isSelected ? (
                         <>
                           <Check className="w-3.5 h-3.5" />
-                          <span>Equipada Actualmente</span>
+                          <span>{t.currentlyEquipped}</span>
                         </>
                       ) : isUnlocked ? (
-                        <span>Equipar Esta Cepa</span>
+                        <span>{t.equipThisStrain}</span>
                       ) : (
                         <>
                           <CyteCoinSvg size={14} />
-                          <span>Desbloquear por {b.priceCytes} Cytes</span>
+                          <span>{t.unlockForCytes} {b.priceCytes} {t.cytes}</span>
                         </>
                       )}
                     </button>
@@ -521,14 +522,14 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
                       {isEquipped ? (
                         <>
                           <Check className="w-4 h-4" />
-                          <span>Conjunto Equipado</span>
+                          <span>{t.bundleEquipped}</span>
                         </>
                       ) : isFullyOwned ? (
-                        <span>Equipar Conjunto</span>
+                        <span>{t.equipBundle}</span>
                       ) : (
                         <>
                           <CyteCoinSvg size={14} />
-                          <span>Adquirir Conjunto ({bundle.priceCytes} Cytes)</span>
+                          <span>{t.acquireBundle} ({bundle.priceCytes} {t.cytes})</span>
                         </>
                       )}
                     </button>
@@ -545,16 +546,16 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
                 <div>
                   <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-1.5">
                     <Zap className="w-4 h-4 text-amber-400" />
-                    <span>Funciones de Mejora Biológica</span>
+                    <span>{t.upgradeFunctionsTitle}</span>
                   </h3>
                   <p className="text-xs text-neutral-300">
-                    Aumentá la atracción de nutrientes, velocidad, resistencia y metabolismo permanente con tus Cytes.
+                    {t.upgradeFunctionsSubtitle}
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="text-[10px] text-neutral-400 block uppercase font-bold">Total Invertido</span>
+                  <span className="text-[10px] text-neutral-400 block uppercase font-bold">{t.totalInvested}</span>
                   <span className="text-xs font-black text-amber-300 font-mono">
-                    {((profile.upgrades?.attraction || 0) + (profile.upgrades?.speed || 0) + (profile.upgrades?.armor || 0) + (profile.upgrades?.metabolism || 0))} / 20 Niveles
+                    {((profile.upgrades?.attraction || 0) + (profile.upgrades?.speed || 0) + (profile.upgrades?.armor || 0) + (profile.upgrades?.metabolism || 0))} / 20 {t.levelsLabel}
                   </span>
                 </div>
               </div>
@@ -614,7 +615,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
                         {isMax ? (
                           <div className="w-full py-2.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5">
                             <Check className="w-4 h-4" />
-                            <span>Nivel Máximo (5/5)</span>
+                            <span>{t.maxLevelReached5}</span>
                           </div>
                         ) : (
                           <button
@@ -628,7 +629,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
                           >
                             <CyteCoinSvg size={14} />
                             <span>
-                              Mejorar a Nivel {currentLvl + 1} ({nextTier?.costCytes} Cytes)
+                              {t.upgradeToLevel} {currentLvl + 1} ({nextTier?.costCytes} {t.cytes})
                             </span>
                           </button>
                         )}
@@ -694,14 +695,14 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
                       {isSelected ? (
                         <>
                           <Check className="w-3.5 h-3.5" />
-                          <span>Equipado</span>
+                          <span>{t.equipped}</span>
                         </>
                       ) : isUnlocked ? (
-                        <span>Equipar</span>
+                        <span>{t.equip}</span>
                       ) : (
                         <>
                           <CyteCoinSvg size={14} />
-                          <span>Desbloquear ({skin.priceCytes} Cytes)</span>
+                          <span>{t.unlock} ({skin.priceCytes} {t.cytes})</span>
                         </>
                       )}
                     </button>
@@ -760,14 +761,14 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
                       {isSelected ? (
                         <>
                           <Check className="w-3.5 h-3.5" />
-                          <span>En Uso</span>
+                          <span>{t.inUse}</span>
                         </>
                       ) : isUnlocked ? (
-                        <span>Equipar</span>
+                        <span>{t.equip}</span>
                       ) : (
                         <>
                           <CyteCoinSvg size={14} />
-                          <span>{spore.priceCytes} Cytes</span>
+                          <span>{spore.priceCytes} {t.cytes}</span>
                         </>
                       )}
                     </button>
@@ -787,16 +788,16 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
                     <Compass className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-white">Dominio del Cuerpo Humano</h3>
+                    <h3 className="text-base font-bold text-white">{t.humanBodyDominance}</h3>
                     <p className="text-xs text-neutral-400">
-                      Alcanzá <strong className="text-emerald-400">100 de Masa</strong> durante una partida para activar el botón de <strong className="text-rose-400">Conquistar Territorio</strong>.
+                      {t.conquerOrganTip}
                     </p>
                   </div>
                 </div>
 
                 <div className="text-right font-mono">
                   <span className="text-2xl font-black text-rose-400">{conqueredCount} / {totalOrgans}</span>
-                  <span className="text-xs text-neutral-400 block font-sans">Órganos Colonizados</span>
+                  <span className="text-xs text-neutral-400 block font-sans">{t.colonizedOrgansLabel}</span>
                 </div>
               </div>
 
@@ -829,19 +830,19 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t 
                         {isConquered ? (
                           <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider flex items-center gap-1 border border-emerald-400/30">
                             <ConqueredFlagSvg size={12} color="#34d399" />
-                            <span>Colonizado</span>
+                            <span>{t.colonizedStatus}</span>
                           </span>
                         ) : (
                           <span className="px-2 py-0.5 rounded-md bg-white/5 text-neutral-400 text-[10px] font-bold">
-                            Sin Conquistar
+                            {t.unconqueredStatus}
                           </span>
                         )}
                       </div>
 
                       <p className="text-xs text-neutral-300 mb-2 leading-relaxed">{organ.description}</p>
                       <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400 pt-2 border-t border-white/5">
-                        <span>Recompensa de Conquista:</span>
-                        <span className="text-emerald-400 font-bold">+80 Cytes & Impulso</span>
+                        <span>{t.conquestRewardLabel}</span>
+                        <span className="text-emerald-400 font-bold">{t.conquestRewardValue}</span>
                       </div>
                     </div>
                   );

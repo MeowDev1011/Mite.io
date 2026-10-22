@@ -22,6 +22,9 @@ import { AchievementToast } from './components/AchievementToast';
 import { ActivePlayersModal } from './components/ActivePlayersModal';
 import { InvitationToast } from './components/InvitationToast';
 import { VirtualJoystick } from './components/VirtualJoystick';
+import { BattleTutorialModal } from './components/BattleTutorialModal';
+import { HomeUpgradesModal } from './components/HomeUpgradesModal';
+import { ShareModal } from './components/ShareModal';
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -56,6 +59,9 @@ export default function App() {
   const [achievementToastId, setAchievementToastId] = useState<string | null>(null);
   const [currentOrgan, setCurrentOrgan] = useState<string>('Corazón (Aorta)');
   const [lastReward, setLastReward] = useState<CytesRewardBreakdown | null>(null);
+  const [showBattleTutorial, setShowBattleTutorial] = useState<boolean>(false);
+  const [showHomeUpgrades, setShowHomeUpgrades] = useState<boolean>(false);
+  const [showShareModal, setShowShareModal] = useState<boolean>(false);
 
   // Entities positions for radar minimap
   const [radarData, setRadarData] = useState<{
@@ -340,6 +346,14 @@ export default function App() {
     }
   }, []);
 
+  const handleReturnToHome = useCallback(() => {
+    soundEngine.stopBGM();
+    if (engineRef.current) {
+      engineRef.current.returnToMenu();
+    }
+    setGameState('TITLE_MENU');
+  }, []);
+
   const handleSplit = useCallback(() => {
     if (engineRef.current) {
       engineRef.current.splitPlayer();
@@ -425,6 +439,9 @@ export default function App() {
           onSelectLanguage={handleSelectLanguage}
           t={t}
           onOpenTutorial={() => setShowTutorial(true)}
+          onOpenBattleTutorial={() => setShowBattleTutorial(true)}
+          onOpenHomeUpgrades={() => setShowHomeUpgrades(true)}
+          onOpenShare={() => setShowShareModal(true)}
           onOpenAchievements={() => setShowAchievements(true)}
           onOpenSkins={() => setShowSkins(true)}
           onOpenShop={() => setShowShop(true)}
@@ -445,6 +462,8 @@ export default function App() {
           onSplit={handleSplit}
           onEject={handleEject}
           onOpenTutorial={() => setShowTutorial(true)}
+          onOpenBattleTutorial={() => setShowBattleTutorial(true)}
+          onOpenShare={() => setShowShareModal(true)}
           onOpenShop={() => setShowShop(true)}
           onConquerTerritory={handleConquerTerritory}
           currentLang={currentLang}
@@ -490,13 +509,16 @@ export default function App() {
         />
       )}
 
-      {/* Game Over Modal */}
+      {/* Game Over Modal with Home and Share Buttons */}
       {gameState === 'GAME_OVER' && (
         <GameOverModal
           stats={stats}
           onRestart={handleRestart}
+          onReturnToHome={handleReturnToHome}
+          t={t}
           rewardBreakdown={lastReward}
           onOpenShop={() => setShowShop(true)}
+          onOpenShare={() => setShowShareModal(true)}
         />
       )}
 
@@ -515,6 +537,32 @@ export default function App() {
         <TutorialModal
           t={t}
           onClose={() => setShowTutorial(false)}
+        />
+      )}
+
+      {/* Battle Mode Dedicated Tutorial Modal */}
+      {showBattleTutorial && (
+        <BattleTutorialModal
+          t={t}
+          onClose={() => setShowBattleTutorial(false)}
+        />
+      )}
+
+      {/* Home Upgrades Modal (Levels up to 1500 for the 5 stats) */}
+      {showHomeUpgrades && (
+        <HomeUpgradesModal
+          t={t}
+          onClose={() => setShowHomeUpgrades(false)}
+        />
+      )}
+
+      {/* Rich Multi-Platform & Device Share Modal */}
+      {showShareModal && (
+        <ShareModal
+          t={t}
+          currentLang={currentLang}
+          stats={stats}
+          onClose={() => setShowShareModal(false)}
         />
       )}
 
@@ -538,6 +586,7 @@ export default function App() {
         <ShopModal
           onClose={() => setShowShop(false)}
           onSkinChanged={handleSkinChanged}
+          t={t}
         />
       )}
 

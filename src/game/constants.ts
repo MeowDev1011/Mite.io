@@ -241,9 +241,9 @@ export const MUTATION_DEFINITIONS: Mutation[] = [
   },
 ];
 
-// Superpowers in the Middle of the Map (15s duration)
-export const SUPERPOWER_DURATION_SEC = 15;
-export const SUPERPOWER_RESPAWN_SEC = 24;
+// Superpowers in the Middle of the Map (10s duration)
+export const SUPERPOWER_DURATION_SEC = 10;
+export const SUPERPOWER_RESPAWN_SEC = 20;
 
 export interface SuperpowerConfig {
   type: SuperpowerType;
@@ -259,7 +259,7 @@ export const SUPERPOWER_DEFS: Record<SuperpowerType, SuperpowerConfig> = {
   magnet_pill: {
     type: 'magnet_pill',
     name: 'Pastilla Hiper-Atracción',
-    desc: 'Mega-imán celular: absorbe nutrientes y proteínas desde enorme distancia por 15s.',
+    desc: 'Mega-imán celular: absorbe nutrientes y proteínas desde enorme distancia por 10s.',
     color: '#06b6d4',
     glowColor: '#22d3ee',
     pillColorA: '#0891b2',
@@ -268,7 +268,7 @@ export const SUPERPOWER_DEFS: Record<SuperpowerType, SuperpowerConfig> = {
   speed_capsule: {
     type: 'speed_capsule',
     name: 'Ampolla de Adrenalina',
-    desc: 'Impulso turbo: +85% de velocidad y fisión acelerada instantánea por 15s.',
+    desc: 'Impulso turbo: +85% de velocidad y fisión acelerada instantánea por 10s.',
     color: '#eab308',
     glowColor: '#facc15',
     pillColorA: '#ca8a04',
@@ -277,7 +277,7 @@ export const SUPERPOWER_DEFS: Record<SuperpowerType, SuperpowerConfig> = {
   shield_capsule: {
     type: 'shield_capsule',
     name: 'Cápsula Escudo Inmune',
-    desc: 'Blindaje plasmático: invulnerable ante anticuerpos y microbios gigantes por 15s.',
+    desc: 'Blindaje plasmático: invulnerable ante anticuerpos y microbios gigantes por 10s.',
     color: '#10b981',
     glowColor: '#34d399',
     pillColorA: '#059669',
@@ -286,7 +286,7 @@ export const SUPERPOWER_DEFS: Record<SuperpowerType, SuperpowerConfig> = {
   toxic_nanobot: {
     type: 'toxic_nanobot',
     name: 'Nanobot Lítico Viral',
-    desc: 'Descarga lítica: pulsos de bio-ácido que debilitan y encogen a los rivales por 15s.',
+    desc: 'Descarga lítica: pulsos de bio-ácido que debilitan y encogen a los rivales por 10s.',
     color: '#ec4899',
     glowColor: '#f472b6',
     pillColorA: '#db2777',

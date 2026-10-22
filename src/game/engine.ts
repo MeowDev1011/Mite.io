@@ -213,12 +213,12 @@ export class GameEngine {
 
   public initSuperpowers() {
     this.superpowers = [
-      // 4 Central Bloodstream Superpowers
+      // 4 Bloodstream Superpowers (Separated into Upper & Lower corridors so they never collide)
       {
         id: 'super_magnet',
         type: 'magnet_pill',
-        x: 0,
-        y: -320,
+        x: -360,
+        y: -460, // Upper Left
         radius: 34,
         color: SUPERPOWER_DEFS.magnet_pill.color,
         glowColor: SUPERPOWER_DEFS.magnet_pill.glowColor,
@@ -231,8 +231,8 @@ export class GameEngine {
       {
         id: 'super_speed',
         type: 'speed_capsule',
-        x: -280,
-        y: 0,
+        x: 360,
+        y: -460, // Upper Right
         radius: 34,
         color: SUPERPOWER_DEFS.speed_capsule.color,
         glowColor: SUPERPOWER_DEFS.speed_capsule.glowColor,
@@ -245,8 +245,8 @@ export class GameEngine {
       {
         id: 'super_shield',
         type: 'shield_capsule',
-        x: 280,
-        y: 0,
+        x: -360,
+        y: 460, // Lower Left
         radius: 34,
         color: SUPERPOWER_DEFS.shield_capsule.color,
         glowColor: SUPERPOWER_DEFS.shield_capsule.glowColor,
@@ -259,8 +259,8 @@ export class GameEngine {
       {
         id: 'super_toxic',
         type: 'toxic_nanobot',
-        x: 0,
-        y: 320,
+        x: 360,
+        y: 460, // Lower Right
         radius: 34,
         color: SUPERPOWER_DEFS.toxic_nanobot.color,
         glowColor: SUPERPOWER_DEFS.toxic_nanobot.glowColor,
@@ -1504,6 +1504,8 @@ export class GameEngine {
 
     for (const other of candidates) {
       if (other.id === bot.id || !other.isAlive) continue;
+      if (this.gameMode === 'team' && other.faction === bot.faction) continue;
+
       for (const op of other.pieces) {
         for (const bp of bot.pieces) {
           const dist = Math.hypot(op.x - bp.x, op.y - bp.y);
@@ -1531,6 +1533,8 @@ export class GameEngine {
 
       for (const other of candidates) {
         if (other.id === bot.id || !other.isAlive) continue;
+        if (this.gameMode === 'team' && other.faction === bot.faction) continue;
+
         for (const op of other.pieces) {
           for (const bp of bot.pieces) {
             const dist = Math.hypot(op.x - bp.x, op.y - bp.y);
@@ -1962,24 +1966,41 @@ export class GameEngine {
     if (this.onStateChange) this.onStateChange('GAME_OVER');
   }
 
-  // Smooth camera tracking
+  // Smooth camera tracking with Grand Panoramic field of view
   private updateCamera(dt: number) {
-    if (!this.player || this.player.pieces.length === 0) return;
+    let targetX = this.cameraX;
+    let targetY = this.cameraY;
+    let totalMass = 20;
 
-    const centroid = this.calculateCentroid(this.player);
-    const totalMass = this.calculateTotalMass(this.player);
+    if (this.player && this.player.isAlive && this.player.pieces.length > 0) {
+      const centroid = this.calculateCentroid(this.player);
+      targetX = centroid.x;
+      targetY = centroid.y;
+      totalMass = this.calculateTotalMass(this.player);
 
-    if (totalMass > this.peakMass) {
-      this.peakMass = totalMass;
+      if (totalMass > this.peakMass) {
+        this.peakMass = totalMass;
+      }
+    } else {
+      // If player died, spectate the largest organism in the match or stay smooth
+      const aliveOrgs = [...this.bots].filter((b) => b.isAlive && b.pieces.length > 0);
+      if (aliveOrgs.length > 0) {
+        aliveOrgs.sort((a, b) => this.calculateTotalMass(b) - this.calculateTotalMass(a));
+        const leader = aliveOrgs[0];
+        const centroid = this.calculateCentroid(leader);
+        targetX = centroid.x;
+        targetY = centroid.y;
+        totalMass = this.calculateTotalMass(leader);
+      }
     }
 
-    // Dynamic zoom: scale out smoothly as player grows so they always see their surroundings
-    const targetZoom = Math.max(0.48, Math.min(1.15, 1.05 - Math.log10(Math.max(10, totalMass) / 10) * 0.28));
+    // Dynamic zoom: scale out smoothly as cell grows to provide an expansive, grand panorama
+    const targetZoom = Math.max(0.24, Math.min(0.96, 0.92 - Math.log10(Math.max(15, totalMass) / 15) * 0.26));
     this.cameraZoom += (targetZoom - this.cameraZoom) * Math.min(1, dt * 3);
 
     // Smooth camera lerp
-    this.cameraX += (centroid.x - this.cameraX) * Math.min(1, dt * 6);
-    this.cameraY += (centroid.y - this.cameraY) * Math.min(1, dt * 6);
+    this.cameraX += (targetX - this.cameraX) * Math.min(1, dt * 5);
+    this.cameraY += (targetY - this.cameraY) * Math.min(1, dt * 5);
 
     // Check Evolution Milestones (100, 250, 500, 1000 mass)
     if (totalMass >= this.nextMilestone && this.nextMilestone <= 1000) {
@@ -2770,7 +2791,7 @@ export class GameEngine {
                 soundEngine.playLevelUp();
                 this.screenShake = 12;
                 this.addFloatingText(sp.x, sp.y - 45, `¡${sp.name.toUpperCase()}!`, sp.color);
-                this.addFloatingText(sp.x, sp.y - 20, '+15 SEGUNDOS DE SUPERPODER', '#ffffff');
+                this.addFloatingText(sp.x, sp.y - 20, '+10 SEGUNDOS DE SUPERPODER', '#ffffff');
               } else {
                 this.addFloatingText(sp.x, sp.y - 30, `¡${org.name} tomó ${sp.name}!`, sp.color);
               }
@@ -3455,11 +3476,13 @@ export class GameEngine {
       ctx.fillStyle = '#fde047';
       ctx.fillText(Math.round(piece.mass).toString(), 0, fontSize * 0.9);
 
-      // 5. Royal Crown floating above leader cell
+      // 5. Royal Crown floating above leader cell (Grand scaled crown for the biggest microbe)
       if (org.hasCrown && piece === org.pieces[0]) {
-        const crownY = -piece.radius - 22 + Math.sin(performance.now() * 0.0035) * 4;
+        const crownScale = Math.max(1.15, Math.min(2.5, piece.radius / 30));
+        const crownY = -piece.radius - (22 * crownScale) + Math.sin(performance.now() * 0.0035) * 4;
         ctx.save();
         ctx.translate(0, crownY);
+        ctx.scale(crownScale, crownScale);
 
         let crownGlow = '#f59e0b';
         let crownFill = '#fbbf24';

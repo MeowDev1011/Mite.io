@@ -3,13 +3,13 @@ import { RotateCcw, Skull, Award, Clock, Heart, Sparkles, Swords, Droplets, Home
 import { GameStats } from '../game/types';
 import { profileStorage, CytesRewardBreakdown } from '../storage/profileStorage';
 import { CyteCoinSvg } from './BioSvgIcons';
-import { TranslationStrings } from '../i18n/languages';
+import { TranslationStrings, getTranslations } from '../i18n/languages';
 
 interface GameOverModalProps {
   stats: GameStats | null;
   onRestart: () => void;
   onReturnToHome: () => void;
-  t: TranslationStrings;
+  t?: TranslationStrings;
   rewardBreakdown?: CytesRewardBreakdown | null;
   onOpenShop?: () => void;
   onOpenShare?: () => void;
@@ -19,11 +19,12 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   stats,
   onRestart,
   onReturnToHome,
-  t,
+  t: propT,
   rewardBreakdown,
   onOpenShop,
   onOpenShare,
 }) => {
+  const t = propT || getTranslations('es');
   const profile = profileStorage.getProfile();
 
   const formatTime = (seconds: number) => {

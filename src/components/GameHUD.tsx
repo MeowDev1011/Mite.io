@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Volume2, VolumeX, Pause, ShieldAlert, Sparkles, Award, BookOpen, Globe, ShoppingBag, MapPin, Crown, Flag, Compass, Zap, ChevronDown, ChevronUp, Map, Eye, EyeOff, HeartPulse, Thermometer, Droplets, Flame, HelpCircle, Share2, X } from 'lucide-react';
+import { Volume2, VolumeX, Pause, ShieldAlert, Sparkles, Award, BookOpen, Globe, ShoppingBag, MapPin, Crown, Flag, Compass, Zap, ChevronDown, ChevronUp, Map, Eye, EyeOff, HeartPulse, Thermometer, Droplets, Flame, HelpCircle, Share2, X, Clock } from 'lucide-react';
 import { GameStats, LeaderboardEntry } from '../game/types';
 import { SECRET_ZONE_X, SECRET_ZONE_Y, ANATOMICAL_ORGANS } from '../game/constants';
 import { TranslationStrings, SUPPORTED_LANGUAGES } from '../i18n/languages';
@@ -79,6 +79,12 @@ export const GameHUD: React.FC<GameHUDProps> = ({
 
   const hostStatus = stats?.hostStatus;
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
   return (
     <div className="absolute inset-0 pointer-events-none p-2 sm:p-5 flex flex-col justify-between select-none z-10 font-sans">
       {/* Top Section: Team Battle Dominance Bar (if in team mode) */}
@@ -87,10 +93,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-black uppercase tracking-wider mb-1 px-1">
             <span className="flex items-center gap-1.5 text-cyan-300">
               <Crown className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Defensores / Inmune ({immuneScore}%)</span>
+              <span>{t.immuneDefenders} ({immuneScore}%)</span>
             </span>
             <span className="flex items-center gap-1.5 text-rose-300">
-              <span>Infección / Patógenos ({pathogenScore}%)</span>
+              <span>{t.pathogenInfection} ({pathogenScore}%)</span>
               <Crown className="w-3.5 h-3.5 text-rose-400" />
             </span>
           </div>
@@ -166,13 +172,13 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             <button
               onClick={onConquerTerritory}
               className="mt-1 flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-neutral-950 font-black text-xs sm:text-sm uppercase tracking-wider shadow-[0_0_30px_rgba(16,185,129,0.8)] border border-emerald-300 animate-pulse transition-all transform active:scale-95 cursor-pointer pointer-events-auto"
-              title="Conquistar Territorio Actual"
+              title={t.conquerDesc}
             >
               <Flag className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current text-neutral-950" />
               <div className="flex flex-col text-left leading-tight">
                 <span>{t.conquerBtn}</span>
                 <span className="text-[9px] text-neutral-900 font-mono font-bold lowercase">
-                  (+80 cytes e impulso)
+                  {t.conquerExtraCytes}
                 </span>
               </div>
             </button>
@@ -279,43 +285,52 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           )}
         </div>
 
-        {/* Center Alert: Antibody Detection Warning */}
-        {antibodyAlert && (
-          <div className="animate-bounce flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-2xl bg-rose-600/90 text-white font-bold text-xs sm:text-sm border border-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.7)] pointer-events-auto">
-            <ShieldAlert className="w-4 h-4 shrink-0" />
-            <span className="truncate max-w-[200px] sm:max-w-md">{t.antibodyWarning}</span>
+        {/* Center Top Dashboard: Survival Timer, Superpower Countdown, Antibody Warning */}
+        <div className="flex flex-col items-center gap-1.5 pointer-events-auto shrink-0 mx-auto">
+          {/* Match Survival Time Counter */}
+          <div className="flex items-center gap-1.5 px-3.5 py-1 sm:py-1.5 rounded-xl bg-black/80 border border-white/15 backdrop-blur-md text-white font-mono text-xs sm:text-sm font-bold shadow-lg">
+            <Clock className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="tracking-wider">{formatTime(stats?.timeAliveSec || 0)}</span>
           </div>
-        )}
 
-        {/* Active Superpower Pill */}
-        {stats?.activeSuperpower && (
-          <div className="flex flex-col items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl bg-black/85 border border-cyan-400/70 shadow-[0_0_25px_rgba(6,182,212,0.45)] backdrop-blur-md animate-pulse pointer-events-auto max-w-[220px] sm:max-w-xs">
-            <div className="flex items-center gap-1.5">
-              <span
-                className="w-2 h-2 rounded-full animate-ping shrink-0"
-                style={{ backgroundColor: stats.activeSuperpower.color }}
-              />
-              <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-white truncate">
-                {stats.activeSuperpower.name}
-              </span>
-              <span
-                className="text-[10px] sm:text-xs font-mono font-black px-1.5 py-0.2 rounded-md text-neutral-950 shrink-0"
-                style={{ backgroundColor: stats.activeSuperpower.color }}
-              >
-                {Math.max(0, stats.activeSuperpower.remainingTime).toFixed(1)}s
-              </span>
+          {/* Active Superpower Pill */}
+          {stats?.activeSuperpower && (
+            <div className="flex flex-col items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl bg-black/85 border border-cyan-400/70 shadow-[0_0_25px_rgba(6,182,212,0.45)] backdrop-blur-md animate-pulse max-w-[220px] sm:max-w-xs">
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="w-2 h-2 rounded-full animate-ping shrink-0"
+                  style={{ backgroundColor: stats.activeSuperpower.color }}
+                />
+                <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-white truncate">
+                  {stats.activeSuperpower.name}
+                </span>
+                <span
+                  className="text-[10px] sm:text-xs font-mono font-black px-1.5 py-0.2 rounded-md text-neutral-950 shrink-0"
+                  style={{ backgroundColor: stats.activeSuperpower.color }}
+                >
+                  {Math.max(0, stats.activeSuperpower.remainingTime).toFixed(1)}s
+                </span>
+              </div>
+              <div className="w-full h-1 rounded-full bg-white/10 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-100"
+                  style={{
+                    width: `${Math.max(0, Math.min(100, (stats.activeSuperpower.remainingTime / stats.activeSuperpower.totalDuration) * 100))}%`,
+                    backgroundColor: stats.activeSuperpower.color,
+                  }}
+                />
+              </div>
             </div>
-            <div className="w-full h-1 rounded-full bg-white/10 overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-100"
-                style={{
-                  width: `${Math.max(0, Math.min(100, (stats.activeSuperpower.remainingTime / stats.activeSuperpower.totalDuration) * 100))}%`,
-                  backgroundColor: stats.activeSuperpower.color,
-                }}
-              />
+          )}
+
+          {/* Center Alert: Antibody Detection Warning */}
+          {antibodyAlert && (
+            <div className="animate-bounce flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-2xl bg-rose-600/90 text-white font-bold text-xs sm:text-sm border border-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.7)]">
+              <ShieldAlert className="w-4 h-4 shrink-0" />
+              <span className="truncate max-w-[200px] sm:max-w-md">{t.antibodyWarning}</span>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Right: Quick Controls, Language & Leaderboard */}
         <div className="flex flex-col items-end gap-1.5 sm:gap-2 pointer-events-auto">
@@ -390,11 +405,11 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             <div
               onClick={() => setIsLeaderboardOpen(!isLeaderboardOpen)}
               className="flex items-center justify-between pb-1 mb-1 border-b border-white/10 font-bold text-neutral-300 cursor-pointer select-none"
-              title="Plegar / Desplegar Tabla"
+              title={t.foldTable}
             >
               <span className="flex items-center gap-1.5 text-[10px] sm:text-xs truncate">
-                <Crown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 shrink-0" />
-                <span>{isTeamMode ? 'Líderes de Bando' : t.leadersTitle}</span>
+                <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
+                <span>{isTeamMode ? t.leaderboardFaction : t.leadersTitle}</span>
               </span>
               <div className="flex items-center gap-1 shrink-0">
                 {isLeaderboardOpen ? (
@@ -446,8 +461,8 @@ export const GameHUD: React.FC<GameHUDProps> = ({
       </div>
 
       {/* Floating Anatomical Dual Body Radar */}
-      {/* Positioned cleanly on bottom-left, compact on mobile, collapsible */}
-      <div className="fixed bottom-32 sm:bottom-40 left-3 sm:left-6 z-30 pointer-events-auto flex flex-col items-start gap-1">
+      {/* Positioned cleanly on upper-left below mass pill, compact on mobile, collapsible */}
+      <div className="fixed top-28 sm:top-36 left-3 sm:left-6 z-30 pointer-events-auto flex flex-col items-start gap-1">
         {/* Toggle / Minimize Button */}
         <button
           onClick={() => setIsRadarOpen(!isRadarOpen)}
@@ -515,10 +530,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
 
                 {/* Dual Body Labels */}
                 <text x={mapWidth * 0.28} y={mapHeight - 3} textAnchor="middle" fill="#fca5a5" fontSize="6.5" fontWeight="bold">
-                  ANT
+                  {t.anteriorLabel}
                 </text>
                 <text x={mapWidth * 0.72} y={mapHeight - 3} textAnchor="middle" fill="#c4b5fd" fontSize="6.5" fontWeight="bold">
-                  POST
+                  {t.posteriorLabel}
                 </text>
               </svg>
 
@@ -550,7 +565,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   left: `${mapCenterX + SECRET_ZONE_X * mapScaleX}px`,
                   top: `${mapCenterY + SECRET_ZONE_Y * mapScaleY}px`,
                 }}
-                title="Cripta Linfática Oculta"
+                title={t.hiddenCrypt}
               />
 
               {/* Other Microbes */}
@@ -598,7 +613,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           <button
             onClick={onEject}
             className="flex flex-col items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-amber-500/20 hover:bg-amber-500/35 active:scale-95 border border-amber-400/50 text-amber-200 backdrop-blur-md shadow-[0_0_15px_rgba(245,158,11,0.25)] transition-all cursor-pointer"
-            title="Eyectar Esporas [W]"
+            title={t.ejectSporeHint}
           >
             <span className="text-sm sm:text-base font-black leading-none tracking-wide">{t.ejectBtn}</span>
             <span className="text-[10px] text-amber-200/80 font-mono mt-0.5">[W]</span>
@@ -608,7 +623,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
           <button
             onClick={onSplit}
             className="flex flex-col items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-tr from-emerald-600/30 to-teal-500/40 hover:from-emerald-500/45 hover:to-teal-400/50 active:scale-95 border border-emerald-400/60 text-emerald-200 backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all cursor-pointer"
-            title="Dividirse en dos [ESPACIO]"
+            title={t.splitTwoHint}
           >
             <span className="text-base sm:text-xl font-black leading-none tracking-wide">{t.splitBtn}</span>
             <span className="text-[10px] text-emerald-200 font-mono mt-0.5">[ESPACIO]</span>

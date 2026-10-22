@@ -38,7 +38,7 @@ export const HomeUpgradesModal: React.FC<HomeUpgradesModalProps> = ({ onClose, t
       setProfile(profileStorage.getProfile());
       soundEngine.playLevelUp();
       if (onUpgraded) onUpgraded();
-      setFeedbackMsg(`¡${res.actualCount || 1} nivel(es) mejorado(s)! Nivel actual: ${res.newLevel} / 1500`);
+      setFeedbackMsg(`+${res.actualCount || 1} ${t.upgradeSuccessLevel} ${res.newLevel} / ${UPGRADE_MAX_LEVEL}`);
       setTimeout(() => setFeedbackMsg(null), 3000);
     } else {
       setFeedbackMsg(res.error || t.insufficientCytes);
@@ -75,7 +75,7 @@ export const HomeUpgradesModal: React.FC<HomeUpgradesModalProps> = ({ onClose, t
           <line x1="28" y1="20" x2="28" y2="36" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="2 2" />
         </svg>
       ),
-      getEffect: (lvl) => (lvl === 0 ? 'Fisión base' : `+${(Math.log10(1 + lvl) * 45).toFixed(0)}% Alcance de Esporas & Mitosis`),
+      getEffect: (lvl) => (lvl === 0 ? t.sporesRangeBase : `+${(Math.log10(1 + lvl) * 45).toFixed(0)}${t.sporesRangeBonus}`),
     },
     {
       key: 'speed',
@@ -92,7 +92,7 @@ export const HomeUpgradesModal: React.FC<HomeUpgradesModalProps> = ({ onClose, t
           <path d="M12 28 Q18 36 24 38" stroke="#fef08a" strokeWidth="2" fill="none" strokeDasharray="2 2" />
         </svg>
       ),
-      getEffect: (lvl) => (lvl === 0 ? 'Velocidad base' : `+${(Math.log10(1 + lvl) * 48).toFixed(0)}% Aceleración en Plasma`),
+      getEffect: (lvl) => (lvl === 0 ? t.speedBase : `+${(Math.log10(1 + lvl) * 48).toFixed(0)}${t.speedBonusLabel}`),
     },
     {
       key: 'attraction',
@@ -115,7 +115,7 @@ export const HomeUpgradesModal: React.FC<HomeUpgradesModalProps> = ({ onClose, t
           <circle cx="34" cy="45" r="2" fill="#67e8f9" />
         </svg>
       ),
-      getEffect: (lvl) => (lvl === 0 ? 'Succión base' : `+${(Math.min(750, lvl * 1.5 + Math.sqrt(lvl) * 12)).toFixed(0)}px Radio Gravitacional`),
+      getEffect: (lvl) => (lvl === 0 ? t.attractionBase : `+${(Math.min(750, lvl * 1.5 + Math.sqrt(lvl) * 12)).toFixed(0)}${t.attractionBonusLabel}`),
     },
     {
       key: 'armor',
@@ -126,13 +126,13 @@ export const HomeUpgradesModal: React.FC<HomeUpgradesModalProps> = ({ onClose, t
       bgGrad: 'from-emerald-950/40 via-neutral-900 to-emerald-950/30',
       icon: <Shield className="w-5 h-5 text-emerald-400" />,
       svgGraphic: (
-        <svg width="56" height="56" viewBox="0 0 56 56" className="shrink-0 drop-shadow-[0_0_10px_rgba(16,185,129,0.4)]">
+        <svg width="56" height="56" viewBox="0 0 56 56" className="shrink-0 drop-shadow-[0_0_10px_rgba(168,85,129,0.4)]">
           <circle cx="28" cy="28" r="24" fill="#064e3b" fillOpacity="0.4" stroke="#10b981" strokeWidth="2" />
           <path d="M28 12 L40 18 V28 C40 37 34 43 28 46 C22 43 16 37 16 28 V18 Z" fill="#059669" stroke="#34d399" strokeWidth="2" />
           <circle cx="28" cy="28" r="5" fill="#a7f3d0" />
         </svg>
       ),
-      getEffect: (lvl) => (lvl === 0 ? 'Sin blindaje' : `-${(Math.min(0.85, 1.0 - 1.0 / (1.0 + lvl * 0.008)) * 100).toFixed(0)}% Daño de Anticuerpos`),
+      getEffect: (lvl) => (lvl === 0 ? t.armorBase : `-${(Math.min(0.85, 1.0 - 1.0 / (1.0 + lvl * 0.008)) * 100).toFixed(0)}${t.armorBonusLabel}`),
     },
     {
       key: 'metabolism',
@@ -149,7 +149,7 @@ export const HomeUpgradesModal: React.FC<HomeUpgradesModalProps> = ({ onClose, t
           <path d="M28 24 Q32 28 32 34 A4 4 0 0 1 24 34 Q24 28 28 24 Z" fill="#fef08a" />
         </svg>
       ),
-      getEffect: (lvl) => (lvl === 0 ? 'Metabolismo estándar' : `+${(Math.log10(1 + lvl) * 55).toFixed(0)}% Masa por Eritrocito`),
+      getEffect: (lvl) => (lvl === 0 ? t.metabolismBase : `+${(Math.log10(1 + lvl) * 55).toFixed(0)}${t.metabolismBonusLabel}`),
     },
   ];
 
@@ -202,7 +202,7 @@ export const HomeUpgradesModal: React.FC<HomeUpgradesModalProps> = ({ onClose, t
         <div className="py-2.5 px-3 rounded-2xl bg-white/5 border border-white/10 my-2 flex items-center justify-between gap-2 shrink-0 flex-wrap">
           <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-300">
             <Info className="w-3.5 h-3.5 text-purple-400" />
-            <span>Modo de Compra Rápida:</span>
+            <span>{t.quickBuyMode}</span>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
             {[1, 10, 50, 100].map((num) => (
@@ -264,7 +264,7 @@ export const HomeUpgradesModal: React.FC<HomeUpgradesModalProps> = ({ onClose, t
                           backgroundColor: `${item.color}15`,
                         }}
                       >
-                        Nivel {currentLvl} / {UPGRADE_MAX_LEVEL}
+                        {t.upgradeLevelLabel} {currentLvl} / {UPGRADE_MAX_LEVEL}
                       </span>
                     </div>
                     <p className="text-xs text-neutral-300 leading-tight line-clamp-2 max-w-md">
@@ -283,7 +283,7 @@ export const HomeUpgradesModal: React.FC<HomeUpgradesModalProps> = ({ onClose, t
                   {/* Progress bar */}
                   <div className="w-full space-y-1">
                     <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400">
-                      <span>Progreso Biológico</span>
+                      <span>{t.bioProgressLabel}</span>
                       <span>{progressPercent.toFixed(1)}%</span>
                     </div>
                     <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
@@ -316,7 +316,7 @@ export const HomeUpgradesModal: React.FC<HomeUpgradesModalProps> = ({ onClose, t
                     >
                       <ChevronUp className="w-3.5 h-3.5" />
                       <span>
-                        +{costData.actualCount} Nvl ({costData.totalCost} Cytes)
+                        +{costData.actualCount} {t.levelsLabel} ({costData.totalCost} {t.cytes})
                       </span>
                     </button>
                   )}

@@ -1,0 +1,32 @@
+{
+  "id": "/",
+  "name": "Mite.io - Bloodstream Invasion",
+  "short_name": "Mite.io",
+  "description": "Real-time action and cellular evolution game inside the bloodstream. Devour nutrients, divide to hunt, and dodge patrol antibodies.",
+  "theme_color": "#080204",
+  "background_color": "#080204",
+  "display": "standalone",
+  "orientation": "any",
+  "start_url": "/",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
