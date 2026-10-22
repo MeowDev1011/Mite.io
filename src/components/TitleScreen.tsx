@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Volume2, VolumeX, Play, ShieldAlert, Zap, Dna, BookOpen, Award, Palette, Globe, Smartphone, Monitor, Tablet, Users, Shield, Skull, Crown, Download, Check, Share2, Sparkles, X } from 'lucide-react';
+import { Volume2, VolumeX, Play, ShieldAlert, Zap, Dna, BookOpen, Award, Palette, Globe, Smartphone, Monitor, Tablet, Users, Shield, Skull, Crown, Download, Check, Share2, Sparkles, X, Flag } from 'lucide-react';
 import { SUPPORTED_LANGUAGES, TranslationStrings } from '../i18n/languages';
 import { profileStorage, getDefaultLocalizedName } from '../storage/profileStorage';
 import { BACTERIA_STRAINS, BacteriaStrain } from '../game/bacteria';
 import { GameMode, Faction } from '../game/types';
 import { BacteriaIllustrationSvg, CyteCoinSvg } from './BioSvgIcons';
 import { InsufficientPlayersModal } from './InsufficientPlayersModal';
+import { DevBadge } from './DevBadge';
 
 interface TitleScreenProps {
   onStartGame: (name: string, mode: GameMode, faction: Faction, humansOnly: boolean) => void;
@@ -22,6 +23,8 @@ interface TitleScreenProps {
   onOpenBattleTutorial?: () => void;
   onOpenShare?: () => void;
   onOpenActivePlayers?: () => void;
+  onOpenReport?: () => void;
+  onOpenDevPanel?: () => void;
   activePlayerCount?: number;
 }
 
@@ -40,6 +43,8 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   onOpenBattleTutorial,
   onOpenShare,
   onOpenActivePlayers,
+  onOpenReport,
+  onOpenDevPanel,
   activePlayerCount = 9,
 }) => {
   const [profile, setProfile] = useState(() => profileStorage.getProfile());
@@ -183,6 +188,23 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             </span>
             <span className="text-[10px] uppercase font-bold text-rose-300">Cytes</span>
           </button>
+
+          {/* User Report Button */}
+          {onOpenReport && (
+            <button
+              onClick={onOpenReport}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-950/70 hover:bg-rose-900 border border-rose-500/40 text-rose-200 transition-all cursor-pointer backdrop-blur-sm text-xs font-bold"
+              title={t.reportBtn}
+            >
+              <Flag className="w-3.5 h-3.5 text-rose-400" />
+              <span className="hidden sm:inline">{t.reportBtn}</span>
+            </button>
+          )}
+
+          {/* Dev Badge / Admin Center button */}
+          {onOpenDevPanel && (
+            <DevBadge onClick={onOpenDevPanel} size="md" />
+          )}
 
           {/* Languages Selector */}
           <div className="relative flex items-center bg-white/10 hover:bg-white/15 border border-white/15 rounded-xl px-2 py-1 text-xs text-white backdrop-blur-sm">
@@ -484,16 +506,22 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           </button>
         </div>
 
-        {/* Name Input & Play Form */}
+        {/* Name Input & Play Form with Official DEV Oval Badge */}
         <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-center gap-2.5 w-full max-w-md">
-          <input
-            type="text"
-            value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
-            maxLength={16}
-            placeholder={t.inputPlaceholder}
-            className="w-full px-4 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 font-medium text-center sm:text-left transition-all"
-          />
+          <div className="relative flex-1 w-full">
+            <input
+              type="text"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              maxLength={16}
+              placeholder={t.inputPlaceholder}
+              className="w-full pl-4 pr-24 py-3 rounded-2xl bg-white/10 border border-white/20 text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 font-medium text-center sm:text-left transition-all"
+            />
+            {/* First user customizable DEV oval badge right beside the player's name */}
+            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center">
+              <DevBadge onClick={onOpenDevPanel} size="sm" />
+            </div>
+          </div>
           <button
             type="submit"
             className="w-full sm:w-auto px-7 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-neutral-950 font-black text-sm tracking-wide uppercase flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all transform active:scale-95 cursor-pointer whitespace-nowrap"

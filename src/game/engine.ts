@@ -2118,6 +2118,48 @@ export class GameEngine {
     }
   }
 
+  public getKingData(): { x: number; y: number; isPlayer: boolean; mass: number } | null {
+    const all = this.player && this.player.isAlive ? [this.player, ...this.bots] : [...this.bots];
+    const sorted = all
+      .filter((o) => o.isAlive && o.pieces.length > 0)
+      .sort((a, b) => this.calculateTotalMass(b) - this.calculateTotalMass(a));
+    if (sorted.length === 0) return null;
+    const king = sorted[0];
+    const kingPiece = king.pieces[0];
+    return {
+      x: kingPiece.x,
+      y: kingPiece.y,
+      isPlayer: king.isPlayer,
+      mass: Math.round(this.calculateTotalMass(king)),
+    };
+  }
+
+  public getNearbyMicrobes(limit: number = 6): { x: number; y: number; mass: number; isLarger: boolean }[] {
+    if (!this.player || !this.player.isAlive || this.player.pieces.length === 0) return [];
+    const playerCentroid = this.calculateCentroid(this.player);
+    const playerMass = this.calculateTotalMass(this.player);
+
+    const results: { x: number; y: number; mass: number; isLarger: boolean; dist: number }[] = [];
+    for (const bot of this.bots) {
+      if (!bot.isAlive || bot.pieces.length === 0) continue;
+      const botPiece = bot.pieces[0];
+      const dist = Math.hypot(botPiece.x - playerCentroid.x, botPiece.y - playerCentroid.y);
+      if (dist > 350 && dist < 2500) {
+        const bMass = this.calculateTotalMass(bot);
+        results.push({
+          x: botPiece.x,
+          y: botPiece.y,
+          mass: bMass,
+          isLarger: bMass > playerMass,
+          dist,
+        });
+      }
+    }
+
+    results.sort((a, b) => a.dist - b.dist);
+    return results.slice(0, limit);
+  }
+
   // ================= RENDER PASS =================
   public render() {
     const { ctx, canvas } = this;

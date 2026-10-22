@@ -209,7 +209,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
 
       ctx.fillStyle = '#38bdf8';
       ctx.font = '900 22px sans-serif';
-      const name = profile.nickname || 'Unknown Cell';
+      const name = profile.name || 'Unknown Cell';
       ctx.fillText(name.slice(0, 18), 65, 178);
 
       ctx.fillStyle = '#94a3b8';
@@ -218,7 +218,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
 
       ctx.fillStyle = '#34d399';
       ctx.font = '700 15px sans-serif';
-      ctx.fillText(profile.bacteriaType.toUpperCase(), 65, 235);
+      ctx.fillText((profile.selectedBacteriaId || 'bacillus_subtilis').toUpperCase(), 65, 235);
 
       ctx.fillStyle = '#94a3b8';
       ctx.font = '600 12px sans-serif';
@@ -242,7 +242,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
       const dataUrl = canvas.toDataURL('image/png');
       const a = document.createElement('a');
       a.href = dataUrl;
-      a.download = `mite-io-bio-card-${profile.nickname || 'cell'}.png`;
+      a.download = `mite-io-bio-card-${profile.name || 'cell'}.png`;
       a.click();
 
       setCardDownloaded(true);

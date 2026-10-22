@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Volume2, VolumeX, Pause, ShieldAlert, Sparkles, Award, BookOpen, Globe, ShoppingBag, MapPin, Crown, Flag, Compass, Zap, ChevronDown, ChevronUp, Map, Eye, EyeOff, HeartPulse, Thermometer, Droplets, Flame, HelpCircle, Share2, X, Clock } from 'lucide-react';
+import { Volume2, VolumeX, Pause, Shield, ShieldAlert, Sparkles, Award, BookOpen, Globe, ShoppingBag, MapPin, Crown, Flag, Compass, Zap, ChevronDown, ChevronUp, Map, Eye, EyeOff, HeartPulse, Thermometer, Droplets, Flame, HelpCircle, Share2, X, Clock } from 'lucide-react';
 import { GameStats, LeaderboardEntry } from '../game/types';
 import { SECRET_ZONE_X, SECRET_ZONE_Y, ANATOMICAL_ORGANS } from '../game/constants';
 import { TranslationStrings, SUPPORTED_LANGUAGES } from '../i18n/languages';
@@ -19,6 +19,8 @@ interface GameHUDProps {
   onConquerTerritory?: () => void;
   onOpenBattleTutorial?: () => void;
   onOpenShare?: () => void;
+  onOpenReport?: () => void;
+  onOpenDevPanel?: () => void;
   currentLang: string;
   onSelectLanguage: (lang: string) => void;
   t: TranslationStrings;
@@ -26,7 +28,9 @@ interface GameHUDProps {
   cytesBalance?: number;
   playerPos?: { x: number; y: number };
   antibodies?: { x: number; y: number; alert: number }[];
-  otherMicrobes?: { x: number; y: number; isBig: boolean }[];
+  otherMicrobes?: { x: number; y: number; isBig: boolean; isKing?: boolean }[];
+  kingPos?: { x: number; y: number; isPlayer: boolean; mass: number } | null;
+  nearbyMicrobes?: { x: number; y: number; mass: number; isLarger: boolean }[];
 }
 
 export const GameHUD: React.FC<GameHUDProps> = ({
@@ -43,6 +47,8 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   onConquerTerritory,
   onOpenBattleTutorial,
   onOpenShare,
+  onOpenReport,
+  onOpenDevPanel,
   currentLang,
   onSelectLanguage,
   t,
@@ -51,6 +57,8 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   playerPos = { x: 0, y: 0 },
   antibodies = [],
   otherMicrobes = [],
+  kingPos = null,
+  nearbyMicrobes = [],
 }) => {
   // Mobile responsiveness check
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
@@ -293,6 +301,51 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             <span className="tracking-wider">{formatTime(stats?.timeAliveSec || 0)}</span>
           </div>
 
+          {/* RED CIRCLE KING TRACKER with Crown and Distance in Meters */}
+          {kingPos && (
+            <div className="pointer-events-auto flex items-center justify-center animate-fade-in my-0.5">
+              {kingPos.isPlayer ? (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-950/90 border-2 border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.7)] backdrop-blur-md">
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-rose-600 to-amber-500 border border-amber-300 flex items-center justify-center shadow-md shrink-0">
+                    <Crown className="w-3.5 h-3.5 text-amber-200 animate-bounce" />
+                  </div>
+                  <span className="text-[10px] sm:text-xs font-black text-rose-200 uppercase tracking-wider">
+                    {t.youAreTheKing}
+                  </span>
+                </div>
+              ) : (
+                <div
+                  className="flex items-center gap-2 px-3 py-1 sm:py-1.5 rounded-full bg-neutral-950/90 border-2 border-rose-500/90 shadow-[0_0_25px_rgba(244,63,94,0.65)] backdrop-blur-md transition-all hover:scale-105 cursor-pointer"
+                  title={t.trackKingHint}
+                >
+                  {/* Glowing Red Circle with Golden Crown & Direction Pointer */}
+                  <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-rose-700 via-red-600 to-rose-500 border border-rose-300 flex items-center justify-center shadow-[0_0_12px_#f43f5e] shrink-0">
+                    <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300 drop-shadow-[0_0_4px_#fbbf24]" />
+                    {/* Rotating direction pointer arrow */}
+                    <div
+                      className="absolute inset-0 flex items-start justify-center transition-transform duration-200"
+                      style={{
+                        transform: `rotate(${Math.atan2(kingPos.y - playerPos.y, kingPos.x - playerPos.x) + Math.PI / 2}rad)`,
+                      }}
+                    >
+                      <div className="w-0 h-0 border-l-[3.5px] border-l-transparent border-r-[3.5px] border-r-transparent border-b-[6px] border-b-amber-300 -translate-y-1" />
+                    </div>
+                  </div>
+
+                  {/* King distance info */}
+                  <div className="flex flex-col text-left leading-tight">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-rose-300">
+                      {t.kingTrackerLabel}
+                    </span>
+                    <span className="text-xs sm:text-sm font-black font-mono text-white">
+                      {Math.max(1, Math.round(Math.hypot(kingPos.x - playerPos.x, kingPos.y - playerPos.y) / 20))} {t.metersUnit}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Active Superpower Pill */}
           {stats?.activeSuperpower && (
             <div className="flex flex-col items-center gap-1 px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl bg-black/85 border border-cyan-400/70 shadow-[0_0_25px_rgba(6,182,212,0.45)] backdrop-blur-md animate-pulse max-w-[220px] sm:max-w-xs">
@@ -398,6 +451,28 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             >
               <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
+
+            {/* User Report Button */}
+            {onOpenReport && (
+              <button
+                onClick={onOpenReport}
+                className="p-1.5 sm:p-2 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/40 text-rose-300 transition-colors backdrop-blur-md cursor-pointer"
+                title={t.reportBtn}
+              >
+                <Flag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            )}
+
+            {/* Dev Admin Panel Button */}
+            {onOpenDevPanel && (
+              <button
+                onClick={onOpenDevPanel}
+                className="p-1.5 sm:p-2 rounded-xl bg-amber-950/60 hover:bg-amber-900/80 border border-amber-500/40 text-amber-300 transition-colors backdrop-blur-md cursor-pointer"
+                title={t.devPanelTitle}
+              >
+                <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            )}
           </div>
 
           {/* Top 10 Leaderboard Panel */}
@@ -568,19 +643,34 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                 title={t.hiddenCrypt}
               />
 
-              {/* Other Microbes */}
-              {otherMicrobes.map((m, i) => (
-                <div
-                  key={i}
-                  className={`absolute rounded-full -translate-x-1/2 -translate-y-1/2 ${
-                    m.isBig ? 'w-2 h-2 bg-yellow-400 shadow-[0_0_4px_#eab308]' : 'w-1.5 h-1.5 bg-neutral-400'
-                  }`}
-                  style={{
-                    left: `${Math.max(4, Math.min(mapWidth - 4, mapCenterX + m.x * mapScaleX))}px`,
-                    top: `${Math.max(4, Math.min(mapHeight - 4, mapCenterY + m.y * mapScaleY))}px`,
-                  }}
-                />
-              ))}
+              {/* Other Microbes & King on Radar */}
+              {otherMicrobes.map((m, i) => {
+                const mx = Math.max(4, Math.min(mapWidth - 4, mapCenterX + m.x * mapScaleX));
+                const my = Math.max(4, Math.min(mapHeight - 4, mapCenterY + m.y * mapScaleY));
+
+                if (m.isKing) {
+                  return (
+                    <div
+                      key={`king_radar_${i}`}
+                      className="absolute -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none"
+                      style={{ left: `${mx}px`, top: `${my}px` }}
+                      title={t.kingTrackerLabel}
+                    >
+                      <Crown className="w-3.5 h-3.5 text-amber-400 drop-shadow-[0_0_6px_#fbbf24] animate-bounce" />
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    key={i}
+                    className={`absolute rounded-full -translate-x-1/2 -translate-y-1/2 ${
+                      m.isBig ? 'w-2 h-2 bg-yellow-400 shadow-[0_0_4px_#eab308]' : 'w-1.5 h-1.5 bg-neutral-400'
+                    }`}
+                    style={{ left: `${mx}px`, top: `${my}px` }}
+                  />
+                );
+              })}
 
               {/* Antibodies */}
               {antibodies.map((ab, i) => (
@@ -596,14 +686,74 @@ export const GameHUD: React.FC<GameHUDProps> = ({
 
               {/* Local Player Marker */}
               <div
-                className="absolute w-3 h-3 rounded-full -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-emerald-400 shadow-[0_0_12px_#34d399] z-10"
+                className="absolute w-3.5 h-3.5 rounded-full -translate-x-1/2 -translate-y-1/2 bg-white border-2 border-emerald-400 shadow-[0_0_12px_#34d399] z-20"
                 style={{ left: `${playerMapX}px`, top: `${playerMapY}px` }}
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 m-auto mt-0.5 animate-pulse" />
+                {kingPos?.isPlayer ? (
+                  <Crown className="w-3 h-3 text-amber-400 -translate-y-2 -translate-x-0.5 animate-bounce" />
+                ) : (
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 m-auto mt-0.5 animate-pulse" />
+                )}
               </div>
             </div>
           </div>
         )}
+      </div>
+
+      {/* Directional Off-Screen Microbe Arrows (No Name, Pure Graphical SVG Arrow, Distance in Meters) */}
+      <div className="fixed inset-0 pointer-events-none z-20 overflow-hidden">
+        {nearbyMicrobes.map((m, idx) => {
+          const dx = m.x - playerPos.x;
+          const dy = m.y - playerPos.y;
+          const dist = Math.hypot(dx, dy);
+          const meters = Math.max(1, Math.round(dist / 20));
+          const angle = Math.atan2(dy, dx);
+
+          const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+          const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+          const cx = vw / 2;
+          const cy = vh / 2;
+
+          const marginX = isMobile ? 32 : 55;
+          const marginY = isMobile ? 65 : 75;
+
+          const maxRadiusX = cx - marginX;
+          const maxRadiusY = cy - marginY;
+          const edgeX = cx + Math.cos(angle) * maxRadiusX;
+          const edgeY = cy + Math.sin(angle) * maxRadiusY;
+
+          const colorClass = m.isLarger
+            ? 'text-rose-300 bg-rose-950/85 border-rose-500/70 shadow-[0_0_12px_rgba(244,63,94,0.4)]'
+            : 'text-emerald-300 bg-emerald-950/85 border-emerald-500/70 shadow-[0_0_12px_rgba(16,185,129,0.35)]';
+
+          return (
+            <div
+              key={`nearby_${idx}`}
+              className={`absolute -translate-x-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-xl border backdrop-blur-md pointer-events-none transition-all duration-300 ${colorClass}`}
+              style={{
+                left: `${edgeX}px`,
+                top: `${edgeY}px`,
+              }}
+            >
+              {/* Graphical SVG Arrow Polygon (No text arrow) */}
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="shrink-0"
+                style={{ transform: `rotate(${angle + Math.PI / 2}rad)` }}
+              >
+                <polygon points="12,2 22,22 12,17 2,22" />
+              </svg>
+
+              {/* Distance in meters without name */}
+              <span className="text-[9px] sm:text-[11px] font-black font-mono leading-none">
+                {meters}{t.metersUnit}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Bottom Action Controls: Eject & Split (Positioned bottom-right) */}

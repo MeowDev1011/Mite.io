@@ -324,6 +324,57 @@ export interface TranslationStrings {
   unconqueredStatus: string;
   conquestRewardLabel: string;
   conquestRewardValue: string;
+  achievementUnlockedLabel: string;
+  kingTrackerLabel: string;
+  metersUnit: string;
+  youAreTheKing: string;
+  trackKingHint: string;
+  distanceLabel: string;
+  threatNearby: string;
+  reportBtn: string;
+  reportModalTitle: string;
+  reportModalDesc: string;
+  reportCategoryLabel: string;
+  reportCategoryCheat: string;
+  reportCategoryBug: string;
+  reportCategoryBehavior: string;
+  reportCategoryDesync: string;
+  reportCategoryOther: string;
+  reportWhenLabel: string;
+  reportWhenJustNow: string;
+  reportWhenMinutes: string;
+  reportWhenStart: string;
+  reportWhenLobby: string;
+  reportUserLabel: string;
+  reportUserPlaceholder: string;
+  reportDetailsLabel: string;
+  reportDetailsPlaceholder: string;
+  reportSeverityLabel: string;
+  reportSeverityLow: string;
+  reportSeverityMedium: string;
+  reportSeverityHigh: string;
+  reportSeverityCritical: string;
+  reportSubmitBtn: string;
+  reportSuccessToast: string;
+  reportInvalidFeedback: string;
+  devBadgeTitle: string;
+  devPanelTitle: string;
+  devCustomColor: string;
+  devCustomRole: string;
+  devIconPreset1: string;
+  devIconPreset2: string;
+  devCustomSvgCode: string;
+  devSaveBadge: string;
+  devBadgeSaved: string;
+  devResolveReport: string;
+  devInvestigateReport: string;
+  devDismissReport: string;
+  devNotesPlaceholder: string;
+  devStatusPending: string;
+  devStatusInvestigating: string;
+  devStatusResolved: string;
+  devStatusDismissed: string;
+  noReportsFound: string;
 }
 
 // Translations dictionary
@@ -602,6 +653,57 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     unconqueredStatus: 'Sin Conquistar',
     conquestRewardLabel: 'Recompensa de Conquista:',
     conquestRewardValue: '+80 Cytes & Impulso',
+    achievementUnlockedLabel: '¡Logro Desbloqueado!',
+    kingTrackerLabel: 'Rey del Torrente',
+    metersUnit: 'm',
+    youAreTheKing: '¡Eres el Rey Actual!',
+    trackKingHint: 'Círculo Rojo: Distancia al Rey',
+    distanceLabel: 'Distancia',
+    threatNearby: 'Microbio cercano',
+    reportBtn: 'Reportar',
+    reportModalTitle: 'Reportar Trampas, Bugs o Jugador',
+    reportModalDesc: 'Tu reporte es analizado directamente por los administradores DEV del sistema.',
+    reportCategoryLabel: 'Categoría del Reporte',
+    reportCategoryCheat: 'Trampas / Hacks / Bots',
+    reportCategoryBug: 'Error Técnico / Bug Visual',
+    reportCategoryBehavior: 'Comportamiento Ofensivo',
+    reportCategoryDesync: 'Desincronización / Lag',
+    reportCategoryOther: 'Otro Asunto',
+    reportWhenLabel: '¿Cuándo sucedió?',
+    reportWhenJustNow: 'Justo ahora en esta partida',
+    reportWhenMinutes: 'Hace unos minutos',
+    reportWhenStart: 'Al iniciar la partida',
+    reportWhenLobby: 'En la pantalla principal',
+    reportUserLabel: 'Jugador o Entidad Involucrada (Opcional)',
+    reportUserPlaceholder: 'Nombre del microbio o ID...',
+    reportDetailsLabel: 'Detalles del Incidente',
+    reportDetailsPlaceholder: 'Describe detalladamente qué sucedió, qué viste o pasos para reproducir...',
+    reportSeverityLabel: 'Nivel de Severidad',
+    reportSeverityLow: 'Baja',
+    reportSeverityMedium: 'Media',
+    reportSeverityHigh: 'Alta',
+    reportSeverityCritical: 'Crítica',
+    reportSubmitBtn: 'Enviar Reporte al Equipo DEV',
+    reportSuccessToast: '¡Reporte enviado exitosamente a los desarrolladores!',
+    reportInvalidFeedback: 'Por favor describe lo sucedido antes de enviar.',
+    devBadgeTitle: 'Personalizar Insignia DEV',
+    devPanelTitle: 'Bandeja de Reportes DEV',
+    devCustomColor: 'Color Hexadecimal (Defecto: Dorado)',
+    devCustomRole: 'Título de la Insignia',
+    devIconPreset1: 'Icono SVG Principal',
+    devIconPreset2: 'Icono SVG Secundario',
+    devCustomSvgCode: 'Pegar Código SVG Personalizado',
+    devSaveBadge: 'Guardar Configuración DEV',
+    devBadgeSaved: '¡Insignia DEV actualizada con éxito!',
+    devResolveReport: 'Marcar Arreglado / Resuelto',
+    devInvestigateReport: 'En Investigación',
+    devDismissReport: 'Descartar Reporte',
+    devNotesPlaceholder: 'Escribe notas o respuesta para el reporte...',
+    devStatusPending: 'Pendiente',
+    devStatusInvestigating: 'Investigando',
+    devStatusResolved: 'Arreglado',
+    devStatusDismissed: 'Descartado',
+    noReportsFound: 'No hay reportes en esta sección.',
   },
   en: {
     title: 'Mite.io',
@@ -877,6 +979,57 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     unconqueredStatus: 'Unconquered',
     conquestRewardLabel: 'Conquest Reward:',
     conquestRewardValue: '+80 Cytes & Boost',
+    achievementUnlockedLabel: 'Achievement Unlocked!',
+    kingTrackerLabel: 'Bloodstream King',
+    metersUnit: 'm',
+    youAreTheKing: 'You are the Current King!',
+    trackKingHint: 'Red Circle: Distance to King',
+    distanceLabel: 'Distance',
+    threatNearby: 'Nearby Microbe',
+    reportBtn: 'Report',
+    reportModalTitle: 'Report Cheats, Bugs, or Player',
+    reportModalDesc: 'Your report is reviewed directly by the DEV moderation team.',
+    reportCategoryLabel: 'Report Category',
+    reportCategoryCheat: 'Cheats / Hacks / Bots',
+    reportCategoryBug: 'Technical Bug / Visual Glitch',
+    reportCategoryBehavior: 'Offensive Behavior',
+    reportCategoryDesync: 'Desync / Lag',
+    reportCategoryOther: 'Other Issue',
+    reportWhenLabel: 'When did it happen?',
+    reportWhenJustNow: 'Just now in this match',
+    reportWhenMinutes: 'A few minutes ago',
+    reportWhenStart: 'At match start',
+    reportWhenLobby: 'On the main screen',
+    reportUserLabel: 'Player or Entity Involved (Optional)',
+    reportUserPlaceholder: 'Microbe name or ID...',
+    reportDetailsLabel: 'Incident Details',
+    reportDetailsPlaceholder: 'Describe what happened, what you observed, or steps to reproduce...',
+    reportSeverityLabel: 'Severity Level',
+    reportSeverityLow: 'Low',
+    reportSeverityMedium: 'Medium',
+    reportSeverityHigh: 'High',
+    reportSeverityCritical: 'Critical',
+    reportSubmitBtn: 'Submit Report to DEV Team',
+    reportSuccessToast: 'Report successfully submitted to developers!',
+    reportInvalidFeedback: 'Please describe the incident before submitting.',
+    devBadgeTitle: 'Customize DEV Badge',
+    devPanelTitle: 'DEV Reports Inbox',
+    devCustomColor: 'Hex Color (Default: Gold)',
+    devCustomRole: 'Badge Title',
+    devIconPreset1: 'Primary SVG Icon',
+    devIconPreset2: 'Secondary SVG Icon',
+    devCustomSvgCode: 'Paste Custom SVG Code',
+    devSaveBadge: 'Save DEV Configuration',
+    devBadgeSaved: 'DEV Badge updated successfully!',
+    devResolveReport: 'Mark Fixed / Resolved',
+    devInvestigateReport: 'Under Investigation',
+    devDismissReport: 'Dismiss Report',
+    devNotesPlaceholder: 'Write notes or response for this report...',
+    devStatusPending: 'Pending',
+    devStatusInvestigating: 'Investigating',
+    devStatusResolved: 'Fixed',
+    devStatusDismissed: 'Dismissed',
+    noReportsFound: 'No reports found in this section.',
   },
   pt: {
     title: 'Mite.io',

@@ -25,6 +25,8 @@ import { VirtualJoystick } from './components/VirtualJoystick';
 import { BattleTutorialModal } from './components/BattleTutorialModal';
 import { HomeUpgradesModal } from './components/HomeUpgradesModal';
 import { ShareModal } from './components/ShareModal';
+import { ReportModal } from './components/ReportModal';
+import { DevAdminModal } from './components/DevAdminModal';
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -62,16 +64,22 @@ export default function App() {
   const [showBattleTutorial, setShowBattleTutorial] = useState<boolean>(false);
   const [showHomeUpgrades, setShowHomeUpgrades] = useState<boolean>(false);
   const [showShareModal, setShowShareModal] = useState<boolean>(false);
+  const [showReportModal, setShowReportModal] = useState<boolean>(false);
+  const [showDevModal, setShowDevModal] = useState<boolean>(false);
 
-  // Entities positions for radar minimap
+  // Entities positions for radar minimap, King tracking, and offscreen indicators
   const [radarData, setRadarData] = useState<{
     playerPos: { x: number; y: number };
     antibodies: { x: number; y: number; alert: number }[];
-    otherMicrobes: { x: number; y: number; isBig: boolean }[];
+    otherMicrobes: { x: number; y: number; isBig: boolean; isKing?: boolean }[];
+    kingPos: { x: number; y: number; isPlayer: boolean; mass: number } | null;
+    nearbyMicrobes: { x: number; y: number; mass: number; isLarger: boolean }[];
   }>({
     playerPos: { x: 0, y: 0 },
     antibodies: [],
     otherMicrobes: [],
+    kingPos: null,
+    nearbyMicrobes: [],
   });
 
   // Initialize Game Engine on mount
@@ -89,6 +97,9 @@ export default function App() {
       setStats(newStats);
       if (engine.player && engine.player.pieces.length > 0) {
         const centroid = engine.calculateCentroid(engine.player);
+        const kingData = engine.getKingData();
+        const nearby = engine.getNearbyMicrobes(6);
+
         setRadarData({
           playerPos: centroid,
           antibodies: engine.antibodies.map((ab) => ({ x: ab.x, y: ab.y, alert: ab.alertLevel })),
@@ -98,7 +109,14 @@ export default function App() {
               x: b.pieces[0].x,
               y: b.pieces[0].y,
               isBig: engine.calculateTotalMass(b) > 150,
+              isKing: Boolean(
+                kingData &&
+                !kingData.isPlayer &&
+                Math.hypot(b.pieces[0].x - kingData.x, b.pieces[0].y - kingData.y) < 80
+              ),
             })),
+          kingPos: kingData,
+          nearbyMicrobes: nearby,
         });
       }
     };
@@ -427,6 +445,7 @@ export default function App() {
       <AchievementToast
         achievementId={achievementToastId}
         onClose={() => setAchievementToastId(null)}
+        t={t}
       />
 
       {/* Title Screen Overlay */}
@@ -446,6 +465,8 @@ export default function App() {
           onOpenSkins={() => setShowSkins(true)}
           onOpenShop={() => setShowShop(true)}
           onOpenActivePlayers={() => setShowActivePlayers(true)}
+          onOpenReport={() => setShowReportModal(true)}
+          onOpenDevPanel={() => setShowDevModal(true)}
           activePlayerCount={activePlayerCount}
         />
       )}
@@ -465,6 +486,8 @@ export default function App() {
           onOpenBattleTutorial={() => setShowBattleTutorial(true)}
           onOpenShare={() => setShowShareModal(true)}
           onOpenShop={() => setShowShop(true)}
+          onOpenReport={() => setShowReportModal(true)}
+          onOpenDevPanel={() => setShowDevModal(true)}
           onConquerTerritory={handleConquerTerritory}
           currentLang={currentLang}
           onSelectLanguage={handleSelectLanguage}
@@ -474,6 +497,8 @@ export default function App() {
           playerPos={radarData.playerPos}
           antibodies={radarData.antibodies}
           otherMicrobes={radarData.otherMicrobes}
+          kingPos={radarData.kingPos}
+          nearbyMicrobes={radarData.nearbyMicrobes}
         />
       )}
 
@@ -595,6 +620,22 @@ export default function App() {
         <ActivePlayersModal
           onClose={() => setShowActivePlayers(false)}
           onInviteSent={handleInviteSent}
+        />
+      )}
+
+      {/* User Report Modal for Bugs, Cheats, Desync & Behavior */}
+      {showReportModal && (
+        <ReportModal
+          onClose={() => setShowReportModal(false)}
+          t={t}
+        />
+      )}
+
+      {/* Official DEV & Admin Command Center */}
+      {showDevModal && (
+        <DevAdminModal
+          onClose={() => setShowDevModal(false)}
+          t={t}
         />
       )}
     </div>
