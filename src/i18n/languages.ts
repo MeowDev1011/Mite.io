@@ -375,6 +375,182 @@ export interface TranslationStrings {
   devStatusResolved: string;
   devStatusDismissed: string;
   noReportsFound: string;
+  // Complete Modals & DEV User Management i18n
+  skinsModalTitle: string;
+  skinsModalSubtitle: string;
+  microbeMembraneTab: string;
+  sporeStylesTab: string;
+  trailLabel: string;
+  lockedLabel: string;
+  doneBtn: string;
+  closeBtn: string;
+  freeSporeBadge: string;
+  achievementRequiredLabel: string;
+  insufficientPlayersTitle: string;
+  playersOnlineCount: string;
+  minRequiredLabel: string;
+  insufficientTeamDesc: string;
+  insufficientFfaDesc: string;
+  makeGameFamousTitle: string;
+  viralizeInvasionBadge: string;
+  shareToFillRoomDesc: string;
+  playWithBotsNowBtn: string;
+  viewActiveAndInviteBtn: string;
+  copiedToast: string;
+  tiktokCopiedHint: string;
+  achievementsModalTitle: string;
+  achievementsProgress: string;
+  unlockedPlural: string;
+  rewardGiftedLabel: string;
+  rewardLockedLabel: string;
+  unlockedDateLabel: string;
+  activePlayersTitle: string;
+  onlineBadge: string;
+  activePlayersSubtitle: string;
+  refreshListTitle: string;
+  searchMicrobePlaceholder: string;
+  filterAll: string;
+  filterDefenders: string;
+  filterPathogens: string;
+  noActiveMicrobesFound: string;
+  defenderRole: string;
+  pathogenRole: string;
+  massLabel: string;
+  inviteToRoomBtn: string;
+  invitingPlayerLabel: string;
+  selectGameModeStep: string;
+  humansOnly2Factions: string;
+  humansOnlyFfa: string;
+  practiceWithAi: string;
+  factionSelectionStep: string;
+  hostAssignsFactions: string;
+  hostAssignsDesc: string;
+  guestChoosesFaction: string;
+  guestChoosesDesc: string;
+  yourHostFactionLabel: string;
+  guestFactionLabel: string;
+  sendOfficialInviteBtn: string;
+  sendingInviteBtn: string;
+  inviteSentSuccess: string;
+  matchInviteBadge: string;
+  invitedYouToPlay: string;
+  modeLabelShort: string;
+  assignedFactionLabel: string;
+  chooseFactionToJoin: string;
+  declineBtn: string;
+  acceptAndJoinBtn: string;
+  massMilestoneReached: string;
+  cellularEvolutionTitle: string;
+  cellularEvolutionDesc: string;
+  skipForNowBtn: string;
+  devModalSubtitle: string;
+  devUsersTab: string;
+  devFirstUserNotice: string;
+  devGrantByIdTitle: string;
+  devEnterUserIdPlaceholder: string;
+  devMakeDevBtn: string;
+  devRevokeDevBtn: string;
+  devRegisteredUsersTitle: string;
+  devPrimaryFounderBadge: string;
+  devStatusActiveBadge: string;
+  devLivePreviewLabel: string;
+  devYourNamePreview: string;
+  devSyncFirebaseBtn: string;
+  devDeleteReportBtn: string;
+  devWhenOccurredLabel: string;
+  devReportsCountLabel: string;
+  // New DEV Panel, Moderation, Icon Presets & Complete UI i18n keys
+  devOpenPanelBtn: string;
+  devBadgeTooltip: string;
+  devGrantByIdOrUserTitle: string;
+  devEnterUserOrIdPlaceholder: string;
+  devModerationTitle: string;
+  devModMuteBtn: string;
+  devModUnmuteBtn: string;
+  devModWarnBtn: string;
+  devModResetBtn: string;
+  devModBanBtn: string;
+  devModUnbanBtn: string;
+  devMutedBadge: string;
+  devBannedBadge: string;
+  devWarningsBadge: string;
+  devQuickModerateBtn: string;
+  devActionAppliedToast: string;
+  devUserNotFoundToast: string;
+  iconCode: string;
+  iconTerminal: string;
+  iconShield: string;
+  iconCrown: string;
+  iconZap: string;
+  iconFlame: string;
+  iconStar: string;
+  iconSparkles: string;
+  iconCheck: string;
+  iconCustom: string;
+  spaceKeyLabel: string;
+  cellsDevouredLabel: string;
+  rankAchievedLabel: string;
+  fissionTipGameOver: string;
+  shareBioCardHeader: string;
+  shareMicrobeSpecimen: string;
+  shareScanQrJoin: string;
+  sharePlayLiveAt: string;
+  tutorialInteractiveSim: string;
+  tutorialClickAnywhereSim: string;
+  shopRequiresAchievement: string;
+  youSuffix: string;
+  actualDeviceLabel: string;
+  // 16+ Moderation Functions, Interactive Warnings & Tiered Shop Economy
+  devModInteractiveWarnBtn: string;
+  devModFreezeBtn: string;
+  devModUnfreezeBtn: string;
+  devModSlowBtn: string;
+  devModUnslowBtn: string;
+  devModDrainMassBtn: string;
+  devModLockSplitBtn: string;
+  devModUnlockSplitBtn: string;
+  devModLockEjectBtn: string;
+  devModUnlockEjectBtn: string;
+  devModGiftCytesBtn: string;
+  devModFineCytesBtn: string;
+  devModResetUpgradesBtn: string;
+  devModStripOrgansBtn: string;
+  devModForceRenameBtn: string;
+  devModKickMatchBtn: string;
+  devModTempBan5mBtn: string;
+  devModPardonBtn: string;
+  devWarnComposerTitle: string;
+  devWarnCustomMessageLabel: string;
+  devWarnCustomMessagePlaceholder: string;
+  devWarnQuestionLabel: string;
+  devWarnQuestionPlaceholder: string;
+  devWarnSendBtn: string;
+  devWarnCancelBtn: string;
+  devWarnHistoryTitle: string;
+  devWarnPlayerAnswered: string;
+  devWarnWaitingAnswer: string;
+  playerWarningModalTitle: string;
+  playerWarningModalSubtitle: string;
+  playerWarningMessageHeader: string;
+  playerWarningQuestionHeader: string;
+  playerWarningAnswerPlaceholder: string;
+  playerWarningSubmitBtn: string;
+  devOnlineBadge: string;
+  devOfflineBadge: string;
+  devFrozenBadge: string;
+  devSlowedBadge: string;
+  devSplitLockedBadge: string;
+  devEjectLockedBadge: string;
+  devTempBannedBadge: string;
+  devOnlyRealUsersNotice: string;
+  devUserNotExistingToast: string;
+  devAccessNoticeTitle: string;
+  devAccessNoticeDesc: string;
+  bannedAccountNotice: string;
+  tempBannedAccountNotice: string;
+  tierBasicBadge: string;
+  tierNormalBadge: string;
+  tierVipBadge: string;
 }
 
 // Translations dictionary
@@ -572,9 +748,9 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     changeBacteriaBtn: 'Cambiar Cepa',
     realMultiplayerToggle: 'Multijugador Real',
     realMultiplayerDesc: 'Solo humanos en línea',
-    // PWA Modal
+    // Install App Modal
     installPwaBtn: 'Instalar App',
-    installPwaTitle: 'Instalar Mite.io (PWA)',
+    installPwaTitle: 'Instalar Aplicación Mite.io',
     installPwaSubtitle: 'Juega a pantalla completa sin barras de navegador',
     installAndroidTitle: 'Android & Google Chrome',
     installAndroidDesc: 'Toca los tres puntos ⋮ en la esquina superior derecha y selecciona "Instalar aplicación" o "Añadir a pantalla de inicio".',
@@ -618,6 +794,7 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     pusImmuneEffect: 'Inmune: +3% Salud +Cytes',
     pusTitle: 'Pústula de Pus',
     battleWinConditionTitle: 'Condición de Victoria',
+    battleWinConditionDesc: 'Colonizá órganos al llegar a 100 de masa, recolectá Cytes, superá al bando rival y decidí el destino del cuerpo humano.',
     factionsConflictBadge: 'Facciones en Conflicto',
     hostBiometricsBadge: 'Biometría Fisiológica',
     quickBuyMode: 'Modo de Compra Rápida:',
@@ -686,15 +863,15 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     reportSubmitBtn: 'Enviar Reporte al Equipo DEV',
     reportSuccessToast: '¡Reporte enviado exitosamente a los desarrolladores!',
     reportInvalidFeedback: 'Por favor describe lo sucedido antes de enviar.',
-    devBadgeTitle: 'Personalizar Insignia DEV',
-    devPanelTitle: 'Bandeja de Reportes DEV',
+    devBadgeTitle: 'Personalizar Etiqueta DEV',
+    devPanelTitle: 'Panel de Administración DEV',
     devCustomColor: 'Color Hexadecimal (Defecto: Dorado)',
-    devCustomRole: 'Título de la Insignia',
-    devIconPreset1: 'Icono SVG Principal',
-    devIconPreset2: 'Icono SVG Secundario',
-    devCustomSvgCode: 'Pegar Código SVG Personalizado',
+    devCustomRole: 'Título de la Etiqueta',
+    devIconPreset1: 'Escoger Icono Principal',
+    devIconPreset2: 'Escoger Icono Secundario',
+    devCustomSvgCode: 'Introducir código SVG (<svg...)',
     devSaveBadge: 'Guardar Configuración DEV',
-    devBadgeSaved: '¡Insignia DEV actualizada con éxito!',
+    devBadgeSaved: '¡Etiqueta DEV actualizada con éxito!',
     devResolveReport: 'Marcar Arreglado / Resuelto',
     devInvestigateReport: 'En Investigación',
     devDismissReport: 'Descartar Reporte',
@@ -703,7 +880,180 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     devStatusInvestigating: 'Investigando',
     devStatusResolved: 'Arreglado',
     devStatusDismissed: 'Descartado',
-    noReportsFound: 'No hay reportes en esta sección.',
+    noReportsFound: 'No hay reportes reales enviados todavía.',
+    skinsModalTitle: 'Casillero de Mutación',
+    skinsModalSubtitle: 'Personalizá la membrana de tu microbio y el estilo de tus esporas',
+    microbeMembraneTab: 'Membrana del Microbio',
+    sporeStylesTab: 'Estilos de Espora [W]',
+    trailLabel: 'Estela:',
+    lockedLabel: 'Bloqueado',
+    doneBtn: 'Listo',
+    closeBtn: 'Cerrar',
+    freeSporeBadge: 'Espora Inicial Gratuita',
+    achievementRequiredLabel: 'Se desbloquea con Logro',
+    insufficientPlayersTitle: '¡Faltan Jugadores Humanos!',
+    playersOnlineCount: 'jugadores en línea',
+    minRequiredLabel: 'Mínimo requerido',
+    insufficientTeamDesc: 'Para jugar Batalla en Equipo (Solo Humanos) se exigen al menos 4 jugadores (2 por bando: Sistema Inmune vs Infección) para que el combate sea balanceado y competitivo.',
+    insufficientFfaDesc: 'Para jugar Multijugador (Solo Humanos) se exige un mínimo de 3 jugadores simultáneos en el torrente sanguíneo.',
+    makeGameFamousTitle: '¡Haz más famoso el juego!',
+    viralizeInvasionBadge: 'Viralizá la Invasión',
+    shareToFillRoomDesc: 'Compartí Mite.io en todas tus redes, apps, código QR o tarjeta bio para llenar la sala con tus amigos de inmediato:',
+    playWithBotsNowBtn: 'Jugar con BOTs por el momento',
+    viewActiveAndInviteBtn: 'Ver Jugadores Activos e Invitar a Sala',
+    copiedToast: '¡Copiado!',
+    tiktokCopiedHint: '¡Texto y enlace copiados! Pegalo en tu biografía, historias o mensajes.',
+    achievementsModalTitle: 'Logros Celulares',
+    achievementsProgress: 'Progreso:',
+    unlockedPlural: 'desbloqueados',
+    rewardGiftedLabel: 'Recompensa regalada:',
+    rewardLockedLabel: 'Recompensa:',
+    unlockedDateLabel: 'Desbloqueado:',
+    activePlayersTitle: 'Jugadores Activos',
+    onlineBadge: 'En Línea',
+    activePlayersSubtitle: 'Explorá los microbios activos en el torrente e invitalos a tu sala',
+    refreshListTitle: 'Actualizar lista',
+    searchMicrobePlaceholder: 'Buscar por nombre de microbio...',
+    filterAll: 'Todos',
+    filterDefenders: 'Defensores',
+    filterPathogens: 'Patógenos',
+    noActiveMicrobesFound: 'No se encontraron otros microbios activos en esta categoría.',
+    defenderRole: 'Defensor',
+    pathogenRole: 'Patógeno',
+    massLabel: 'Masa',
+    inviteToRoomBtn: 'Invitar a Sala',
+    invitingPlayerLabel: 'Invitando a:',
+    selectGameModeStep: '1. Seleccioná el Modo de Juego:',
+    humansOnly2Factions: 'Solo Humanos (2 Bandos)',
+    humansOnlyFfa: 'Solo Humanos (FFA)',
+    practiceWithAi: 'Práctica con IA',
+    factionSelectionStep: '2. Elección de Bandos:',
+    hostAssignsFactions: 'Tú Asignas los Bandos',
+    hostAssignsDesc: 'Tú configuras ambos roles',
+    guestChoosesFaction: 'Él Elige su Bando',
+    guestChoosesDesc: 'El invitado escoge al aceptar',
+    yourHostFactionLabel: 'Tu Bando (Anfitrión):',
+    guestFactionLabel: 'Bando del Invitado',
+    sendOfficialInviteBtn: 'Enviar Invitación Oficial',
+    sendingInviteBtn: 'Enviando Invitación...',
+    inviteSentSuccess: '¡Invitación enviada! Esperando respuesta.',
+    matchInviteBadge: '¡Invitación a Partida!',
+    invitedYouToPlay: 'te invitó a jugar',
+    modeLabelShort: 'Modo:',
+    assignedFactionLabel: 'Tu bando asignado:',
+    chooseFactionToJoin: 'Elegí tu bando para ingresar:',
+    declineBtn: 'Rechazar',
+    acceptAndJoinBtn: 'Aceptar e Ingresar',
+    massMilestoneReached: 'Hito de Masa alcanzado:',
+    cellularEvolutionTitle: 'Evolución Celular',
+    cellularEvolutionDesc: 'Tu microbio ha mutado y desarrollado nuevas adaptaciones para dominar el torrente sanguíneo. Elegí una mejora:',
+    skipForNowBtn: 'Omitir por ahora',
+    devModalSubtitle: 'Moderación de usuarios, resolución de reportes, permisos DEV y personalización de etiqueta',
+    devUsersTab: 'Moderar Usuarios y Permisos DEV',
+    devFirstUserNotice: 'El primer usuario (ID) en iniciar sesión es detectado automáticamente como Desarrollador Principal (DEV) y puede moderar o nombrar a otros.',
+    devGrantByIdTitle: 'Hacer DEV o Moderar por ID o Usuario',
+    devEnterUserIdPlaceholder: 'Escribir ID o nombre de usuario...',
+    devMakeDevBtn: 'Hacer DEV',
+    devRevokeDevBtn: 'Quitar DEV',
+    devRegisteredUsersTitle: 'Lista de Usuarios Registrados y Moderación',
+    devPrimaryFounderBadge: 'Primer Usuario (DEV Principal)',
+    devStatusActiveBadge: 'DEV Oficial',
+    devLivePreviewLabel: 'Vista Previa en Tiempo Real:',
+    devYourNamePreview: 'TuNombre',
+    devSyncFirebaseBtn: 'Sincronizar Admin con Google Firebase',
+    devDeleteReportBtn: 'Eliminar',
+    devWhenOccurredLabel: 'Momento:',
+    devReportsCountLabel: 'reportes',
+    devOpenPanelBtn: 'Panel DEV',
+    devBadgeTooltip: 'Etiqueta DEV Oficial — Toca para abrir el Panel DEV',
+    devGrantByIdOrUserTitle: 'Dar DEV o Moderar escribiendo ID o Nombre de Usuario',
+    devEnterUserOrIdPlaceholder: 'Escribe ID o nombre de usuario (ej. Microbio o dev_abc...)...',
+    devModerationTitle: 'Acciones de Moderación de Usuarios',
+    devModMuteBtn: 'Silenciar',
+    devModUnmuteBtn: 'Quitar Silencio',
+    devModWarnBtn: 'Advertir',
+    devModResetBtn: 'Reiniciar Cytes',
+    devModBanBtn: 'Bloquear',
+    devModUnbanBtn: 'Desbloquear',
+    devMutedBadge: 'Silenciado',
+    devBannedBadge: 'Bloqueado',
+    devWarningsBadge: 'Advertencias',
+    devQuickModerateBtn: 'Moderar Usuario Reportado',
+    devActionAppliedToast: '¡Acción aplicada correctamente al usuario!',
+    devUserNotFoundToast: 'Por favor escribe un ID o nombre de usuario válido.',
+    iconCode: 'Código',
+    iconTerminal: 'Terminal',
+    iconShield: 'Escudo',
+    iconCrown: 'Corona',
+    iconZap: 'Rayo',
+    iconFlame: 'Llama',
+    iconStar: 'Estrella',
+    iconSparkles: 'Destellos',
+    iconCheck: 'Verificado',
+    iconCustom: 'Personalizado',
+    spaceKeyLabel: '[ESPACIO]',
+    cellsDevouredLabel: 'Células Devoradas',
+    rankAchievedLabel: 'Rango Alcanzado',
+    fissionTipGameOver: 'Consejo: Dividite con [Espacio] para atrapar presas veloces y evitá los anticuerpos verdes cuando superes 160 de masa.',
+    shareBioCardHeader: 'TARJETA DE IDENTIDAD BIOLÓGICA',
+    shareMicrobeSpecimen: 'ESPÉCIMEN MICROBIANO:',
+    shareScanQrJoin: 'ESCANEÁ EL QR CON TU CÁMARA PARA UNIRTE',
+    sharePlayLiveAt: 'JUGÁ EN VIVO EN:',
+    tutorialInteractiveSim: 'Simulación Interactiva',
+    tutorialClickAnywhereSim: 'Hacé clic en cualquier parte de esta pantalla para probar',
+    shopRequiresAchievement: 'Requiere Logro:',
+    youSuffix: '(Tú)',
+    actualDeviceLabel: 'Actual',
+    devModInteractiveWarnBtn: '1. Advertencia + Pregunta',
+    devModFreezeBtn: '3. Congelar Microbio',
+    devModUnfreezeBtn: '3. Descongelar Microbio',
+    devModSlowBtn: '4. Ralentizar 50%',
+    devModUnslowBtn: '4. Velocidad Normal',
+    devModDrainMassBtn: '5. Drenar Masa a 18',
+    devModLockSplitBtn: '6. Bloquear División [Espacio]',
+    devModUnlockSplitBtn: '6. Permitir División [Espacio]',
+    devModLockEjectBtn: '7. Bloquear Esporas [W]',
+    devModUnlockEjectBtn: '7. Permitir Esporas [W]',
+    devModGiftCytesBtn: '8. Regalar +500 Cytes',
+    devModFineCytesBtn: '9. Multar -250 Cytes',
+    devModResetUpgradesBtn: '11. Reiniciar Mejoras (Nv.0)',
+    devModStripOrgansBtn: '12. Quitar Órganos',
+    devModForceRenameBtn: '13. Forzar Nombre Sancionado',
+    devModKickMatchBtn: '14. Expulsar de Partida',
+    devModTempBan5mBtn: '15. Suspender 5 Minutos',
+    devModPardonBtn: '17. Perdonar y Limpiar Todo',
+    devWarnComposerTitle: 'Enviar Advertencia Personalizada con Pregunta Obligatoria',
+    devWarnCustomMessageLabel: 'Mensaje de Advertencia Personalizado para el Jugador:',
+    devWarnCustomMessagePlaceholder: 'Escribe el motivo de la advertencia que verá en pantalla...',
+    devWarnQuestionLabel: 'Pregunta Obligatoria que el Jugador Debe Responder:',
+    devWarnQuestionPlaceholder: 'Ej: ¿Te comprometes a respetar las reglas y jugar limpio?',
+    devWarnSendBtn: 'Enviar Advertencia y Pregunta al Jugador',
+    devWarnCancelBtn: 'Cancelar',
+    devWarnHistoryTitle: 'Historial de Advertencias y Respuestas del Jugador:',
+    devWarnPlayerAnswered: 'Respuesta del jugador:',
+    devWarnWaitingAnswer: 'Esperando respuesta en pantalla del jugador...',
+    playerWarningModalTitle: 'ADVERTENCIA OFICIAL DE UN DESARROLLADOR (DEV)',
+    playerWarningModalSubtitle: 'Has recibido una advertencia en tiempo real. Debes leer el mensaje y responder la pregunta para continuar.',
+    playerWarningMessageHeader: 'Mensaje del Moderador DEV:',
+    playerWarningQuestionHeader: 'Pregunta Obligatoria:',
+    playerWarningAnswerPlaceholder: 'Escribe tu respuesta aquí para poder continuar...',
+    playerWarningSubmitBtn: 'Enviar Respuesta al DEV y Continuar',
+    devOnlineBadge: 'En Línea',
+    devOfflineBadge: 'Desconectado',
+    devFrozenBadge: 'Congelado',
+    devSlowedBadge: 'Ralentizado 50%',
+    devSplitLockedBadge: 'Sin División',
+    devEjectLockedBadge: 'Sin Esporas',
+    devTempBannedBadge: 'Suspendido 5m',
+    devOnlyRealUsersNotice: 'Solo aparecen usuarios reales existentes que se han conectado al juego (sin bots ni cuentas ficticias).',
+    devUserNotExistingToast: 'Ese ID o nombre de usuario no existe entre los jugadores reales registrados.',
+    devAccessNoticeTitle: 'Seguridad DEV: Botón exclusivo para DEVs · Insignia visible para todos',
+    devAccessNoticeDesc: 'Solo los usuarios con rango DEV tienen acceso al botón "Panel DEV". Sin embargo, TODOS los jugadores ven tu insignia DEV personalizada junto a tu nombre en la tabla de líderes y en partida.',
+    bannedAccountNotice: 'Tu cuenta ha sido bloqueada permanentemente por un Desarrollador (DEV).',
+    tempBannedAccountNotice: 'Has sido suspendido temporalmente por 5 minutos por un Desarrollador (DEV).',
+    tierBasicBadge: 'BÁSICO · ECONÓMICO',
+    tierNormalBadge: 'NORMAL · ESTÁNDAR',
+    tierVipBadge: 'VIP · EXCLUSIVO',
   },
   en: {
     title: 'Mite.io',
@@ -897,9 +1247,9 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     changeBacteriaBtn: 'Change Strain',
     realMultiplayerToggle: 'Real Multiplayer',
     realMultiplayerDesc: 'Humans only online',
-    // PWA Modal
+    // Install App Modal
     installPwaBtn: 'Install App',
-    installPwaTitle: 'Install Mite.io (PWA)',
+    installPwaTitle: 'Install Mite.io App',
     installPwaSubtitle: 'Play full-screen with no browser address bar',
     installAndroidTitle: 'Android & Google Chrome',
     installAndroidDesc: 'Tap the three dots ⋮ in the top right corner and select "Install app" or "Add to Home screen".',
@@ -1012,15 +1362,15 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     reportSubmitBtn: 'Submit Report to DEV Team',
     reportSuccessToast: 'Report successfully submitted to developers!',
     reportInvalidFeedback: 'Please describe the incident before submitting.',
-    devBadgeTitle: 'Customize DEV Badge',
-    devPanelTitle: 'DEV Reports Inbox',
+    devBadgeTitle: 'Customize DEV Tag',
+    devPanelTitle: 'DEV Administration Panel',
     devCustomColor: 'Hex Color (Default: Gold)',
-    devCustomRole: 'Badge Title',
-    devIconPreset1: 'Primary SVG Icon',
-    devIconPreset2: 'Secondary SVG Icon',
-    devCustomSvgCode: 'Paste Custom SVG Code',
+    devCustomRole: 'Tag Title',
+    devIconPreset1: 'Choose Primary Icon',
+    devIconPreset2: 'Choose Secondary Icon',
+    devCustomSvgCode: 'Enter SVG code (<svg...)',
     devSaveBadge: 'Save DEV Configuration',
-    devBadgeSaved: 'DEV Badge updated successfully!',
+    devBadgeSaved: 'DEV Tag updated successfully!',
     devResolveReport: 'Mark Fixed / Resolved',
     devInvestigateReport: 'Under Investigation',
     devDismissReport: 'Dismiss Report',
@@ -1029,7 +1379,180 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     devStatusInvestigating: 'Investigating',
     devStatusResolved: 'Fixed',
     devStatusDismissed: 'Dismissed',
-    noReportsFound: 'No reports found in this section.',
+    noReportsFound: 'No real user reports submitted yet.',
+    skinsModalTitle: 'Mutation Locker',
+    skinsModalSubtitle: 'Customize your microbe membrane and spore style',
+    microbeMembraneTab: 'Microbe Membrane',
+    sporeStylesTab: 'Spore Styles [W]',
+    trailLabel: 'Trail:',
+    lockedLabel: 'Locked',
+    doneBtn: 'Done',
+    closeBtn: 'Close',
+    freeSporeBadge: 'Free Starter Spore',
+    achievementRequiredLabel: 'Unlocked via Achievement',
+    insufficientPlayersTitle: 'Not Enough Human Players!',
+    playersOnlineCount: 'players online',
+    minRequiredLabel: 'Minimum required',
+    insufficientTeamDesc: 'To play Team Battle (Humans Only), at least 4 players (2 per faction: Immune System vs Infection) are required for a balanced match.',
+    insufficientFfaDesc: 'To play Multiplayer (Humans Only), a minimum of 3 simultaneous players in the bloodstream is required.',
+    makeGameFamousTitle: 'Make the game famous!',
+    viralizeInvasionBadge: 'Go Viral',
+    shareToFillRoomDesc: 'Share Mite.io across all social networks, apps, QR code, or bio-card to fill the room with your friends right away:',
+    playWithBotsNowBtn: 'Play with BOTs for now',
+    viewActiveAndInviteBtn: 'View Active Players & Invite to Room',
+    copiedToast: 'Copied!',
+    tiktokCopiedHint: 'Text and link copied! Paste it into your bio, stories, or messages.',
+    achievementsModalTitle: 'Cellular Achievements',
+    achievementsProgress: 'Progress:',
+    unlockedPlural: 'unlocked',
+    rewardGiftedLabel: 'Reward unlocked:',
+    rewardLockedLabel: 'Reward:',
+    unlockedDateLabel: 'Unlocked:',
+    activePlayersTitle: 'Active Players',
+    onlineBadge: 'Online',
+    activePlayersSubtitle: 'Explore active microbes in the bloodstream and invite them to your room',
+    refreshListTitle: 'Refresh list',
+    searchMicrobePlaceholder: 'Search by microbe name...',
+    filterAll: 'All',
+    filterDefenders: 'Defenders',
+    filterPathogens: 'Pathogens',
+    noActiveMicrobesFound: 'No other active microbes found in this category.',
+    defenderRole: 'Defender',
+    pathogenRole: 'Pathogen',
+    massLabel: 'Mass',
+    inviteToRoomBtn: 'Invite to Room',
+    invitingPlayerLabel: 'Inviting:',
+    selectGameModeStep: '1. Select Game Mode:',
+    humansOnly2Factions: 'Humans Only (2 Factions)',
+    humansOnlyFfa: 'Humans Only (FFA)',
+    practiceWithAi: 'AI Practice',
+    factionSelectionStep: '2. Faction Selection:',
+    hostAssignsFactions: 'You Assign Factions',
+    hostAssignsDesc: 'You configure both roles',
+    guestChoosesFaction: 'Guest Chooses Faction',
+    guestChoosesDesc: 'Guest picks upon accepting',
+    yourHostFactionLabel: 'Your Faction (Host):',
+    guestFactionLabel: 'Guest Faction',
+    sendOfficialInviteBtn: 'Send Official Invitation',
+    sendingInviteBtn: 'Sending Invitation...',
+    inviteSentSuccess: 'Invitation sent! Waiting for response.',
+    matchInviteBadge: 'Match Invitation!',
+    invitedYouToPlay: 'invited you to play',
+    modeLabelShort: 'Mode:',
+    assignedFactionLabel: 'Your assigned faction:',
+    chooseFactionToJoin: 'Choose your faction to join:',
+    declineBtn: 'Decline',
+    acceptAndJoinBtn: 'Accept & Join',
+    massMilestoneReached: 'Mass Milestone reached:',
+    cellularEvolutionTitle: 'Cellular Evolution',
+    cellularEvolutionDesc: 'Your microbe has mutated and developed new adaptations to dominate the bloodstream. Choose an upgrade:',
+    skipForNowBtn: 'Skip for now',
+    devModalSubtitle: 'User moderation, report resolution, DEV permissions & tag customization',
+    devUsersTab: 'Moderate Users & DEV Permissions',
+    devFirstUserNotice: 'The first user (ID) to sign in is automatically detected as the Primary Developer (DEV) and can moderate or promote other users.',
+    devGrantByIdTitle: 'Make DEV or Moderate by ID or Username',
+    devEnterUserIdPlaceholder: 'Type User ID or username...',
+    devMakeDevBtn: 'Make DEV',
+    devRevokeDevBtn: 'Revoke DEV',
+    devRegisteredUsersTitle: 'Registered Users & Moderation List',
+    devPrimaryFounderBadge: 'First User (Primary DEV)',
+    devStatusActiveBadge: 'Official DEV',
+    devLivePreviewLabel: 'Real-Time Live Preview:',
+    devYourNamePreview: 'YourName',
+    devSyncFirebaseBtn: 'Sync Admin with Google Firebase',
+    devDeleteReportBtn: 'Delete',
+    devWhenOccurredLabel: 'When:',
+    devReportsCountLabel: 'reports',
+    devOpenPanelBtn: 'DEV Panel',
+    devBadgeTooltip: 'Official DEV Tag — Click to open DEV Panel',
+    devGrantByIdOrUserTitle: 'Grant DEV or Moderate by ID or Username',
+    devEnterUserOrIdPlaceholder: 'Enter User ID or username (e.g. Microbe or dev_abc...)...',
+    devModerationTitle: 'User Moderation Actions',
+    devModMuteBtn: 'Mute',
+    devModUnmuteBtn: 'Unmute',
+    devModWarnBtn: 'Warn',
+    devModResetBtn: 'Reset Cytes',
+    devModBanBtn: 'Ban',
+    devModUnbanBtn: 'Unban',
+    devMutedBadge: 'Muted',
+    devBannedBadge: 'Banned',
+    devWarningsBadge: 'Warnings',
+    devQuickModerateBtn: 'Moderate Reported User',
+    devActionAppliedToast: 'Action successfully applied to user!',
+    devUserNotFoundToast: 'Please enter a valid User ID or username.',
+    iconCode: 'Code',
+    iconTerminal: 'Terminal',
+    iconShield: 'Shield',
+    iconCrown: 'Crown',
+    iconZap: 'Lightning',
+    iconFlame: 'Flame',
+    iconStar: 'Star',
+    iconSparkles: 'Sparkles',
+    iconCheck: 'Verified',
+    iconCustom: 'Custom',
+    spaceKeyLabel: '[SPACE]',
+    cellsDevouredLabel: 'Cells Devoured',
+    rankAchievedLabel: 'Rank Achieved',
+    fissionTipGameOver: 'Tip: Split with [Space] to catch fast prey and avoid green antibodies once your mass exceeds 160.',
+    shareBioCardHeader: 'BIOLOGICAL IDENTITY CARD',
+    shareMicrobeSpecimen: 'MICROBE SPECIMEN:',
+    shareScanQrJoin: 'SCAN QR WITH PHONE CAMERA TO JOIN',
+    sharePlayLiveAt: 'PLAY LIVE AT:',
+    tutorialInteractiveSim: 'Interactive Simulation',
+    tutorialClickAnywhereSim: 'Click anywhere on this screen to test',
+    shopRequiresAchievement: 'Requires Achievement:',
+    youSuffix: '(You)',
+    actualDeviceLabel: 'Current',
+    devModInteractiveWarnBtn: '1. Warning + Question',
+    devModFreezeBtn: '3. Freeze Microbe',
+    devModUnfreezeBtn: '3. Unfreeze Microbe',
+    devModSlowBtn: '4. Slow Down 50%',
+    devModUnslowBtn: '4. Normal Speed',
+    devModDrainMassBtn: '5. Drain Mass to 18',
+    devModLockSplitBtn: '6. Lock Split [Space]',
+    devModUnlockSplitBtn: '6. Unlock Split [Space]',
+    devModLockEjectBtn: '7. Lock Spores [W]',
+    devModUnlockEjectBtn: '7. Unlock Spores [W]',
+    devModGiftCytesBtn: '8. Gift +500 Cytes',
+    devModFineCytesBtn: '9. Fine -250 Cytes',
+    devModResetUpgradesBtn: '11. Reset Upgrades (Lv.0)',
+    devModStripOrgansBtn: '12. Strip Conquered Organs',
+    devModForceRenameBtn: '13. Force Sanctioned Name',
+    devModKickMatchBtn: '14. Kick from Match',
+    devModTempBan5mBtn: '15. Suspend 5 Minutes',
+    devModPardonBtn: '17. Pardon & Clear All',
+    devWarnComposerTitle: 'Send Custom Warning with Mandatory Question',
+    devWarnCustomMessageLabel: 'Custom Warning Message for Player:',
+    devWarnCustomMessagePlaceholder: 'Write the warning reason that will pop up on their screen...',
+    devWarnQuestionLabel: 'Mandatory Question the Player Must Answer:',
+    devWarnQuestionPlaceholder: 'E.g.: Do you agree to follow the rules and play fair?',
+    devWarnSendBtn: 'Send Warning & Question to Player',
+    devWarnCancelBtn: 'Cancel',
+    devWarnHistoryTitle: 'Player Warning & Response History:',
+    devWarnPlayerAnswered: 'Player Answer:',
+    devWarnWaitingAnswer: 'Waiting for player response on screen...',
+    playerWarningModalTitle: 'OFFICIAL DEVELOPER (DEV) WARNING',
+    playerWarningModalSubtitle: 'You have received a real-time warning. You must read the message and answer the question to continue.',
+    playerWarningMessageHeader: 'Message from DEV Moderator:',
+    playerWarningQuestionHeader: 'Mandatory Question:',
+    playerWarningAnswerPlaceholder: 'Type your answer here to continue...',
+    playerWarningSubmitBtn: 'Submit Answer to DEV & Continue',
+    devOnlineBadge: 'Online',
+    devOfflineBadge: 'Offline',
+    devFrozenBadge: 'Frozen',
+    devSlowedBadge: 'Slowed 50%',
+    devSplitLockedBadge: 'Split Locked',
+    devEjectLockedBadge: 'Spores Locked',
+    devTempBannedBadge: 'Suspended 5m',
+    devOnlyRealUsersNotice: 'Only real existing users who have connected to the game appear here (zero bots or fake accounts).',
+    devUserNotExistingToast: 'That User ID or username does not exist among real registered players.',
+    devAccessNoticeTitle: 'DEV Security: Button exclusive to DEVs · Badge visible to everyone',
+    devAccessNoticeDesc: 'Only users with DEV rank have the "DEV Panel" button. However, ALL players can see your custom DEV badge next to your name on the leaderboard and in-game.',
+    bannedAccountNotice: 'Your account has been permanently banned by a Developer (DEV).',
+    tempBannedAccountNotice: 'You have been temporarily suspended for 5 minutes by a Developer (DEV).',
+    tierBasicBadge: 'BASIC · AFFORDABLE',
+    tierNormalBadge: 'NORMAL · STANDARD',
+    tierVipBadge: 'VIP · EXCLUSIVE',
   },
   pt: {
     title: 'Mite.io',
@@ -1555,17 +2078,72 @@ export function getTranslations(langCode: string): TranslationStrings {
   const baseTrans = (TRANSLATIONS[base] || {}) as Partial<TranslationStrings>;
   const exactTrans = (TRANSLATIONS[langCode] || {}) as Partial<TranslationStrings>;
 
-  // If user is in Spanish locale, use Spanish as top priority, else English default with translations
-  if (langCode.toLowerCase().startsWith('es')) {
+  // If user is in Spanish locale, use 100% Spanish
+  if (!langCode || langCode.toLowerCase().startsWith('es')) {
     return { ...en, ...es, ...baseTrans, ...exactTrans };
   }
   return { ...es, ...en, ...baseTrans, ...exactTrans };
 }
 
+const SPANISH_TIMEZONES = [
+  'america/guatemala',
+  'america/mexico',
+  'america/merida',
+  'america/monterrey',
+  'america/cancun',
+  'america/chihuahua',
+  'america/tijuana',
+  'america/mazatlan',
+  'america/hermosillo',
+  'america/el_salvador',
+  'america/tegucigalpa',
+  'america/managua',
+  'america/costa_rica',
+  'america/panama',
+  'america/bogota',
+  'america/lima',
+  'america/guayaquil',
+  'america/la_paz',
+  'america/santiago',
+  'america/argentina',
+  'america/buenos_aires',
+  'america/cordoba',
+  'america/mendoza',
+  'america/montevideo',
+  'america/asuncion',
+  'america/caracas',
+  'america/santo_domingo',
+  'america/puerto_rico',
+  'america/havana',
+  'europe/madrid',
+  'atlantic/canary',
+];
+
 // Detect user's device language automatically
 export function detectDeviceLanguage(): string {
   try {
-    const navLang = navigator.language || (navigator.languages && navigator.languages[0]);
+    const langs: string[] = [];
+    if (Array.isArray(navigator.languages)) {
+      langs.push(...navigator.languages);
+    }
+    if (navigator.language) {
+      langs.push(navigator.language);
+    }
+
+    // If any preferred language on the device is Spanish, prioritize Spanish
+    if (langs.some((l) => l && l.toLowerCase().startsWith('es'))) {
+      return 'es';
+    }
+
+    // Check timezone for Spanish-speaking regions (e.g., America/Guatemala, etc.) where WebView may report en-US
+    try {
+      const tz = (Intl.DateTimeFormat().resolvedOptions().timeZone || '').toLowerCase();
+      if (tz && SPANISH_TIMEZONES.some((stz) => tz.includes(stz))) {
+        return 'es';
+      }
+    } catch {}
+
+    const navLang = langs[0];
     if (!navLang) return 'es';
 
     // Direct exact match

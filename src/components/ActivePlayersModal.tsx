@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Users, X, RefreshCw, Send, Shield, Skull, MapPin, Sparkles, UserCheck } from 'lucide-react';
+import { Users, X, RefreshCw, Send, Shield, Skull, MapPin } from 'lucide-react';
 import { ActivePlayer } from '../game/types';
 import { profileStorage } from '../storage/profileStorage';
 import { InviteModal } from './InviteModal';
+import { TranslationStrings } from '../i18n/languages';
+import { DevBadge } from './DevBadge';
 
 interface ActivePlayersModalProps {
   onClose: () => void;
   onInviteSent: (msg: string) => void;
+  t: TranslationStrings;
 }
 
-export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose, onInviteSent }) => {
+export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose, onInviteSent, t }) => {
   const [players, setPlayers] = useState<ActivePlayer[]>([]);
   const [filter, setFilter] = useState<'all' | 'immune' | 'pathogen'>('all');
   const [search, setSearch] = useState('');
@@ -42,7 +45,7 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
   const myDeviceId = profileStorage.getDeviceId();
 
   const filteredPlayers = players.filter((p) => {
-    if (p.deviceId === myDeviceId) return false; // don't invite oneself
+    if (p.deviceId === myDeviceId) return false;
     if (filter !== 'all' && p.faction !== filter) return false;
     if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
@@ -50,24 +53,24 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
 
   return (
     <>
-      <div className="fixed inset-0 z-40 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md pointer-events-auto select-none">
-        <div className="w-full max-w-3xl max-h-[90vh] p-5 sm:p-7 rounded-3xl bg-neutral-900 border border-cyan-500/30 shadow-[0_0_50px_rgba(6,182,212,0.2)] flex flex-col overflow-hidden">
+      <div className="fixed inset-0 z-40 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md pointer-events-auto select-none font-sans">
+        <div className="w-full max-w-3xl max-h-[90vh] p-4 sm:p-7 rounded-3xl bg-neutral-900 border border-cyan-500/30 shadow-[0_0_50px_rgba(6,182,212,0.2)] flex flex-col overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-white/10 gap-2 flex-wrap">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300">
+              <div className="w-10 h-10 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-300 shrink-0">
                 <Users className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl sm:text-2xl font-black text-white">Jugadores Activos</h2>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-lg sm:text-2xl font-black text-white">{t.activePlayersTitle}</h2>
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
                   <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-bold font-mono">
-                    {players.length} En Línea
+                    {players.length} {t.onlineBadge}
                   </span>
                 </div>
                 <p className="text-xs text-neutral-400">
-                  Explorá los microbios activos en el torrente e invitalos a tu sala
+                  {t.activePlayersSubtitle}
                 </p>
               </div>
             </div>
@@ -76,7 +79,7 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
               <button
                 onClick={fetchActivePlayers}
                 className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-cyan-300 transition-colors cursor-pointer"
-                title="Actualizar lista"
+                title={t.refreshListTitle}
               >
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               </button>
@@ -94,13 +97,13 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
           <div className="flex items-center gap-2 pt-3 pb-2 flex-wrap shrink-0">
             <input
               type="text"
-              placeholder="Buscar por nombre de microbio..."
+              placeholder={t.searchMicrobePlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="flex-1 min-w-[200px] px-3.5 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400"
             />
 
-            <div className="flex items-center gap-1.5 text-xs font-bold">
+            <div className="flex items-center gap-1.5 text-xs font-bold flex-wrap">
               <button
                 onClick={() => setFilter('all')}
                 className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
@@ -109,7 +112,7 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
                     : 'bg-white/5 text-neutral-400 hover:text-white'
                 }`}
               >
-                Todos
+                {t.filterAll}
               </button>
               <button
                 onClick={() => setFilter('immune')}
@@ -120,7 +123,7 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
                 }`}
               >
                 <Shield className="w-3 h-3 text-cyan-400" />
-                <span>Defensores</span>
+                <span>{t.filterDefenders}</span>
               </button>
               <button
                 onClick={() => setFilter('pathogen')}
@@ -131,7 +134,7 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
                 }`}
               >
                 <Skull className="w-3 h-3 text-rose-400" />
-                <span>Patógenos</span>
+                <span>{t.filterPathogens}</span>
               </button>
             </div>
           </div>
@@ -140,7 +143,7 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
           <div className="overflow-y-auto py-2 flex-1 pr-1 space-y-2.5">
             {filteredPlayers.length === 0 ? (
               <div className="text-center py-12 text-neutral-400 text-xs">
-                No se encontraron otros microbios activos en esta categoría.
+                {t.noActiveMicrobesFound}
               </div>
             ) : (
               filteredPlayers.map((player) => {
@@ -163,8 +166,11 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
                       </div>
 
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="text-sm font-black text-white">{player.name}</h4>
+                          {player.isDev && player.devBadge && (
+                            <DevBadge config={player.devBadge as any} size="sm" tooltip={t.devBadgeTooltip} />
+                          )}
                           <span
                             className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${
                               isImmune
@@ -172,7 +178,7 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
                                 : 'bg-rose-500/20 text-rose-300 border-rose-400/30'
                             }`}
                           >
-                            {isImmune ? 'Defensor' : 'Patógeno'}
+                            {isImmune ? t.defenderRole : t.pathogenRole}
                           </span>
                         </div>
 
@@ -182,9 +188,11 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
                             <span>{player.currentOrgan}</span>
                           </span>
                           <span>·</span>
-                          <span>Masa: <strong className="text-white">{player.mass}</strong></span>
+                          <span>
+                            {t.massLabel}: <strong className="text-white">{player.mass}</strong>
+                          </span>
                           <span>·</span>
-                          <span className="text-[10px] text-neutral-500">ID: {player.deviceId.slice(-6).toUpperCase()}</span>
+                          <span className="text-[10px] text-neutral-500">ID: {player.deviceId}</span>
                         </div>
                       </div>
                     </div>
@@ -195,7 +203,7 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
                       className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-neutral-950 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(6,182,212,0.35)] transition-all transform active:scale-95 cursor-pointer shrink-0"
                     >
                       <Send className="w-3.5 h-3.5" />
-                      <span>Invitar a Sala</span>
+                      <span>{t.inviteToRoomBtn}</span>
                     </button>
                   </div>
                 );
@@ -214,6 +222,7 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
             onInviteSent(msg);
             setSelectedTarget(null);
           }}
+          t={t}
         />
       )}
     </>

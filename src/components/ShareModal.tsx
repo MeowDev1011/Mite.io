@@ -29,7 +29,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
   const [copied, setCopied] = useState(false);
   const [discordCopied, setDiscordCopied] = useState(false);
   const [cardDownloaded, setCardDownloaded] = useState(false);
-  const [showQr, setShowQr] = useState(false);
+  const [qrDownloaded, setQrDownloaded] = useState(false);
+  const [showQr, setShowQr] = useState(true);
   const profile = profileStorage.getProfile();
 
   const getShareUrl = () => {
@@ -45,7 +46,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
   const shareUrl = getShareUrl();
 
   const getShareMessage = () => {
-    const peak = stats?.peakMass ? `[Mite.io] Mass: ${stats.peakMass} · ` : '';
+    const peak = stats?.peakMass ? `[Mite.io] ${t.peakMass}: ${stats.peakMass} · ` : '';
     return `${peak}${t.shareMessageText} ${shareUrl}`;
   };
 
@@ -59,7 +60,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Mite.io · Bloodstream Cellular Invasion',
+          title: t.shareTitle,
           text: getShareMessage(),
           url: shareUrl,
         });
@@ -93,7 +94,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
   };
 
   const handleShareReddit = () => {
-    const title = encodeURIComponent('Mite.io - Real-Time Bloodstream Cellular Invasion Game');
+    const title = encodeURIComponent(t.shareTitle);
     const url = encodeURIComponent(shareUrl);
     window.open(`https://reddit.com/submit?url=${url}&title=${title}`, '_blank');
   };
@@ -104,14 +105,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
   };
 
   const handleShareDiscord = () => {
-    const discordText = `🦠 **Mite.io — Bloodstream Cellular Invasion**\n> ${stats?.peakMass ? `Peak mass: **${stats.peakMass}** | ` : ''}Factions, super-powers & real-time survival inside the human body!\nPlay here: <${shareUrl}>`;
+    const discordText = `🦠 **${t.shareTitle}**\n> ${stats?.peakMass ? `${t.peakMass}: **${stats.peakMass}** | ` : ''}${t.shareMessageText}\n<${shareUrl}>`;
     navigator.clipboard.writeText(discordText);
     setDiscordCopied(true);
     setTimeout(() => setDiscordCopied(false), 3500);
   };
 
   const handleShareEmail = () => {
-    const subject = encodeURIComponent('Mite.io · Cellular Invasion Battle');
+    const subject = encodeURIComponent(t.shareTitle);
     const body = encodeURIComponent(getShareMessage());
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
@@ -171,7 +172,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
 
       ctx.font = '700 13px sans-serif';
       ctx.fillStyle = '#f43f5e';
-      ctx.fillText('BIOLOGICAL IDENTITY CARD', 45, 84);
+      ctx.fillText(t.shareBioCardHeader, 45, 84);
 
       // Microbe circular badge
       const badgeX = 550;
@@ -205,16 +206,16 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
       // Name & Bacteria
       ctx.fillStyle = '#94a3b8';
       ctx.font = '600 12px sans-serif';
-      ctx.fillText('MICROBE SPECIMEN:', 65, 150);
+      ctx.fillText(t.shareMicrobeSpecimen, 65, 150);
 
       ctx.fillStyle = '#38bdf8';
       ctx.font = '900 22px sans-serif';
-      const name = profile.name || 'Unknown Cell';
+      const name = profile.name || 'Mite';
       ctx.fillText(name.slice(0, 18), 65, 178);
 
       ctx.fillStyle = '#94a3b8';
       ctx.font = '600 12px sans-serif';
-      ctx.fillText('SPECIES / VARIANT:', 65, 215);
+      ctx.fillText(`${t.bacteriaTab.toUpperCase()}:`, 65, 215);
 
       ctx.fillStyle = '#34d399';
       ctx.font = '700 15px sans-serif';
@@ -222,22 +223,22 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
 
       ctx.fillStyle = '#94a3b8';
       ctx.font = '600 12px sans-serif';
-      ctx.fillText('CYTES POOL:', 250, 215);
+      ctx.fillText(`${t.cytes.toUpperCase()}:`, 250, 215);
 
       ctx.fillStyle = '#fbbf24';
       ctx.font = '800 16px monospace';
-      ctx.fillText(`${profile.cytes.toLocaleString()} cytes`, 250, 235);
+      ctx.fillText(`${profile.cytes.toLocaleString()} ${t.cytes}`, 250, 235);
 
       // Stats Banner
       ctx.fillStyle = '#f43f5e';
       ctx.font = '800 14px sans-serif';
       const peakMass = stats?.peakMass || profile.cytes || 500;
-      ctx.fillText(`PEAK MASS RECORD: ${peakMass.toLocaleString()} AMU`, 45, 315);
+      ctx.fillText(`${t.peakMass.toUpperCase()}: ${peakMass.toLocaleString()}`, 45, 315);
 
       // URL Footer
       ctx.fillStyle = '#64748b';
       ctx.font = '500 11px monospace';
-      ctx.fillText(`ID: ${profileStorage.getDeviceId().slice(0, 14)} · PLAY AT: ${shareUrl.slice(0, 50)}`, 45, 355);
+      ctx.fillText(`ID: ${profileStorage.getDeviceId().slice(0, 14)} · ${t.sharePlayLiveAt} ${shareUrl.slice(0, 45)}`, 45, 355);
 
       const dataUrl = canvas.toDataURL('image/png');
       const a = document.createElement('a');
@@ -252,9 +253,161 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
     }
   };
 
+  // Build high-resolution QR Code canvas for downloading or sharing
+  const buildQrCanvas = (): HTMLCanvasElement | null => {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 520;
+      canvas.height = 640;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      // Dark bio background
+      const bgGrad = ctx.createLinearGradient(0, 0, 520, 640);
+      bgGrad.addColorStop(0, '#09090b');
+      bgGrad.addColorStop(0.5, '#180718');
+      bgGrad.addColorStop(1, '#040d1a');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 520, 640);
+
+      // Border frame
+      ctx.strokeStyle = '#a855f7';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(12, 12, 496, 616);
+
+      // Header text
+      ctx.textAlign = 'center';
+      ctx.font = '900 32px sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('Mite.io', 260, 58);
+
+      ctx.font = '700 13px sans-serif';
+      ctx.fillStyle = '#c084fc';
+      ctx.fillText(t.shareScanQrJoin, 260, 84);
+
+      // White QR container pad
+      const qrBoxX = 80;
+      const qrBoxY = 108;
+      const qrBoxSize = 360;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 24);
+      ctx.fill();
+
+      // Scale factor from 140x140 SVG coordinate space to 360x360
+      const scale = qrBoxSize / 140;
+      ctx.save();
+      ctx.translate(qrBoxX, qrBoxY);
+      ctx.scale(scale, scale);
+
+      // Corner finder patterns
+      const drawFinder = (fx: number, fy: number) => {
+        ctx.fillStyle = '#09090b';
+        ctx.fillRect(fx, fy, 34, 34);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(fx + 6, fy + 6, 22, 22);
+        ctx.fillStyle = '#e11d48';
+        ctx.fillRect(fx + 12, fy + 12, 10, 10);
+      };
+      drawFinder(10, 10);
+      drawFinder(96, 10);
+      drawFinder(10, 96);
+
+      // Data modules
+      ctx.fillStyle = '#18181b';
+      const modules: [number, number][] = [
+        [52, 12], [64, 12], [76, 12],
+        [58, 24], [70, 24], [82, 24],
+        [52, 36], [64, 36],
+        [12, 52], [24, 52], [36, 52], [48, 52], [60, 52], [72, 52], [84, 52], [96, 52], [108, 52], [120, 52],
+        [12, 68], [28, 68], [44, 68], [92, 68], [108, 68], [124, 68],
+        [12, 80], [36, 80], [52, 80], [82, 80], [102, 80], [120, 80],
+        [52, 96], [68, 96], [84, 96], [100, 96], [116, 96],
+        [52, 112], [74, 112], [92, 112], [110, 112], [124, 112],
+        [60, 124], [78, 124], [96, 124],
+      ];
+      for (const [mx, my] of modules) {
+        ctx.fillRect(mx, my, 6, 6);
+      }
+
+      // Center cell emblem
+      ctx.beginPath();
+      ctx.arc(70, 70, 14, 0, Math.PI * 2);
+      ctx.fillStyle = '#f43f5e';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(70, 70, 8, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(70, 70, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#09090b';
+      ctx.fill();
+
+      ctx.restore();
+
+      // Player & URL footer
+      ctx.fillStyle = '#34d399';
+      ctx.font = '800 18px sans-serif';
+      ctx.fillText(`${profile.name || 'Microbio'} · ${profile.cytes} ${t.cytes}`, 260, 512);
+
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '600 13px sans-serif';
+      ctx.fillText(t.scanQrToPlay, 260, 545);
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '500 11px monospace';
+      ctx.fillText(shareUrl.slice(0, 54), 260, 585);
+
+      return canvas;
+    } catch {
+      return null;
+    }
+  };
+
+  const handleDownloadQr = () => {
+    const canvas = buildQrCanvas();
+    if (!canvas) return;
+    try {
+      const dataUrl = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `mite-io-qr-${(profile.name || 'game').toLowerCase().replace(/\s+/g, '-')}.png`;
+      a.click();
+      setQrDownloaded(true);
+      setTimeout(() => setQrDownloaded(false), 3500);
+    } catch {
+      handleCopyLink();
+    }
+  };
+
+  const handleShareQr = async () => {
+    const canvas = buildQrCanvas();
+    if (canvas && navigator.share) {
+      try {
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+        if (blob) {
+          const file = new File([blob], 'mite-io-qr.png', { type: 'image/png' });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              title: t.shareTitle,
+              text: getShareMessage(),
+              url: shareUrl,
+              files: [file],
+            });
+            return;
+          }
+        }
+      } catch {
+        // Fallback to standard share below
+      }
+    }
+    await handleNativeShare();
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md pointer-events-auto select-none animate-fade-in">
-      <div className="relative w-full max-w-lg p-5 sm:p-7 rounded-3xl bg-neutral-950/95 border border-rose-500/40 shadow-[0_0_50px_rgba(244,63,94,0.3)] flex flex-col max-h-[92vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md pointer-events-auto select-none animate-fade-in overflow-x-hidden">
+      <div className="relative w-full max-w-lg p-4 sm:p-7 rounded-3xl bg-neutral-950/95 border border-rose-500/40 shadow-[0_0_50px_rgba(244,63,94,0.3)] flex flex-col max-h-[92vh] overflow-y-auto overflow-x-hidden">
         {/* Glowing top line */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-1 bg-gradient-to-r from-transparent via-rose-500 to-transparent" />
 
@@ -506,7 +659,37 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
                 </g>
               </svg>
             </div>
-            <p className="text-xs font-bold text-neutral-300">{t.scanQrToPlay}</p>
+            <p className="text-xs font-bold text-neutral-300 mb-3">{t.scanQrToPlay}</p>
+
+            {/* QR Code Action Buttons: Download QR & Share QR/Game */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full">
+              <button
+                type="button"
+                onClick={handleDownloadQr}
+                className="py-2.5 px-3 rounded-xl bg-purple-600/25 hover:bg-purple-600/40 border border-purple-400/50 text-purple-100 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+              >
+                {qrDownloaded ? (
+                  <>
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span className="text-emerald-300 truncate">{t.qrDownloaded}</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 text-purple-300 shrink-0" />
+                    <span className="truncate">{t.downloadQrBtn}</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleShareQr}
+                className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-purple-600 hover:from-rose-400 hover:to-purple-500 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-[0_0_15px_rgba(244,63,94,0.35)]"
+              >
+                <Share2 className="w-4 h-4 shrink-0" />
+                <span className="truncate">{t.shareQrBtn}</span>
+              </button>
+            </div>
           </div>
         )}
       </div>

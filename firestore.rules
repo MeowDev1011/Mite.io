@@ -1,0 +1,210 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reusable Hardened Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'carmenmena1204@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // Validation Blueprint: PlayerProfile
+    function isValidPlayerProfile(data) {
+      return data.keys().hasAll([
+          'deviceId', 'ownerUid', 'name', 'cytes', 'totalCytesEarned',
+          'selectedSkinId', 'selectedSporeId', 'selectedBacteriaId',
+          'preferredLanguage', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'deviceId', 'ownerUid', 'name', 'deviceType', 'cytes', 'totalCytesEarned',
+          'selectedSkinId', 'selectedSporeId', 'selectedBacteriaId',
+          'preferredLanguage', 'isDev', 'createdAt', 'updatedAt'
+        ]) &&
+        data.deviceId is string && data.deviceId.size() >= 1 && data.deviceId.size() <= 128 && data.deviceId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.ownerUid is string && data.ownerUid.size() >= 1 && data.ownerUid.size() <= 128 && data.ownerUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 64 &&
+        (!('deviceType' in data) || (data.deviceType is string && data.deviceType.size() <= 32)) &&
+        data.cytes is number && data.cytes >= 0 &&
+        data.totalCytesEarned is number && data.totalCytesEarned >= 0 &&
+        data.selectedSkinId is string && data.selectedSkinId.size() >= 1 && data.selectedSkinId.size() <= 64 &&
+        data.selectedSporeId is string && data.selectedSporeId.size() >= 1 && data.selectedSporeId.size() <= 64 &&
+        data.selectedBacteriaId is string && data.selectedBacteriaId.size() >= 1 && data.selectedBacteriaId.size() <= 64 &&
+        data.preferredLanguage is string && data.preferredLanguage.size() >= 1 && data.preferredLanguage.size() <= 16 &&
+        (!('isDev' in data) || data.isDev is bool) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // Validation Blueprint: UserReport
+    function isValidUserReport(data) {
+      return data.keys().hasAll([
+          'id', 'reporterUid', 'reporterDeviceId', 'category',
+          'when', 'details', 'severity', 'status', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'reporterUid', 'reporterDeviceId', 'category', 'reportedUser',
+          'when', 'details', 'severity', 'status', 'devNotes', 'createdAt', 'updatedAt'
+        ]) &&
+        data.id is string && data.id.size() >= 1 && data.id.size() <= 128 && data.id.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.reporterUid is string && data.reporterUid.size() >= 1 && data.reporterUid.size() <= 128 && data.reporterUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.reporterDeviceId is string && data.reporterDeviceId.size() >= 1 && data.reporterDeviceId.size() <= 128 &&
+        data.category is string && data.category.size() <= 32 && data.category in ['cheat', 'bug', 'behavior', 'desync', 'other'] &&
+        (!('reportedUser' in data) || (data.reportedUser is string && data.reportedUser.size() <= 64)) &&
+        data.when is string && data.when.size() >= 1 && data.when.size() <= 128 &&
+        data.details is string && data.details.size() >= 1 && data.details.size() <= 2000 &&
+        data.severity is string && data.severity.size() <= 32 && data.severity in ['low', 'medium', 'high', 'critical'] &&
+        data.status is string && data.status.size() <= 32 && data.status in ['pending', 'investigating', 'resolved', 'dismissed'] &&
+        (!('devNotes' in data) || (data.devNotes is string && data.devNotes.size() <= 2000)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // Validation Blueprint: DevRecord
+    function isValidDevRecord(data) {
+      return data.keys().hasAll([
+          'deviceId', 'grantedByUid', 'title', 'color',
+          'iconPreset1', 'iconPreset2', 'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'deviceId', 'grantedByUid', 'title', 'color',
+          'iconPreset1', 'iconPreset2', 'createdAt', 'updatedAt'
+        ]) &&
+        data.deviceId is string && data.deviceId.size() >= 1 && data.deviceId.size() <= 128 && data.deviceId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.grantedByUid is string && data.grantedByUid.size() >= 1 && data.grantedByUid.size() <= 128 && data.grantedByUid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 32 &&
+        data.color is string && data.color.size() >= 4 && data.color.size() <= 16 &&
+        data.iconPreset1 is string && data.iconPreset1.size() >= 1 && data.iconPreset1.size() <= 32 &&
+        data.iconPreset2 is string && data.iconPreset2.size() >= 1 && data.iconPreset2.size() <= 32 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // Collection: /profiles/{profileId}
+    match /profiles/{profileId} {
+      allow get: if isSignedIn() && isValidId(profileId) && (existing().ownerUid == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().ownerUid == request.auth.uid || isAdmin());
+
+      allow create: if isSignedIn() &&
+        isValidId(profileId) &&
+        isValidPlayerProfile(incoming()) &&
+        profileId == request.auth.uid &&
+        incoming().ownerUid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        (!('isDev' in incoming()) || incoming().isDev == false || isAdmin());
+
+      allow update: if isSignedIn() &&
+        isValidId(profileId) &&
+        isValidPlayerProfile(incoming()) &&
+        incoming().ownerUid == existing().ownerUid &&
+        incoming().deviceId == existing().deviceId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          // Action 1: Owner updates gameplay profile fields (cannot self-promote to isDev)
+          (existing().ownerUid == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 'deviceType', 'cytes', 'totalCytesEarned',
+              'selectedSkinId', 'selectedSporeId', 'selectedBacteriaId',
+              'preferredLanguage', 'updatedAt'
+            ])
+          ) ||
+          // Action 2: Admin override (can grant/revoke isDev)
+          (isAdmin() &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 'deviceType', 'cytes', 'totalCytesEarned',
+              'selectedSkinId', 'selectedSporeId', 'selectedBacteriaId',
+              'preferredLanguage', 'isDev', 'updatedAt'
+            ])
+          )
+        );
+
+      allow delete: if isSignedIn() && isValidId(profileId) && isAdmin();
+    }
+
+    // Collection: /reports/{reportId}
+    match /reports/{reportId} {
+      allow get: if isSignedIn() && isValidId(reportId) && (existing().reporterUid == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().reporterUid == request.auth.uid || isAdmin());
+
+      allow create: if isSignedIn() &&
+        isValidId(reportId) &&
+        isValidUserReport(incoming()) &&
+        incoming().id == reportId &&
+        incoming().reporterUid == request.auth.uid &&
+        incoming().status == 'pending' &&
+        !('devNotes' in incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() &&
+        isValidId(reportId) &&
+        isValidUserReport(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().reporterUid == existing().reporterUid &&
+        incoming().reporterDeviceId == existing().reporterDeviceId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          // Action 1: Reporter updates details while still pending (Terminal state locked once resolved/dismissed)
+          (existing().reporterUid == request.auth.uid &&
+            existing().status == 'pending' &&
+            incoming().status == 'pending' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['details', 'when', 'severity', 'updatedAt'])
+          ) ||
+          // Action 2: Admin triages, resolves, or adds devNotes
+          (isAdmin() &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'devNotes', 'updatedAt'])
+          )
+        );
+
+      allow delete: if isSignedIn() && isValidId(reportId) && isAdmin();
+    }
+
+    // Collection: /devs/{devId}
+    match /devs/{devId} {
+      allow get: if isSignedIn() && isValidId(devId) && (devId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().grantedByUid == request.auth.uid || isAdmin());
+
+      allow create: if isSignedIn() &&
+        isValidId(devId) &&
+        isValidDevRecord(incoming()) &&
+        isAdmin() &&
+        incoming().grantedByUid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isSignedIn() &&
+        isValidId(devId) &&
+        isValidDevRecord(incoming()) &&
+        isAdmin() &&
+        incoming().deviceId == existing().deviceId &&
+        incoming().grantedByUid == existing().grantedByUid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['title', 'color', 'iconPreset1', 'iconPreset2', 'updatedAt']);
+
+      allow delete: if isSignedIn() && isValidId(devId) && isAdmin();
+    }
+  }
+}

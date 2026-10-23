@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { X, Send, Users, Shield, Skull, Crown, Bot, Sparkles, Check } from 'lucide-react';
+import { X, Send, Users, Shield, Skull, Crown, Bot } from 'lucide-react';
 import { ActivePlayer, GameMode, Faction } from '../game/types';
 import { profileStorage } from '../storage/profileStorage';
+import { TranslationStrings } from '../i18n/languages';
 
 interface InviteModalProps {
   targetPlayer: ActivePlayer;
   onClose: () => void;
   onInviteSent: (msg: string) => void;
+  t: TranslationStrings;
 }
 
-export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose, onInviteSent }) => {
+export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose, onInviteSent, t }) => {
   const profile = profileStorage.getProfile();
   const [mode, setMode] = useState<GameMode | 'bots'>('team');
   const [factionRule, setFactionRule] = useState<'host_decides' | 'guest_chooses'>('host_decides');
@@ -37,21 +39,19 @@ export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose,
       });
 
       if (res.ok) {
-        onInviteSent(`¡Invitación enviada a ${targetPlayer.name}! Esperando respuesta.`);
+        onInviteSent(`${targetPlayer.name} — ${t.inviteSentSuccess}`);
         onClose();
-      } else {
-        alert('Error al enviar la invitación. Intentá de nuevo.');
       }
     } catch {
-      alert('Error de conexión al enviar invitación.');
+      // Handled gracefully
     } finally {
       setIsSending(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md pointer-events-auto select-none">
-      <div className="w-full max-w-lg p-6 rounded-3xl bg-neutral-900 border border-cyan-500/30 shadow-[0_0_50px_rgba(6,182,212,0.25)] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md pointer-events-auto select-none font-sans">
+      <div className="w-full max-w-lg p-5 sm:p-6 rounded-3xl bg-neutral-900 border border-cyan-500/30 shadow-[0_0_50px_rgba(6,182,212,0.25)] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-white/10">
           <div className="flex items-center gap-2.5">
@@ -59,9 +59,9 @@ export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose,
               <Users className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-black text-white">Invitar a Sala</h3>
+              <h3 className="text-lg font-black text-white">{t.inviteToRoomBtn}</h3>
               <p className="text-xs text-neutral-400">
-                Invitando a: <strong className="text-cyan-300">{targetPlayer.name}</strong>
+                {t.invitingPlayerLabel} <strong className="text-cyan-300">{targetPlayer.name}</strong>
               </p>
             </div>
           </div>
@@ -79,7 +79,7 @@ export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose,
           {/* Step 1: Mode Selection */}
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-neutral-400 mb-1.5 block">
-              1. Seleccioná el Modo de Juego:
+              {t.selectGameModeStep}
             </label>
             <div className="grid grid-cols-3 gap-2">
               <button
@@ -96,8 +96,8 @@ export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose,
                   <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300">0 BOTs</span>
                 </div>
                 <div>
-                  <span className="text-xs font-black text-white block">Batalla en Equipo</span>
-                  <span className="text-[10px] text-neutral-400 leading-tight">Solo Humanos (2 Bandos)</span>
+                  <span className="text-xs font-black text-white block">{t.modeTeam}</span>
+                  <span className="text-[10px] text-neutral-400 leading-tight">{t.humansOnly2Factions}</span>
                 </div>
               </button>
 
@@ -115,8 +115,8 @@ export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose,
                   <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">0 BOTs</span>
                 </div>
                 <div>
-                  <span className="text-xs font-black text-white block">Multijugador Normal</span>
-                  <span className="text-[10px] text-neutral-400 leading-tight">Solo Humanos (FFA)</span>
+                  <span className="text-xs font-black text-white block">{t.modeFfa}</span>
+                  <span className="text-[10px] text-neutral-400 leading-tight">{t.humansOnlyFfa}</span>
                 </div>
               </button>
 
@@ -134,8 +134,8 @@ export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose,
                   <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300">BOTs</span>
                 </div>
                 <div>
-                  <span className="text-xs font-black text-white block">Sala con BOTs</span>
-                  <span className="text-[10px] text-neutral-400 leading-tight">Práctica con IA</span>
+                  <span className="text-xs font-black text-white block">{t.modeBots}</span>
+                  <span className="text-[10px] text-neutral-400 leading-tight">{t.practiceWithAi}</span>
                 </div>
               </button>
             </div>
@@ -145,7 +145,7 @@ export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose,
           {mode === 'team' && (
             <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10 space-y-3 animate-fade-in">
               <label className="text-xs font-bold uppercase tracking-wider text-neutral-300 block">
-                2. Elección de Bandos:
+                {t.factionSelectionStep}
               </label>
 
               {/* Faction Rule Toggle */}
@@ -159,8 +159,8 @@ export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose,
                       : 'bg-white/5 border-white/10 text-neutral-400'
                   }`}
                 >
-                  <span className="block font-black">Tú Asignas los Bandos</span>
-                  <span className="text-[10px] text-neutral-400 font-normal">Tú configuras ambos roles</span>
+                  <span className="block font-black">{t.hostAssignsFactions}</span>
+                  <span className="text-[10px] text-neutral-400 font-normal">{t.hostAssignsDesc}</span>
                 </button>
 
                 <button
@@ -172,14 +172,14 @@ export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose,
                       : 'bg-white/5 border-white/10 text-neutral-400'
                   }`}
                 >
-                  <span className="block font-black">Él Elige su Bando</span>
-                  <span className="text-[10px] text-neutral-400 font-normal">El invitado escoge al aceptar</span>
+                  <span className="block font-black">{t.guestChoosesFaction}</span>
+                  <span className="text-[10px] text-neutral-400 font-normal">{t.guestChoosesDesc}</span>
                 </button>
               </div>
 
               {/* Host Faction Picker */}
               <div className="space-y-1.5 pt-1">
-                <span className="text-[11px] text-neutral-400 font-medium">Tu Bando (Anfitrión):</span>
+                <span className="text-[11px] text-neutral-400 font-medium">{t.yourHostFactionLabel}</span>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -194,7 +194,7 @@ export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose,
                     }`}
                   >
                     <Shield className="w-3.5 h-3.5" />
-                    <span>Sistema Inmune</span>
+                    <span>{t.factionImmuneTitle}</span>
                   </button>
 
                   <button
@@ -210,7 +210,7 @@ export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose,
                     }`}
                   >
                     <Skull className="w-3.5 h-3.5" />
-                    <span>Infección / Patógeno</span>
+                    <span>{t.factionPathogenTitle}</span>
                   </button>
                 </div>
               </div>
@@ -218,7 +218,9 @@ export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose,
               {/* Guest Faction Picker (if host_decides) */}
               {factionRule === 'host_decides' && (
                 <div className="space-y-1.5 pt-1">
-                  <span className="text-[11px] text-neutral-400 font-medium">Bando del Invitado ({targetPlayer.name}):</span>
+                  <span className="text-[11px] text-neutral-400 font-medium">
+                    {t.guestFactionLabel} ({targetPlayer.name}):
+                  </span>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -230,7 +232,7 @@ export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose,
                       }`}
                     >
                       <Shield className="w-3.5 h-3.5" />
-                      <span>Defensor Inmune</span>
+                      <span>{t.factionImmuneTitle}</span>
                     </button>
 
                     <button
@@ -243,7 +245,7 @@ export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose,
                       }`}
                     >
                       <Skull className="w-3.5 h-3.5" />
-                      <span>Patógeno Invasor</span>
+                      <span>{t.factionPathogenTitle}</span>
                     </button>
                   </div>
                 </div>
@@ -252,22 +254,24 @@ export const InviteModal: React.FC<InviteModalProps> = ({ targetPlayer, onClose,
           )}
         </div>
 
-        {/* Footer Actions */}
-        <div className="pt-3 border-t border-white/10 flex items-center justify-end gap-2.5">
+        {/* Footer */}
+        <div className="pt-3 border-t border-white/10 flex items-center justify-end gap-2">
           <button
+            type="button"
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 text-xs font-bold transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-neutral-300 text-xs font-bold transition-colors cursor-pointer"
           >
-            Cancelar
+            {t.closeBtn}
           </button>
 
           <button
-            onClick={handleSend}
+            type="button"
             disabled={isSending}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-neutral-950 text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all cursor-pointer disabled:opacity-50"
+            onClick={handleSend}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-neutral-950 font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all cursor-pointer"
           >
             <Send className="w-3.5 h-3.5" />
-            <span>{isSending ? 'Enviando...' : 'Enviar Invitación'}</span>
+            <span>{isSending ? t.sendingInviteBtn : t.sendOfficialInviteBtn}</span>
           </button>
         </div>
       </div>

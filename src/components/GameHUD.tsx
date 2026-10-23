@@ -4,6 +4,8 @@ import { GameStats, LeaderboardEntry } from '../game/types';
 import { SECRET_ZONE_X, SECRET_ZONE_Y, ANATOMICAL_ORGANS } from '../game/constants';
 import { TranslationStrings, SUPPORTED_LANGUAGES } from '../i18n/languages';
 import { profileStorage } from '../storage/profileStorage';
+import { reportStorage } from '../storage/reportStorage';
+import { DevBadge } from './DevBadge';
 
 interface GameHUDProps {
   stats: GameStats | null;
@@ -62,11 +64,12 @@ export const GameHUD: React.FC<GameHUDProps> = ({
 }) => {
   // Mobile responsiveness check
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  const devBadgeConfig = reportStorage.getDevConfig();
 
   // Minimap scaling: Dual human body world coordinates span approx [-2200, 2200] x [-2600, 2800]
-  // On mobile screens, scale down significantly so it never blocks gameplay
-  const mapWidth = isMobile ? 135 : 190;
-  const mapHeight = isMobile ? 112 : 160;
+  // Compact size so it comes open by default and never blocks the bottom-left joystick, top-right leaderboard, or center screen
+  const mapWidth = isMobile ? 114 : 162;
+  const mapHeight = isMobile ? 94 : 134;
   const mapCenterX = mapWidth / 2;
   const mapCenterY = mapHeight / 2;
   const mapScaleX = mapWidth / 4800;
@@ -80,10 +83,10 @@ export const GameHUD: React.FC<GameHUDProps> = ({
   const immuneScore = stats?.immunePercentage ?? 50;
   const pathogenScore = stats?.pathogenPercentage ?? 50;
 
-  // On mobile, default radar to minimized so it never covers the screen or joystick!
-  const [isRadarOpen, setIsRadarOpen] = useState<boolean>(!isMobile);
-  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState<boolean>(!isMobile);
-  const [isHostStatusOpen, setIsHostStatusOpen] = useState<boolean>(true);
+  // Radar comes open by default (true) and positioned cleanly so it never covers controls
+  const [isRadarOpen, setIsRadarOpen] = useState<boolean>(true);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState<boolean>(true);
+  const [isHostStatusOpen, setIsHostStatusOpen] = useState<boolean>(!isMobile);
 
   const hostStatus = stats?.hostStatus;
 
@@ -418,22 +421,6 @@ export const GameHUD: React.FC<GameHUDProps> = ({
               <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
-            {/* Language Selector Dropdown */}
-            <div className="relative flex items-center bg-black/60 border border-white/10 rounded-xl px-1.5 sm:px-2 py-1 sm:py-1.5 text-xs text-neutral-200 backdrop-blur-md">
-              <Globe className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-cyan-400 mr-1 shrink-0" />
-              <select
-                value={currentLang}
-                onChange={(e) => onSelectLanguage(e.target.value)}
-                className="bg-transparent text-white text-[11px] sm:text-xs font-medium focus:outline-none cursor-pointer pr-1"
-              >
-                {SUPPORTED_LANGUAGES.map((lang) => (
-                  <option key={lang.code} value={lang.code} className="bg-neutral-900 text-white">
-                    {lang.flag} {lang.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             {/* Audio Mute Button */}
             <button
               onClick={onToggleMute}
@@ -467,24 +454,25 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             {onOpenDevPanel && (
               <button
                 onClick={onOpenDevPanel}
-                className="p-1.5 sm:p-2 rounded-xl bg-amber-950/60 hover:bg-amber-900/80 border border-amber-500/40 text-amber-300 transition-colors backdrop-blur-md cursor-pointer"
+                className="px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-xl bg-amber-950/75 hover:bg-amber-900/90 border border-amber-500/50 text-amber-300 transition-colors backdrop-blur-md cursor-pointer flex items-center gap-1 font-black text-[10px] sm:text-xs"
                 title={t.devPanelTitle}
               >
-                <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+                <span>{t.devOpenPanelBtn}</span>
               </button>
             )}
           </div>
 
-          {/* Top 10 Leaderboard Panel */}
-          <div className="w-40 sm:w-60 p-2 sm:p-2.5 rounded-2xl bg-black/70 border border-white/10 backdrop-blur-md shadow-xl text-xs">
+          {/* Top 10 Leaderboard Panel - Always visible on mobile and desktop */}
+          <div className="w-36 sm:w-60 p-1.5 sm:p-2.5 rounded-2xl bg-black/80 border border-amber-500/30 backdrop-blur-md shadow-xl text-xs">
             <div
               onClick={() => setIsLeaderboardOpen(!isLeaderboardOpen)}
-              className="flex items-center justify-between pb-1 mb-1 border-b border-white/10 font-bold text-neutral-300 cursor-pointer select-none"
+              className="flex items-center justify-between pb-1 mb-1 border-b border-white/10 font-bold text-amber-200 cursor-pointer select-none"
               title={t.foldTable}
             >
-              <span className="flex items-center gap-1.5 text-[10px] sm:text-xs truncate">
-                <Crown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
-                <span>{isTeamMode ? t.leaderboardFaction : t.leadersTitle}</span>
+              <span className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs truncate">
+                <Crown className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400 shrink-0" />
+                <span className="truncate">{isTeamMode ? t.leaderboardFaction : t.leadersTitle}</span>
               </span>
               <div className="flex items-center gap-1 shrink-0">
                 {isLeaderboardOpen ? (
@@ -496,8 +484,8 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             </div>
 
             {isLeaderboardOpen && (
-              <div className="space-y-0.5 sm:space-y-1 max-h-32 sm:max-h-44 overflow-hidden">
-                {leaderboard.map((entry, idx) => {
+              <div className="space-y-0.5 sm:space-y-1 max-h-28 sm:max-h-44 overflow-y-auto pr-0.5">
+                {leaderboard.slice(0, isMobile ? 6 : 10).map((entry, idx) => {
                   const isLeader = entry.hasCrown || idx === 0;
                   let crownColor = 'text-amber-400';
                   if (entry.crownType === 'immune' || (isTeamMode && entry.faction === 'immune' && idx === 0)) {
@@ -509,21 +497,28 @@ export const GameHUD: React.FC<GameHUDProps> = ({
                   return (
                     <div
                       key={entry.id || idx}
-                      className={`flex items-center justify-between px-1.5 py-0.5 rounded-lg ${
+                      className={`flex items-center justify-between px-1 sm:px-1.5 py-0.5 rounded-lg ${
                         entry.isPlayer
                           ? 'bg-emerald-500/25 text-emerald-300 font-bold border border-emerald-500/30'
-                          : 'text-neutral-300'
+                          : 'text-neutral-200'
                       }`}
                     >
-                      <div className="flex items-center gap-1 truncate pr-1">
+                      <div className="flex items-center gap-1 truncate pr-1 min-w-0">
                         {isLeader ? (
-                          <Crown className={`w-3 h-3 ${crownColor} shrink-0 animate-pulse`} />
+                          <Crown className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${crownColor} shrink-0 animate-pulse`} />
                         ) : (
-                          <span className="font-mono text-[9px] text-neutral-500 w-3 text-right">{idx + 1}.</span>
+                          <span className="font-mono text-[9px] text-neutral-500 w-3 text-right shrink-0">{idx + 1}.</span>
                         )}
-                        <span className="truncate text-[10px] sm:text-xs">{entry.name}</span>
+                        <span className="truncate text-[9px] sm:text-xs">{entry.name}</span>
+                        {(entry.isDev || (entry.isPlayer && devBadgeConfig.isDev)) && (
+                          <DevBadge
+                            config={(entry.devBadge as any) || devBadgeConfig}
+                            size="sm"
+                            tooltip={t.devBadgeTooltip}
+                          />
+                        )}
                       </div>
-                      <span className="font-mono tabular-nums text-neutral-400 text-[10px] shrink-0">
+                      <span className="font-mono tabular-nums text-amber-300/90 text-[9px] sm:text-[10px] font-bold shrink-0">
                         {entry.mass}
                       </span>
                     </div>
@@ -536,25 +531,25 @@ export const GameHUD: React.FC<GameHUDProps> = ({
       </div>
 
       {/* Floating Anatomical Dual Body Radar */}
-      {/* Positioned cleanly on upper-left below mass pill, compact on mobile, collapsible */}
-      <div className="fixed top-28 sm:top-36 left-3 sm:left-6 z-30 pointer-events-auto flex flex-col items-start gap-1">
+      {/* Open by default, compact and tucked cleanly below top-left status bar so it never blocks controls */}
+      <div className="fixed top-24 sm:top-32 left-2 sm:left-5 z-20 pointer-events-auto flex flex-col items-start gap-1">
         {/* Toggle / Minimize Button */}
         <button
           onClick={() => setIsRadarOpen(!isRadarOpen)}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/85 hover:bg-black/95 border border-rose-500/40 text-rose-300 text-[10px] font-bold backdrop-blur-md cursor-pointer transition-all shadow-md active:scale-95"
+          className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/80 hover:bg-black/95 border border-rose-500/40 text-rose-300 text-[9px] sm:text-[10px] font-bold backdrop-blur-md cursor-pointer transition-all shadow-md active:scale-95"
           title={isRadarOpen ? t.radarMinimizeBtn : t.radarToggleBtn}
         >
-          <Compass className="w-3.5 h-3.5 text-rose-400" />
-          <span>{isRadarOpen ? t.radarMinimizeBtn : t.radarToggleBtn}</span>
+          <Compass className="w-3 h-3 text-rose-400" />
+          <span>{isRadarOpen ? t.capillaryRadar : t.radarToggleBtn}</span>
           {isRadarOpen ? (
-            <ChevronDown className="w-3 h-3 text-neutral-400" />
+            <ChevronUp className="w-2.5 h-2.5 text-neutral-400" />
           ) : (
-            <ChevronUp className="w-3 h-3 text-neutral-400" />
+            <ChevronDown className="w-2.5 h-2.5 text-neutral-400" />
           )}
         </button>
 
         {isRadarOpen && (
-          <div className="p-1.5 sm:p-2 rounded-2xl bg-black/80 border border-white/10 backdrop-blur-md shadow-2xl flex flex-col items-center animate-fade-in relative">
+          <div className="p-1 sm:p-1.5 rounded-xl bg-black/75 border border-white/10 backdrop-blur-md shadow-xl flex flex-col items-center animate-fade-in relative">
             <div className="relative" style={{ width: mapWidth, height: mapHeight }}>
               {/* SVG Dual 2D Human Body Silhouette */}
               <svg width={mapWidth} height={mapHeight} className="absolute inset-0">
@@ -776,7 +771,7 @@ export const GameHUD: React.FC<GameHUDProps> = ({
             title={t.splitTwoHint}
           >
             <span className="text-base sm:text-xl font-black leading-none tracking-wide">{t.splitBtn}</span>
-            <span className="text-[10px] text-emerald-200 font-mono mt-0.5">[ESPACIO]</span>
+            <span className="text-[10px] text-emerald-200 font-mono mt-0.5">{t.spaceKeyLabel}</span>
           </button>
         </div>
       </div>

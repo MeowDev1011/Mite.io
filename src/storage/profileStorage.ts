@@ -6,6 +6,18 @@ import { ACHIEVEMENTS_LIST, Achievement } from '../game/achievements';
 import { detectDeviceType, detectDeviceLanguage } from '../i18n/languages';
 import { getOrCreateDeviceId } from './deviceId';
 import { PlayerUpgrades } from '../game/types';
+import {
+  db,
+  auth,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  serverTimestamp,
+  onAuthStateChanged,
+  handleFirestoreError,
+  OperationType,
+} from '../firebase';
 
 const CACHE_KEY = 'mite_io_device_profile_cache_v5';
 
@@ -80,10 +92,10 @@ export function getDefaultLocalizedName(lang?: string, deviceId?: string): strin
 
 export const UPGRADE_MAX_LEVEL = 1500;
 
-// Dynamic cost formula scaling progressively from level 0 to 1500
+// Dynamic cost formula scaling progressively from Basic (cheap) to Normal (medium) to VIP (expensive)
 export function getUpgradeCost(currentLvl: number): number {
   if (currentLvl >= UPGRADE_MAX_LEVEL) return 0;
-  return Math.floor(10 + Math.pow(currentLvl, 1.28) * 3 + currentLvl * 2);
+  return Math.floor(35 + Math.pow(currentLvl, 1.45) * 18 + currentLvl * 15);
 }
 
 export function getTotalUpgradeCost(currentLvl: number, count: number): { totalCost: number; actualCount: number; targetLevel: number } {
@@ -144,6 +156,59 @@ class ProfileStorage {
     this.profile = this.loadLocalCache();
     // Synchronize with server database
     this.fetchFromServer();
+
+    // Listen to Firebase Auth state changes to sync profile with Firestore
+    onAuthStateChanged(auth, async (user) => {
+      if (user && user.emailVerified) {
+        await this.syncFromFirestore(user.uid);
+      }
+    });
+  }
+
+  private async syncFromFirestore(uid: string) {
+    const path = `profiles/${uid}`;
+    try {
+      const snap = await getDoc(doc(db, 'profiles', uid));
+      if (snap.exists()) {
+        const data = snap.data();
+        this.profile = {
+          ...this.profile,
+          name: data.name || this.profile.name,
+          cytes: typeof data.cytes === 'number' ? Math.max(this.profile.cytes, data.cytes) : this.profile.cytes,
+          totalCytesEarned:
+            typeof data.totalCytesEarned === 'number'
+              ? Math.max(this.profile.totalCytesEarned, data.totalCytesEarned)
+              : this.profile.totalCytesEarned,
+          selectedSkinId: data.selectedSkinId || this.profile.selectedSkinId,
+          selectedSporeId: data.selectedSporeId || this.profile.selectedSporeId,
+          selectedBacteriaId: data.selectedBacteriaId || this.profile.selectedBacteriaId,
+          preferredLanguage: data.preferredLanguage || this.profile.preferredLanguage,
+        };
+        this.saveLocalCache();
+      } else {
+        // Create initial Firestore profile document
+        const payload: Record<string, any> = {
+          deviceId: currentDeviceId.slice(0, 128),
+          ownerUid: uid,
+          name: (this.profile.name || 'Microbio').slice(0, 64),
+          deviceType: (this.profile.deviceType || 'Desktop').slice(0, 32),
+          cytes: Math.max(0, this.profile.cytes),
+          totalCytesEarned: Math.max(0, this.profile.totalCytesEarned),
+          selectedSkinId: (this.profile.selectedSkinId || 'emerald_mite').slice(0, 64),
+          selectedSporeId: (this.profile.selectedSporeId || 'spore_plasma').slice(0, 64),
+          selectedBacteriaId: (this.profile.selectedBacteriaId || 'bacillus_subtilis').slice(0, 64),
+          preferredLanguage: (this.profile.preferredLanguage || 'es').slice(0, 16),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+        if (auth.currentUser?.email === 'carmenmena1204@gmail.com') {
+          payload.isDev = true;
+        }
+        await setDoc(doc(db, 'profiles', uid), payload);
+      }
+    } catch (error) {
+      handleFirestoreError(error, OperationType.GET, path);
+    }
   }
 
   private loadLocalCache(): PlayerProfile {
@@ -217,6 +282,27 @@ class ProfileStorage {
       } catch (e) {
         // Handled silently for offline mode
       }
+
+      // Sync to Firebase Firestore if signed in with verified email
+      const user = auth.currentUser;
+      if (user && user.emailVerified) {
+        const path = `profiles/${user.uid}`;
+        try {
+          await updateDoc(doc(db, 'profiles', user.uid), {
+            name: (this.profile.name || 'Microbio').slice(0, 64),
+            deviceType: (this.profile.deviceType || 'Desktop').slice(0, 32),
+            cytes: Math.max(0, this.profile.cytes),
+            totalCytesEarned: Math.max(0, this.profile.totalCytesEarned),
+            selectedSkinId: (this.profile.selectedSkinId || 'emerald_mite').slice(0, 64),
+            selectedSporeId: (this.profile.selectedSporeId || 'spore_plasma').slice(0, 64),
+            selectedBacteriaId: (this.profile.selectedBacteriaId || 'bacillus_subtilis').slice(0, 64),
+            preferredLanguage: (this.profile.preferredLanguage || 'es').slice(0, 16),
+            updatedAt: serverTimestamp(),
+          });
+        } catch (error) {
+          handleFirestoreError(error, OperationType.UPDATE, path);
+        }
+      }
     }, 400);
   }
 
@@ -247,6 +333,27 @@ class ProfileStorage {
     this.profile.cytes += validAmount;
     this.profile.totalCytesEarned += validAmount;
     this.saveProfile();
+  }
+
+  public setCytesBalance(amount: number) {
+    this.profile.cytes = Math.max(0, Math.floor(amount));
+    this.saveLocalCache();
+  }
+
+  public resetUpgradesToZero() {
+    this.profile.upgrades = {
+      attraction: 0,
+      speed: 0,
+      armor: 0,
+      metabolism: 0,
+      sporesFission: 0,
+    };
+    this.saveLocalCache();
+  }
+
+  public clearConqueredOrgans() {
+    this.profile.conqueredOrgans = [];
+    this.saveLocalCache();
   }
 
   public spendCytes(amount: number): boolean {
@@ -409,20 +516,25 @@ class ProfileStorage {
     };
 
     // Auto-unlock corresponding skin rewards from achievements
-    if (achievementId === 'first_blood' && !this.profile.unlockedSkinIds.includes('crimson_phage')) {
-      this.profile.unlockedSkinIds.push('crimson_phage');
+    if (achievementId === 'first_blood') {
+      if (!this.profile.unlockedSkinIds.includes('crimson_phage')) this.profile.unlockedSkinIds.push('crimson_phage');
+      if (!this.profile.unlockedSporeIds.includes('spore_hemoglobin_ruby')) this.profile.unlockedSporeIds.push('spore_hemoglobin_ruby');
     }
-    if (achievementId === 'mitosis_master' && !this.profile.unlockedSkinIds.includes('cyber_cyan')) {
-      this.profile.unlockedSkinIds.push('cyber_cyan');
+    if (achievementId === 'mitosis_master') {
+      if (!this.profile.unlockedSkinIds.includes('cyber_cyan')) this.profile.unlockedSkinIds.push('cyber_cyan');
+      if (!this.profile.unlockedSporeIds.includes('spore_mitosis_spark')) this.profile.unlockedSporeIds.push('spore_mitosis_spark');
     }
-    if (achievementId === 'mass_500' && !this.profile.unlockedSkinIds.includes('royal_gold')) {
-      this.profile.unlockedSkinIds.push('royal_gold');
+    if (achievementId === 'mass_500') {
+      if (!this.profile.unlockedSkinIds.includes('royal_gold')) this.profile.unlockedSkinIds.push('royal_gold');
+      if (!this.profile.unlockedSporeIds.includes('spore_titan_gold')) this.profile.unlockedSporeIds.push('spore_titan_gold');
     }
-    if (achievementId === 'secret_lymph_node' && !this.profile.unlockedSkinIds.includes('void_amethyst')) {
-      this.profile.unlockedSkinIds.push('void_amethyst');
+    if (achievementId === 'secret_lymph_node') {
+      if (!this.profile.unlockedSkinIds.includes('void_amethyst')) this.profile.unlockedSkinIds.push('void_amethyst');
+      if (!this.profile.unlockedSporeIds.includes('spore_lymphatic_mist')) this.profile.unlockedSporeIds.push('spore_lymphatic_mist');
     }
-    if (achievementId === 'antibody_survivor' && !this.profile.unlockedSkinIds.includes('solar_amber')) {
-      this.profile.unlockedSkinIds.push('solar_amber');
+    if (achievementId === 'antibody_survivor') {
+      if (!this.profile.unlockedSkinIds.includes('solar_amber')) this.profile.unlockedSkinIds.push('solar_amber');
+      if (!this.profile.unlockedSporeIds.includes('spore_antibody_null')) this.profile.unlockedSporeIds.push('spore_antibody_null');
     }
     if (achievementId === 'erythrocyte_feast' && !this.profile.unlockedSporeIds.includes('spore_hemoglobin')) {
       this.profile.unlockedSporeIds.push('spore_hemoglobin');
@@ -434,8 +546,8 @@ class ProfileStorage {
       this.profile.unlockedSporeIds.push('spore_cosmic');
     }
 
-    // Award bonus Cytes for completing achievement
-    this.addCytes(75);
+    // Award balanced bonus Cytes for completing achievement
+    this.addCytes(25);
 
     this.saveProfile();
     return true;
@@ -447,10 +559,10 @@ class ProfileStorage {
     sporesInvaded: number,
     kills: number
   ): CytesRewardBreakdown {
-    const timeReward = Math.floor(survivalSec * 1.5);
-    const massReward = Math.floor(peakMass * 0.65);
-    const territoryReward = Math.floor(sporesInvaded * 6 + kills * 40);
-    const totalEarned = Math.max(15, timeReward + massReward + territoryReward);
+    const timeReward = Math.floor(survivalSec * 0.25);
+    const massReward = Math.floor(Math.max(0, peakMass - 18) * 0.12);
+    const territoryReward = Math.floor(sporesInvaded * 1 + kills * 8);
+    const totalEarned = Math.max(3, timeReward + massReward + territoryReward);
 
     return {
       timeReward,

@@ -1,0 +1,197 @@
+{
+  "entities": {
+    "PlayerProfile": {
+      "title": "PlayerProfile",
+      "description": "Stores a player's persistent profile, device ID, Cytes balance, and unlocked items.",
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string",
+          "description": "Unique device identifier",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "description": "Authenticated Firebase UID of the owner",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Player display name",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "deviceType": {
+          "type": "string",
+          "description": "Device category",
+          "maxLength": 32
+        },
+        "cytes": {
+          "type": "number",
+          "description": "Current Cytes balance"
+        },
+        "totalCytesEarned": {
+          "type": "number",
+          "description": "Cumulative Cytes earned"
+        },
+        "selectedSkinId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "selectedSporeId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "selectedBacteriaId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "preferredLanguage": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "isDev": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["deviceId", "ownerUid", "name", "cytes", "totalCytesEarned", "selectedSkinId", "selectedSporeId", "selectedBacteriaId", "preferredLanguage", "createdAt", "updatedAt"]
+    },
+    "UserReport": {
+      "title": "UserReport",
+      "description": "Stores bug, cheat, and behavior reports submitted by players for developer review.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "reporterUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "reporterDeviceId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "category": {
+          "type": "string",
+          "enum": ["cheat", "bug", "behavior", "desync", "other"],
+          "maxLength": 32
+        },
+        "reportedUser": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "when": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "details": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical"],
+          "maxLength": 32
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "investigating", "resolved", "dismissed"],
+          "maxLength": 32
+        },
+        "devNotes": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "reporterUid", "reporterDeviceId", "category", "when", "details", "severity", "status", "createdAt", "updatedAt"]
+    },
+    "DevRecord": {
+      "title": "DevRecord",
+      "description": "Stores developer status and customizable badge settings for authorized developer IDs.",
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "grantedByUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "color": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 16
+        },
+        "iconPreset1": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "iconPreset2": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["deviceId", "grantedByUid", "title", "color", "iconPreset1", "iconPreset2", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/profiles/{profileId}": {
+      "schema": "PlayerProfile",
+      "description": "Player profiles keyed by authenticated UID or device ID."
+    },
+    "/reports/{reportId}": {
+      "schema": "UserReport",
+      "description": "Player bug and behavior reports."
+    },
+    "/devs/{devId}": {
+      "schema": "DevRecord",
+      "description": "Developer registry and badge customization."
+    }
+  }
+}

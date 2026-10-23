@@ -55,7 +55,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           {t.gameOverTitle}
         </h2>
         <p className="text-xs sm:text-sm font-medium text-rose-300 mb-4">
-          {stats?.causeOfDeath || 'Lisis celular en el torrente sanguíneo'}
+          {stats?.causeOfDeath || t.gameOverTitle}
         </p>
 
         {/* Cytes Reward Banner */}
@@ -89,7 +89,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           </div>
 
           <div className="text-[10px] text-rose-300/80 mt-1.5 font-medium">
-            Saldo acumulado: <strong className="text-white font-mono">{profile.cytes} {t.cytes}</strong>
+            {t.cytes}: <strong className="text-white font-mono">{profile.cytes} {t.cytes}</strong>
           </div>
         </div>
 

@@ -140,6 +140,27 @@ export class GameEngine {
   private unlockedMutations: Set<MutationId> = new Set();
   private splitsCount: number = 0;
   private secretZoneDiscoveredThisGame: boolean = false;
+  private statsDispatchTimer: number = 0;
+
+  // Real-time moderation state enforced on local player
+  public modFrozen: boolean = false;
+  public modSlowed: boolean = false;
+  public modSplitLocked: boolean = false;
+  public modEjectLocked: boolean = false;
+  public isPlayerDev: boolean = false;
+  public playerDevBadge: { title?: string; color?: string } | null = null;
+
+  public drainPlayerMassToBase() {
+    if (!this.player || !this.player.isAlive || this.player.pieces.length === 0) return;
+    const mainPiece = this.player.pieces[0];
+    mainPiece.mass = 18;
+    mainPiece.radius = GameEngine.massToRadius(18);
+    mainPiece.targetRadius = mainPiece.radius;
+    mainPiece.vx = 0;
+    mainPiece.vy = 0;
+    this.player.pieces = [mainPiece];
+    this.addFloatingText(mainPiece.x, mainPiece.y - 30, '¡MASA DRENADA POR DEV (18)!', '#f43f5e');
+  }
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -794,7 +815,7 @@ export class GameEngine {
     const profile = profileStorage.getProfile();
     const strain = BACTERIA_STRAINS.find((b) => b.id === profile.selectedBacteriaId);
     const multiplier = strain?.conquestCytesMultiplier || 1.0;
-    const cytesEarned = Math.round(80 * multiplier);
+    const cytesEarned = Math.round(25 * multiplier);
 
     // "Te haces chiquito": shrink player down to base mass 20
     const mainPiece = this.player.pieces[0];
@@ -909,12 +930,22 @@ export class GameEngine {
   // Player split mechanic (Spacebar / Split button)
   public splitPlayer() {
     if (!this.player || !this.player.isAlive || this.state !== 'PLAYING') return;
+    if (this.modSplitLocked || this.modFrozen) {
+      const p = this.player.pieces[0];
+      if (p) this.addFloatingText(p.x, p.y - 28, '¡DIVISIÓN BLOQUEADA POR DEV!', '#f43f5e');
+      return;
+    }
     this.splitOrganism(this.player);
   }
 
   // Player eject mass mechanic (W / Eject button)
   public ejectPlayerSpore() {
     if (!this.player || !this.player.isAlive || this.state !== 'PLAYING') return;
+    if (this.modEjectLocked || this.modFrozen) {
+      const p = this.player.pieces[0];
+      if (p) this.addFloatingText(p.x, p.y - 28, '¡ESPORAS BLOQUEADAS POR DEV!', '#f43f5e');
+      return;
+    }
     this.ejectSpore(this.player);
   }
 
@@ -1320,8 +1351,12 @@ export class GameEngine {
       this.screenShake = Math.max(0, this.screenShake - dt * 25);
     }
 
-    // 12. Dispatch Stats and Leaderboard
-    this.dispatchStats();
+    // 12. Dispatch Stats and Leaderboard (throttled to ~7Hz to prevent 60fps React DOM re-renders on mobile)
+    this.statsDispatchTimer += dt;
+    if (this.statsDispatchTimer >= 0.14) {
+      this.statsDispatchTimer = 0;
+      this.dispatchStats();
+    }
   }
 
   private updatePlayerHeading() {
@@ -1370,7 +1405,12 @@ export class GameEngine {
   private updateOrganismPhysics(organism: Organism, dt: number) {
     const hasFlagella = organism.mutations.has('flagella_boost');
     const isPlayerSpeedBoost = organism.isPlayer && this.activeSuperpower?.type === 'speed_capsule';
-    const speedMult = organism.speedMultiplier * (hasFlagella ? 1.18 : 1.0) * (isPlayerSpeedBoost ? 1.85 : 1.0);
+    const modSpeedPenalty = organism.isPlayer ? (this.modFrozen ? 0 : this.modSlowed ? 0.5 : 1.0) : 1.0;
+    const speedMult =
+      organism.speedMultiplier *
+      (hasFlagella ? 1.18 : 1.0) *
+      (isPlayerSpeedBoost ? 1.85 : 1.0) *
+      modSpeedPenalty;
 
     for (const piece of organism.pieces) {
       // Smoothly interpolate radius to target radius based on mass
@@ -1378,7 +1418,7 @@ export class GameEngine {
       piece.radius += (piece.targetRadius - piece.radius) * Math.min(1, dt * 8);
 
       // Speed inversely proportional to mass
-      const speed = GameEngine.massToSpeed(piece.mass, speedMult);
+      const speed = organism.isPlayer && this.modFrozen ? 0 : GameEngine.massToSpeed(piece.mass, speedMult);
 
       // Desired velocity from organism heading
       const targetVx = organism.targetHeading.x * speed;
@@ -2088,6 +2128,7 @@ export class GameEngine {
       faction: o.faction,
       hasCrown: o.hasCrown,
       crownType: o.crownType,
+      isDev: o.isPlayer ? this.isPlayerDev : false,
     }));
 
     if (this.onLeaderboardUpdate) {
@@ -2281,20 +2322,21 @@ export class GameEngine {
     ctx.restore();
   }
 
-  // Render glowing proteins
+  // Render glowing proteins (optimized without per-dot Gaussian shadowBlur to keep mobile CPU cool & silent)
   private renderProteins(ctx: CanvasRenderingContext2D) {
     for (const p of this.proteins) {
       // Viewport frustum culling
       if (this.isOutsideViewport(p.x, p.y, p.radius * 2)) continue;
 
-      ctx.save();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius * 1.45, 0, Math.PI * 2);
+      ctx.fillStyle = p.color + '33';
+      ctx.fill();
+
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
       ctx.fillStyle = p.color;
-      ctx.shadowColor = p.color;
-      ctx.shadowBlur = 8;
       ctx.fill();
-      ctx.restore();
     }
   }
 
@@ -3062,8 +3104,8 @@ export class GameEngine {
 
               if (org.isPlayer) {
                 soundEngine.playCollect();
-                profileStorage.addCytes(5);
-                this.addFloatingText(pus.x, pus.y - 25, '¡PUS SANADO! +3% SALUD (+5 Cytes)', '#22d3ee');
+                profileStorage.addCytes(2);
+                this.addFloatingText(pus.x, pus.y - 25, '¡PUS SANADO! +3% SALUD (+2 Cytes)', '#22d3ee');
               }
             }
 
@@ -3517,6 +3559,18 @@ export class GameEngine {
       ctx.strokeText(Math.round(piece.mass).toString(), 0, fontSize * 0.9);
       ctx.fillStyle = '#fde047';
       ctx.fillText(Math.round(piece.mass).toString(), 0, fontSize * 0.9);
+
+      // 4b. Public DEV Badge pill above DEV microbe name (visible to everyone in-game)
+      if (org.isPlayer && this.isPlayerDev && this.playerDevBadge && piece === org.pieces[0]) {
+        const badgeText = `[${this.playerDevBadge.title || 'DEV'}]`;
+        const badgeColor = this.playerDevBadge.color || '#fbbf24';
+        ctx.font = `800 ${Math.max(10, Math.round(fontSize * 0.72))}px 'Plus Jakarta Sans', system-ui, sans-serif`;
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+        ctx.strokeText(badgeText, 0, -fontSize * 0.95);
+        ctx.fillStyle = badgeColor;
+        ctx.fillText(badgeText, 0, -fontSize * 0.95);
+      }
 
       // 5. Royal Crown floating above leader cell (Grand scaled crown for the biggest microbe)
       if (org.hasCrown && piece === org.pieces[0]) {

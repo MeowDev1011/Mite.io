@@ -6,10 +6,11 @@ interface DevBadgeProps {
   config?: DevBadgeConfig;
   onClick?: () => void;
   size?: 'sm' | 'md';
+  tooltip?: string;
 }
 
 export const renderDevSvgIcon = (preset: string, customSvg?: string, color: string = '#fbbf24', size: number = 13) => {
-  if (customSvg && customSvg.trim().startsWith('<svg')) {
+  if ((preset === 'custom' || customSvg) && customSvg && customSvg.trim().startsWith('<svg')) {
     return (
       <span
         className="inline-flex items-center justify-center shrink-0 [&>svg]:w-3.5 [&>svg]:h-3.5"
@@ -43,7 +44,7 @@ export const renderDevSvgIcon = (preset: string, customSvg?: string, color: stri
   }
 };
 
-export const DevBadge: React.FC<DevBadgeProps> = ({ config: propConfig, onClick, size = 'sm' }) => {
+export const DevBadge: React.FC<DevBadgeProps> = ({ config: propConfig, onClick, size = 'sm', tooltip }) => {
   const config = propConfig || reportStorage.getDevConfig();
   if (!config.isDev) return null;
 
@@ -62,15 +63,15 @@ export const DevBadge: React.FC<DevBadgeProps> = ({ config: propConfig, onClick,
         color: hexColor,
         boxShadow: `0 0 10px ${hexColor}30`,
       }}
-      title="Insignia DEV Oficial · Click para configurar y ver Reportes"
+      title={tooltip || 'DEV'}
     >
-      {/* 1st Customizable SVG */}
+      {/* 1st Customizable Icon */}
       {renderDevSvgIcon(config.iconPreset1, config.customSvg1, hexColor, size === 'sm' ? 11 : 13)}
 
       {/* Title Tag */}
       <span className="font-mono font-black leading-none">{config.title || 'DEV'}</span>
 
-      {/* 2nd Customizable SVG */}
+      {/* 2nd Customizable Icon */}
       {renderDevSvgIcon(config.iconPreset2, config.customSvg2, hexColor, size === 'sm' ? 11 : 13)}
     </button>
   );

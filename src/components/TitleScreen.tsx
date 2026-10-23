@@ -142,11 +142,11 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
         {/* Device & Biosphere Info */}
         <div className="flex items-center gap-2 text-xs font-semibold text-rose-300/80 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl backdrop-blur-sm">
           <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-          <span className="hidden sm:inline">Torrente Vascular Humano · Sala 50 Max</span>
+          <span className="hidden sm:inline">{t.bioZone}</span>
           <span className="text-white/20">|</span>
-          <span className="flex items-center gap-1 text-cyan-300">
+          <span className="flex items-center gap-1 text-cyan-300" title={profile.deviceId}>
             {getDeviceIcon()}
-            <span>ID: {profile.deviceId.slice(-6).toUpperCase()}</span>
+            <span className="font-mono">ID: {profile.deviceId}</span>
           </span>
         </div>
 
@@ -157,10 +157,10 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             <button
               onClick={onOpenActivePlayers}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-400/50 text-cyan-200 transition-all cursor-pointer backdrop-blur-sm shadow-[0_0_12px_rgba(6,182,212,0.3)] text-xs font-bold"
-              title="Ver Jugadores Activos en Tiempo Real e Invitar a Sala"
+              title={t.viewActiveAndInviteBtn}
             >
               <Users className="w-3.5 h-3.5 text-cyan-300" />
-              <span>Online ({activePlayerCount})</span>
+              <span>{t.onlineBadge} ({activePlayerCount})</span>
             </button>
           )}
 
@@ -169,10 +169,10 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             <button
               onClick={handleInstallPWA}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-[0_0_15px_rgba(16,185,129,0.4)] border border-emerald-400/50 cursor-pointer transition-all"
-              title="Descargar como App PWA"
+              title={t.installPwaTitle}
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Instalar App</span>
+              <span>{t.installPwaBtn}</span>
             </button>
           )}
 
@@ -180,13 +180,13 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           <button
             onClick={onOpenShop}
             className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-red-950/70 hover:bg-red-900/80 border border-red-500/40 text-rose-200 transition-all cursor-pointer backdrop-blur-sm shadow-[0_0_12px_rgba(239,68,68,0.25)]"
-            title="Abrir Tienda de Cytes"
+            title={t.shopTitle}
           >
             <CyteCoinSvg size={16} />
             <span className="text-xs sm:text-sm font-black text-white font-mono tabular-nums">
               {profile.cytes}
             </span>
-            <span className="text-[10px] uppercase font-bold text-rose-300">Cytes</span>
+            <span className="text-[10px] uppercase font-bold text-rose-300">{t.cytes}</span>
           </button>
 
           {/* User Report Button */}
@@ -201,63 +201,40 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             </button>
           )}
 
-          {/* Dev Badge / Admin Center button */}
+          {/* Official DEV Panel Button & Customizable Tag */}
           {onOpenDevPanel && (
-            <DevBadge onClick={onOpenDevPanel} size="md" />
+            <div className="flex items-center gap-1.5">
+              <DevBadge onClick={onOpenDevPanel} size="md" tooltip={t.devBadgeTooltip} />
+              <button
+                onClick={onOpenDevPanel}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/50 text-amber-200 transition-all cursor-pointer backdrop-blur-sm text-xs font-black shadow-[0_0_12px_rgba(245,158,11,0.3)]"
+                title={t.devPanelTitle}
+              >
+                <Shield className="w-3.5 h-3.5 text-amber-400" />
+                <span>{t.devOpenPanelBtn}</span>
+              </button>
+            </div>
           )}
-
-          {/* Languages Selector */}
-          <div className="relative flex items-center bg-white/10 hover:bg-white/15 border border-white/15 rounded-xl px-2 py-1 text-xs text-white backdrop-blur-sm">
-            <Globe className="w-3.5 h-3.5 text-cyan-400 mr-1.5 shrink-0" />
-            <select
-              value={currentLang}
-              onChange={(e) => onSelectLanguage(e.target.value)}
-              className="bg-transparent text-white text-xs font-medium focus:outline-none cursor-pointer pr-1"
-            >
-              {SUPPORTED_LANGUAGES.map((lang) => (
-                <option key={lang.code} value={lang.code} className="bg-neutral-900 text-white">
-                  {lang.flag} {lang.name}
-                </option>
-              ))}
-            </select>
-          </div>
 
           {/* Sound Toggle */}
           <button
             onClick={onToggleMute}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl bg-white/10 hover:bg-white/20 text-neutral-200 transition-colors backdrop-blur-sm cursor-pointer"
-            title={t.soundOn}
+            title={isMuted ? t.soundOff : t.soundOn}
           >
             {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
           </button>
         </div>
       </div>
 
-      {/* Hero Centerpiece: Title Lockup with Biological Illustration */}
+      {/* Hero Centerpiece: Title Lockup with Official Mite.io Logo */}
       <div className="flex flex-col items-center text-center max-w-2xl px-4 my-auto py-3">
-        {/* Bespoke Biological Title Lockup SVG */}
-        <div className="flex items-center justify-center mb-1">
-          <svg className="w-16 h-16 sm:w-20 sm:h-20 drop-shadow-[0_0_25px_rgba(244,63,94,0.6)]" viewBox="0 0 100 100" fill="none">
-            <circle cx="50" cy="50" r="42" stroke="#f43f5e" strokeWidth="2.5" strokeDasharray="4 3" opacity="0.6" />
-            <path
-              d="M50 16 C68 16, 84 32, 84 50 C84 68, 68 84, 50 84 C32 84, 16 68, 16 50 C16 32, 32 16, 50 16 Z"
-              fill="url(#titleMicrobeGrad)"
-              stroke="#34d399"
-              strokeWidth="3"
-            />
-            <circle cx="50" cy="46" r="14" fill="#10b981" />
-            <circle cx="47" cy="43" r="5" fill="#ffffff" opacity="0.75" />
-            <path d="M42 82 Q38 94 30 96" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" />
-            <path d="M50 84 Q50 97 54 99" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" />
-            <path d="M58 82 Q62 94 70 96" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" />
-            <defs>
-              <linearGradient id="titleMicrobeGrad" x1="20" y1="20" x2="80" y2="80" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#064e3b" />
-                <stop offset="0.6" stopColor="#059669" />
-                <stop offset="1" stopColor="#34d399" />
-              </linearGradient>
-            </defs>
-          </svg>
+        <div className="flex items-center justify-center mb-1.5">
+          <img
+            src="/mite_io_logo.png"
+            alt="Mite.io"
+            className="w-20 h-20 sm:w-24 sm:h-24 object-contain rounded-2xl drop-shadow-[0_0_25px_rgba(244,63,94,0.6)]"
+          />
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white mb-1 font-sans">
@@ -519,7 +496,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             />
             {/* First user customizable DEV oval badge right beside the player's name */}
             <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center">
-              <DevBadge onClick={onOpenDevPanel} size="sm" />
+              <DevBadge onClick={onOpenDevPanel} size="sm" tooltip={t.devBadgeTooltip} />
             </div>
           </div>
           <button
@@ -560,6 +537,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             if (onOpenActivePlayers) onOpenActivePlayers();
           }}
           currentLang={currentLang}
+          t={t}
         />
       )}
 

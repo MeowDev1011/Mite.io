@@ -27,16 +27,29 @@ import { HomeUpgradesModal } from './components/HomeUpgradesModal';
 import { ShareModal } from './components/ShareModal';
 import { ReportModal } from './components/ReportModal';
 import { DevAdminModal } from './components/DevAdminModal';
+import { reportStorage, InteractiveWarningEntry } from './storage/reportStorage';
+import { AlertTriangle, Send, Ban } from 'lucide-react';
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const engineRef = useRef<GameEngine | null>(null);
 
-  // Internationalization state (auto-detects device language)
-  const [currentLang, setCurrentLang] = useState<string>(() => {
-    const saved = profileStorage.getProfile().preferredLanguage;
-    return saved || detectDeviceLanguage();
-  });
+  // Internationalization state (strictly auto-detects device language, no manual in-game selector)
+  const [currentLang, setCurrentLang] = useState<string>(() => detectDeviceLanguage());
+
+  useEffect(() => {
+    const detected = detectDeviceLanguage();
+    setCurrentLang(detected);
+    profileStorage.setPreferredLanguage(detected);
+
+    const onLangChange = () => {
+      const next = detectDeviceLanguage();
+      setCurrentLang(next);
+      profileStorage.setPreferredLanguage(next);
+    };
+    window.addEventListener('languagechange', onLangChange);
+    return () => window.removeEventListener('languagechange', onLangChange);
+  }, []);
 
   const t = useMemo(() => getTranslations(currentLang), [currentLang]);
 
@@ -66,6 +79,27 @@ export default function App() {
   const [showShareModal, setShowShareModal] = useState<boolean>(false);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
   const [showDevModal, setShowDevModal] = useState<boolean>(false);
+  const [isCurrentUserDev, setIsCurrentUserDev] = useState<boolean>(() => reportStorage.getDevConfig().isDev);
+
+  // Real-time Moderation & Interactive Warning State
+  const [activeInteractiveWarning, setActiveInteractiveWarning] = useState<InteractiveWarningEntry | null>(null);
+  const [warningAnswerInput, setWarningAnswerInput] = useState<string>('');
+  const [banStatusMessage, setBanStatusMessage] = useState<string | null>(null);
+  const lastModTriggersRef = useRef<{
+    drainMass: number;
+    cytesOverride: number;
+    resetUpgrades: number;
+    stripOrgans: number;
+    forcedName: number;
+    kickMatch: number;
+  }>({
+    drainMass: 0,
+    cytesOverride: 0,
+    resetUpgrades: 0,
+    stripOrgans: 0,
+    forcedName: 0,
+    kickMatch: 0,
+  });
 
   // Entities positions for radar minimap, King tracking, and offscreen indicators
   const [radarData, setRadarData] = useState<{
@@ -237,9 +271,20 @@ export default function App() {
     };
   }, []);
 
-  // Heartbeat and Room Invitations Polling with Live Server DB
+  // Heartbeat, DEV Status Verification, and Real-Time Moderation Enforcement Polling
   useEffect(() => {
     const deviceId = profileStorage.getDeviceId();
+    reportStorage
+      .fetchDevRegistry()
+      .then((reg) => {
+        const isMeDev = reg.firstDevId === deviceId || reg.devIds.includes(deviceId);
+        setIsCurrentUserDev(isMeDev);
+        if (engineRef.current) {
+          engineRef.current.isPlayerDev = isMeDev;
+          engineRef.current.playerDevBadge = isMeDev ? reportStorage.getDevConfig() : null;
+        }
+      })
+      .catch(() => {});
 
     const checkInvitations = async () => {
       try {
@@ -256,7 +301,7 @@ export default function App() {
     const sendHeartbeat = async () => {
       try {
         const profile = profileStorage.getProfile();
-        await fetch('/api/players/heartbeat', {
+        const hbRes = await fetch('/api/players/heartbeat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -269,6 +314,95 @@ export default function App() {
           }),
         });
 
+        if (hbRes.ok) {
+          const hbJson = await hbRes.json();
+          if (typeof hbJson.isDev === 'boolean') {
+            setIsCurrentUserDev(hbJson.isDev);
+            if (engineRef.current) {
+              engineRef.current.isPlayerDev = hbJson.isDev;
+              engineRef.current.playerDevBadge = hbJson.isDev ? reportStorage.getDevConfig() : null;
+            }
+          }
+
+          const mod = hbJson.moderation || {};
+
+          // 1. Live engine physics & ability locks (Freeze, Slow 50%, Lock Split, Lock Spores)
+          if (engineRef.current) {
+            engineRef.current.modFrozen = Boolean(mod.isFrozen);
+            engineRef.current.modSlowed = Boolean(mod.isSlowed);
+            engineRef.current.modSplitLocked = Boolean(mod.isSplitLocked);
+            engineRef.current.modEjectLocked = Boolean(mod.isEjectLocked);
+          }
+
+          // 2. Drain Mass Trigger
+          if (mod.drainMassTrigger && mod.drainMassTrigger > lastModTriggersRef.current.drainMass) {
+            lastModTriggersRef.current.drainMass = mod.drainMassTrigger;
+            engineRef.current?.drainPlayerMassToBase();
+          }
+
+          // 3. Cytes Gift / Fine / Reset Trigger
+          if (mod.cytesOverrideTrigger && mod.cytesOverrideTrigger > lastModTriggersRef.current.cytesOverride) {
+            lastModTriggersRef.current.cytesOverride = mod.cytesOverrideTrigger;
+            if (typeof mod.cytesOverride === 'number') {
+              profileStorage.setCytesBalance(mod.cytesOverride);
+            }
+          }
+
+          // 4. Reset Upgrades Trigger
+          if (mod.resetUpgradesTrigger && mod.resetUpgradesTrigger > lastModTriggersRef.current.resetUpgrades) {
+            lastModTriggersRef.current.resetUpgrades = mod.resetUpgradesTrigger;
+            profileStorage.resetUpgradesToZero();
+          }
+
+          // 5. Strip Conquered Organs Trigger
+          if (mod.stripOrgansTrigger && mod.stripOrgansTrigger > lastModTriggersRef.current.stripOrgans) {
+            lastModTriggersRef.current.stripOrgans = mod.stripOrgansTrigger;
+            profileStorage.clearConqueredOrgans();
+          }
+
+          // 6. Force Sanctioned Name Trigger
+          if (mod.forcedNameTrigger && mod.forcedNameTrigger > lastModTriggersRef.current.forcedName) {
+            lastModTriggersRef.current.forcedName = mod.forcedNameTrigger;
+            if (mod.forcedName) {
+              profileStorage.setPlayerName(mod.forcedName);
+              if (engineRef.current?.player) {
+                engineRef.current.player.name = mod.forcedName;
+              }
+            }
+          }
+
+          // 7. Kick from Match / Temp Ban / Permanent Ban
+          const isTempBanned = Boolean(mod.tempBanUntil && mod.tempBanUntil > Date.now());
+          if (mod.isBanned) {
+            setBanStatusMessage(t.bannedAccountNotice);
+          } else if (isTempBanned) {
+            setBanStatusMessage(t.tempBannedAccountNotice);
+          } else {
+            setBanStatusMessage(null);
+          }
+
+          if (
+            (mod.kickMatchTrigger && mod.kickMatchTrigger > lastModTriggersRef.current.kickMatch) ||
+            mod.isBanned ||
+            isTempBanned
+          ) {
+            if (mod.kickMatchTrigger) {
+              lastModTriggersRef.current.kickMatch = mod.kickMatchTrigger;
+            }
+            if (engineRef.current && (engineRef.current.state === 'PLAYING' || engineRef.current.state === 'PAUSED')) {
+              soundEngine.stopBGM();
+              engineRef.current.returnToMenu();
+              setGameState('TITLE_MENU');
+            }
+          }
+
+          // 8. Check for Unanswered Interactive Warning with Custom Message & Mandatory Question
+          if (Array.isArray(mod.interactiveWarnings)) {
+            const unanswered = mod.interactiveWarnings.find((w: InteractiveWarningEntry) => !w.answered);
+            setActiveInteractiveWarning(unanswered || null);
+          }
+        }
+
         const activeRes = await fetch('/api/players/active');
         if (activeRes.ok) {
           const activeJson = await activeRes.json();
@@ -280,24 +414,41 @@ export default function App() {
     };
 
     const invInterval = setInterval(checkInvitations, 3500);
-    const hbInterval = setInterval(sendHeartbeat, 7000);
+    const hbInterval = setInterval(sendHeartbeat, 4000);
     sendHeartbeat();
 
     return () => {
       clearInterval(invInterval);
       clearInterval(hbInterval);
     };
-  }, [gameState, currentOrgan, stats?.currentMass]);
+  }, [gameState, currentOrgan, stats?.currentMass, t.bannedAccountNotice, t.tempBannedAccountNotice]);
 
   const handleStartGame = useCallback(
     (playerName: string, mode: GameMode = 'ffa', faction: Faction = 'immune', humansOnly: boolean = false) => {
+      if (banStatusMessage) {
+        setInviteToast(banStatusMessage);
+        setTimeout(() => setInviteToast(null), 4000);
+        return;
+      }
       soundEngine.startBGM();
       if (engineRef.current) {
+        engineRef.current.isPlayerDev = isCurrentUserDev;
+        engineRef.current.playerDevBadge = isCurrentUserDev ? reportStorage.getDevConfig() : null;
         engineRef.current.startGame(playerName, mode, faction, humansOnly);
       }
     },
-    []
+    [banStatusMessage, isCurrentUserDev]
   );
+
+  const handleSubmitWarningAnswer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeInteractiveWarning || !warningAnswerInput.trim()) return;
+    const ok = await reportStorage.respondToWarning(activeInteractiveWarning.id, warningAnswerInput.trim());
+    if (ok) {
+      setActiveInteractiveWarning(null);
+      setWarningAnswerInput('');
+    }
+  };
 
   const handleConquerTerritory = useCallback(() => {
     if (engineRef.current) {
@@ -466,7 +617,7 @@ export default function App() {
           onOpenShop={() => setShowShop(true)}
           onOpenActivePlayers={() => setShowActivePlayers(true)}
           onOpenReport={() => setShowReportModal(true)}
-          onOpenDevPanel={() => setShowDevModal(true)}
+          onOpenDevPanel={isCurrentUserDev ? () => setShowDevModal(true) : undefined}
           activePlayerCount={activePlayerCount}
         />
       )}
@@ -487,7 +638,7 @@ export default function App() {
           onOpenShare={() => setShowShareModal(true)}
           onOpenShop={() => setShowShop(true)}
           onOpenReport={() => setShowReportModal(true)}
-          onOpenDevPanel={() => setShowDevModal(true)}
+          onOpenDevPanel={isCurrentUserDev ? () => setShowDevModal(true) : undefined}
           onConquerTerritory={handleConquerTerritory}
           currentLang={currentLang}
           onSelectLanguage={handleSelectLanguage}
@@ -515,6 +666,7 @@ export default function App() {
         invitation={activeInvitation}
         onAccept={handleAcceptInvitation}
         onDecline={handleDeclineInvitation}
+        t={t}
       />
 
       {/* Outgoing Invitation Confirmation Toast */}
@@ -531,6 +683,7 @@ export default function App() {
           onRestart={handleRestart}
           isMuted={isMuted}
           onToggleMute={handleToggleMute}
+          t={t}
         />
       )}
 
@@ -554,6 +707,7 @@ export default function App() {
           currentMutations={currentMutations}
           onSelectMutation={handleSelectMutation}
           onDismiss={handleDismissMutation}
+          t={t}
         />
       )}
 
@@ -595,6 +749,7 @@ export default function App() {
       {showAchievements && (
         <AchievementsModal
           onClose={() => setShowAchievements(false)}
+          t={t}
         />
       )}
 
@@ -603,6 +758,7 @@ export default function App() {
         <SkinsModal
           onClose={() => setShowSkins(false)}
           onSkinChanged={handleSkinChanged}
+          t={t}
         />
       )}
 
@@ -620,6 +776,7 @@ export default function App() {
         <ActivePlayersModal
           onClose={() => setShowActivePlayers(false)}
           onInviteSent={handleInviteSent}
+          t={t}
         />
       )}
 
@@ -631,12 +788,77 @@ export default function App() {
         />
       )}
 
-      {/* Official DEV & Admin Command Center */}
-      {showDevModal && (
+      {/* Official DEV & Admin Command Center (Strictly Exclusive to DEVs) */}
+      {showDevModal && isCurrentUserDev && (
         <DevAdminModal
           onClose={() => setShowDevModal(false)}
           t={t}
         />
+      )}
+
+      {/* Ban / Temp-Ban Banner */}
+      {banStatusMessage && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-rose-950/95 border-2 border-rose-500 text-rose-100 text-xs sm:text-sm font-black shadow-[0_0_30px_rgba(244,63,94,0.6)] flex items-center gap-2 pointer-events-auto">
+          <Ban className="w-4 h-4 text-rose-400 shrink-0" />
+          <span>{banStatusMessage}</span>
+        </div>
+      )}
+
+      {/* Mandatory Interactive DEV Warning & Question Modal */}
+      {activeInteractiveWarning && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-lg pointer-events-auto select-none animate-fade-in">
+          <form
+            onSubmit={handleSubmitWarningAnswer}
+            className="w-full max-w-lg p-6 rounded-3xl bg-neutral-950 border-2 border-orange-500/80 shadow-[0_0_60px_rgba(249,115,22,0.4)] space-y-4 text-left"
+          >
+            <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+              <div className="w-11 h-11 rounded-2xl bg-orange-500/20 border border-orange-500/50 flex items-center justify-center text-orange-400 shrink-0">
+                <AlertTriangle className="w-6 h-6 animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-black text-orange-300 uppercase tracking-wider">
+                  {t.playerWarningModalTitle}
+                </h3>
+                <p className="text-xs text-neutral-300">{t.playerWarningModalSubtitle}</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-orange-950/40 border border-orange-500/40 space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-orange-300 block">
+                {t.playerWarningMessageHeader}
+              </span>
+              <p className="text-sm font-bold text-white leading-relaxed">
+                {activeInteractiveWarning.message}
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/40 space-y-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 block">
+                {t.playerWarningQuestionHeader}
+              </span>
+              <p className="text-sm font-black text-amber-100">
+                {activeInteractiveWarning.question}
+              </p>
+              <input
+                type="text"
+                value={warningAnswerInput}
+                onChange={(e) => setWarningAnswerInput(e.target.value)}
+                placeholder={t.playerWarningAnswerPlaceholder}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-black/70 border border-amber-500/50 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-amber-400"
+                required
+                autoFocus
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-neutral-950 font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(249,115,22,0.4)] cursor-pointer"
+            >
+              <Send className="w-4 h-4" />
+              <span>{t.playerWarningSubmitBtn}</span>
+            </button>
+          </form>
+        </div>
       )}
     </div>
   );

@@ -25,7 +25,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ t, onClose }) => {
           <div className="absolute w-2 h-2 rounded-full bg-cyan-400 top-6 left-8 animate-ping" />
           <div className="absolute w-2.5 h-2.5 rounded-full bg-amber-400 bottom-8 right-12 animate-ping" />
           <div className="absolute w-2 h-2 rounded-full bg-rose-400 top-12 right-8 animate-ping" />
-          <div className="absolute text-[10px] text-neutral-400 bottom-2 font-mono">Nutrientes +1 a +3</div>
+          <div className="absolute text-[10px] text-neutral-400 bottom-2 font-mono">+1 - +3 {t.massLabel}</div>
         </div>
       ),
     },
@@ -38,9 +38,9 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ t, onClose }) => {
         <div className="relative w-48 h-32 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center overflow-hidden">
           {/* Red blood cell disk */}
           <div className="w-16 h-16 rounded-full bg-gradient-to-r from-red-700 via-red-500 to-red-800 border-2 border-red-400 shadow-[0_0_15px_#ef4444] flex items-center justify-center">
-            <div className="w-8 h-8 rounded-full bg-red-900/60" />
+            <div className="w-8 h-8 rounded-full bg-red-950/60" />
           </div>
-          <div className="absolute text-[10px] text-rose-300 bottom-2 font-mono">Eritrocito (+18 a +32 Masa)</div>
+          <div className="absolute text-[10px] text-rose-300 bottom-2 font-mono">{t.erythrocytes} (+18 - +32)</div>
         </div>
       ),
     },
@@ -64,7 +64,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ t, onClose }) => {
             <div className="w-10 h-0.5 bg-emerald-400/80 dashed animate-pulse" />
             <div className="relative w-10 h-10 rounded-full bg-emerald-500 border border-emerald-200 flex items-center justify-center text-[9px] font-bold text-neutral-950 shadow-[0_0_10px_#34d399] translate-x-2">
               50%
-              <div className="absolute -bottom-4 text-[9px] font-mono text-cyan-300">¡IMPULSO!</div>
+              <div className="absolute -bottom-4 text-[9px] font-mono text-cyan-300">{t.splitBtn}!</div>
             </div>
           </div>
         </div>
@@ -85,7 +85,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ t, onClose }) => {
             <div className="absolute -left-2 w-4 h-2 bg-red-500 rounded" />
             <div className="absolute -right-2 w-4 h-2 bg-red-500 rounded" />
           </div>
-          <div className="absolute text-[10px] text-rose-400 bottom-1.5 font-mono">Caza si Masa &gt; 160</div>
+          <div className="absolute text-[10px] text-rose-400 bottom-1.5 font-mono">{t.massLabel} &gt; 160</div>
         </div>
       ),
     },
@@ -99,7 +99,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ t, onClose }) => {
           <div className="w-16 h-16 rounded-full bg-cyan-600/30 border border-cyan-400 shadow-[0_0_25px_#06b6d4] flex items-center justify-center">
             <Sparkles className="w-8 h-8 text-cyan-300 animate-pulse" />
           </div>
-          <div className="absolute text-[10px] text-cyan-300 bottom-2 font-mono">Nódulo Linfático Oculto</div>
+          <div className="absolute text-[10px] text-cyan-300 bottom-2 font-mono">{t.hiddenCrypt}</div>
         </div>
       ),
     },

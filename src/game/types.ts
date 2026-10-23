@@ -153,6 +153,15 @@ export interface LeaderboardEntry {
   faction?: Faction;
   hasCrown?: boolean;
   crownType?: 'gold' | 'immune' | 'pathogen';
+  isDev?: boolean;
+  devBadge?: {
+    enabled: boolean;
+    label: string;
+    color: string;
+    svgPreset: string;
+    customSvgPath?: string;
+    customSvgCode?: string;
+  } | null;
 }
 
 export interface GameStats {
@@ -250,6 +259,15 @@ export interface ActivePlayer {
   faction: 'immune' | 'pathogen' | 'neutral';
   isRealDevice: boolean;
   lastSeen: number;
+  isDev?: boolean;
+  devBadge?: {
+    enabled: boolean;
+    label: string;
+    color: string;
+    svgPreset: string;
+    customSvgPath?: string;
+    customSvgCode?: string;
+  } | null;
 }
 
 export interface RoomInvitation {

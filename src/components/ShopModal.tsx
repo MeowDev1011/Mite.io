@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ShoppingBag, Sparkles, Check, Lock, X, Zap, Shield, Target, Compass, Award, Magnet, Flame, HeartPulse, Droplets, ChevronUp } from 'lucide-react';
 import { profileStorage, PlayerProfile, UPGRADE_MAX_LEVEL, getTotalUpgradeCost, getUpgradeCost, UPGRADE_TIERS } from '../storage/profileStorage';
 import { PlayerUpgrades } from '../game/types';
-import { MICROBE_SKINS, SPORE_STYLES, BUNDLE_PACKS, MicrobeSkin, SporeStyle, SkinBundle } from '../game/skins';
+import { MICROBE_SKINS, SPORE_STYLES, BUNDLE_PACKS, MicrobeSkin, SporeStyle, SkinBundle, getItemPriceTier } from '../game/skins';
 import { BACTERIA_STRAINS, BacteriaStrain } from '../game/bacteria';
 import { ANATOMICAL_ORGANS } from '../game/constants';
 import { soundEngine } from '../audio/soundEngine';
@@ -29,13 +29,13 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
       profileStorage.selectBacteria(bacteria.id);
       setProfile(profileStorage.getProfile());
       onSkinChanged();
-      setFeedbackMsg(`¡Bacteriófago / Cepa equipada: ${bacteria.name}!`);
+      setFeedbackMsg(`${bacteria.name} — ${t.equipped}!`);
       setTimeout(() => setFeedbackMsg(null), 3000);
       return;
     }
 
     if (profile.cytes < bacteria.priceCytes) {
-      setFeedbackMsg(`¡Cytes insuficientes! Cuesta ${bacteria.priceCytes} Cytes. Devorá eritrocitos o conquistá órganos.`);
+      setFeedbackMsg(`${t.insufficientCytes} (${bacteria.priceCytes} ${t.cytes})`);
       setTimeout(() => setFeedbackMsg(null), 3500);
       return;
     }
@@ -47,7 +47,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
       setProfile(profileStorage.getProfile());
       soundEngine.playLevelUp();
       onSkinChanged();
-      setFeedbackMsg(`¡Adquiriste la cepa ${bacteria.name}!`);
+      setFeedbackMsg(`${bacteria.name} — ${t.equipped}!`);
       setTimeout(() => setFeedbackMsg(null), 3500);
     }
   };
@@ -61,7 +61,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
     }
 
     if (profile.cytes < skin.priceCytes) {
-      setFeedbackMsg('¡Cytes insuficientes! Devorá glóbulos rojos o conquistá órganos con 100 de masa.');
+      setFeedbackMsg(t.insufficientCytes);
       setTimeout(() => setFeedbackMsg(null), 3000);
       return;
     }
@@ -73,21 +73,28 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
       setProfile(profileStorage.getProfile());
       soundEngine.playLevelUp();
       onSkinChanged();
-      setFeedbackMsg(`¡Has adquirido ${skin.name}!`);
+      setFeedbackMsg(`${skin.name} — ${t.equipped}!`);
       setTimeout(() => setFeedbackMsg(null), 3000);
     }
   };
 
   const handleBuySpore = (spore: SporeStyle) => {
-    if (profile.unlockedSporeIds.includes(spore.id)) {
+    const isFreeStarter = spore.id === 'spore_plasma';
+    if (isFreeStarter || profile.unlockedSporeIds.includes(spore.id)) {
       profileStorage.selectSpore(spore.id);
       setProfile(profileStorage.getProfile());
       onSkinChanged();
       return;
     }
 
+    if (spore.requiredAchievementId && spore.priceCytes === 0) {
+      setFeedbackMsg(`${t.achievementRequiredLabel}: ${spore.unlockRequirement}`);
+      setTimeout(() => setFeedbackMsg(null), 3000);
+      return;
+    }
+
     if (profile.cytes < spore.priceCytes) {
-      setFeedbackMsg('¡Cytes insuficientes!');
+      setFeedbackMsg(t.insufficientCytes);
       setTimeout(() => setFeedbackMsg(null), 3000);
       return;
     }
@@ -99,7 +106,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
       setProfile(profileStorage.getProfile());
       soundEngine.playLevelUp();
       onSkinChanged();
-      setFeedbackMsg(`¡Has adquirido ${spore.name}!`);
+      setFeedbackMsg(`${spore.name} — ${t.equipped}!`);
       setTimeout(() => setFeedbackMsg(null), 3000);
     }
   };
@@ -115,13 +122,13 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
       profileStorage.selectBacteria(bundle.bacteriaId);
       setProfile(profileStorage.getProfile());
       onSkinChanged();
-      setFeedbackMsg(`¡Conjunto ${bundle.name} equipado al completo!`);
+      setFeedbackMsg(`${bundle.name} — ${t.bundleEquipped}!`);
       setTimeout(() => setFeedbackMsg(null), 3000);
       return;
     }
 
     if (profile.cytes < bundle.priceCytes) {
-      setFeedbackMsg(`¡Cytes insuficientes! Este conjunto cuesta ${bundle.priceCytes} Cytes.`);
+      setFeedbackMsg(`${t.insufficientCytes} (${bundle.priceCytes} ${t.cytes})`);
       setTimeout(() => setFeedbackMsg(null), 3000);
       return;
     }
@@ -137,7 +144,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
       setProfile(profileStorage.getProfile());
       soundEngine.playLevelUp();
       onSkinChanged();
-      setFeedbackMsg(`¡Has adquirido y equipado el ${bundle.name}!`);
+      setFeedbackMsg(`${bundle.name} — ${t.bundleEquipped}!`);
       setTimeout(() => setFeedbackMsg(null), 3500);
     }
   };
@@ -148,10 +155,10 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
     if (res.success) {
       setProfile(profileStorage.getProfile());
       soundEngine.playLevelUp();
-      setFeedbackMsg(`¡Mejora aplicada con éxito! Nivel ${res.newLevel} / ${UPGRADE_MAX_LEVEL} activo.`);
+      setFeedbackMsg(`${t.upgradeSuccessLevel} ${res.newLevel} / ${UPGRADE_MAX_LEVEL}`);
       setTimeout(() => setFeedbackMsg(null), 3000);
     } else {
-      setFeedbackMsg(res.error || 'Cytes insuficientes para mejorar');
+      setFeedbackMsg(t.insufficientCytes);
       setTimeout(() => setFeedbackMsg(null), 3000);
     }
   };
@@ -166,49 +173,73 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
   }[] = [
     {
       key: 'sporesFission',
-      name: 'Esporas y Fisión Mitótica',
-      desc: 'Incrementa el alcance, masa retenida y velocidad balística al disparar esporas [W] e impulso de división [Espacio].',
+      name: t.statSporesFissionTitle,
+      desc: t.statSporesFissionDesc,
       icon: <Droplets className="w-5 h-5 text-purple-400" />,
       color: '#a855f7',
-      effectLabel: (lvl) => (lvl === 0 ? 'Fisión base' : `+${(Math.log10(1 + lvl) * 45).toFixed(0)}% Alcance & Mitosis`),
+      effectLabel: (lvl) => (lvl === 0 ? t.sporesRangeBase : `+${(Math.log10(1 + lvl) * 45).toFixed(0)}${t.sporesRangeBonus}`),
     },
     {
       key: 'attraction',
-      name: 'Bio-Atracción Magnética',
-      desc: 'Amplía el radio gravitacional para absorber proteínas, glucosa y esporas desde mayor distancia.',
+      name: t.statAttractionTitle,
+      desc: t.statAttractionDesc,
       icon: <Magnet className="w-5 h-5 text-cyan-400" />,
       color: '#06b6d4',
-      effectLabel: (lvl) => (lvl === 0 ? 'Rango base' : `+${(Math.min(750, lvl * 1.5 + Math.sqrt(lvl) * 12)).toFixed(0)}px Succión`),
+      effectLabel: (lvl) => (lvl === 0 ? t.attractionBase : `+${(Math.min(750, lvl * 1.5 + Math.sqrt(lvl) * 12)).toFixed(0)}px`),
     },
     {
       key: 'speed',
-      name: 'Velocidad e Hidrodinámica',
-      desc: 'Optimiza la movilidad flagelar en el plasma sanguíneo con mayor aceleración y velocidad punta.',
+      name: t.statSpeedTitle,
+      desc: t.statSpeedDesc,
       icon: <Zap className="w-5 h-5 text-amber-400" />,
       color: '#f59e0b',
-      effectLabel: (lvl) => (lvl === 0 ? 'Velocidad base' : `+${(Math.log10(1 + lvl) * 48).toFixed(0)}% Velocidad Plasma`),
+      effectLabel: (lvl) => (lvl === 0 ? t.speedBase : `+${(Math.log10(1 + lvl) * 48).toFixed(0)}${t.speedBonusLabel}`),
     },
     {
       key: 'armor',
-      name: 'Armadura Inmunológica',
-      desc: 'Refuerza la pared celular reduciendo la pérdida de masa por anticuerpos patrulla y toxinas.',
+      name: t.statArmorTitle,
+      desc: t.statArmorDesc,
       icon: <Shield className="w-5 h-5 text-emerald-400" />,
       color: '#10b981',
-      effectLabel: (lvl) => (lvl === 0 ? 'Blindaje normal' : `-${(Math.min(0.85, 1.0 - 1.0 / (1.0 + lvl * 0.008)) * 100).toFixed(0)}% Daño`),
+      effectLabel: (lvl) => (lvl === 0 ? t.armorBase : `-${(Math.min(0.85, 1.0 - 1.0 / (1.0 + lvl * 0.008)) * 100).toFixed(0)}${t.armorBonusLabel}`),
     },
     {
       key: 'metabolism',
-      name: 'Metabolismo & Fisión Rápida',
-      desc: 'Aumenta la ganancia de masa por eritrocito devorado y reduce el tiempo de recombinación.',
+      name: t.statMetabolismTitle,
+      desc: t.statMetabolismDesc,
       icon: <Flame className="w-5 h-5 text-rose-400" />,
       color: '#f43f5e',
-      effectLabel: (lvl) => (lvl === 0 ? 'Metabolismo estándar' : `+${(Math.log10(1 + lvl) * 55).toFixed(0)}% Masa Extra`),
+      effectLabel: (lvl) => (lvl === 0 ? t.metabolismBase : `+${(Math.log10(1 + lvl) * 55).toFixed(0)}${t.metabolismBonusLabel}`),
     },
   ];
 
   const conqueredCount = profile.conqueredOrgans.length;
   const totalOrgans = ANATOMICAL_ORGANS.length;
   const conquestPercent = Math.round((conqueredCount / totalOrgans) * 100);
+
+  const renderPriceTierBadge = (priceCytes: number, isFree?: boolean) => {
+    if (isFree || priceCytes <= 0) return null;
+    const tier = getItemPriceTier(priceCytes);
+    if (tier === 'basic') {
+      return (
+        <span className="px-2 py-0.5 rounded-md bg-cyan-500/15 text-cyan-300 text-[9px] font-black uppercase tracking-wider border border-cyan-400/30">
+          {t.tierBasicBadge}
+        </span>
+      );
+    }
+    if (tier === 'normal') {
+      return (
+        <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 text-[9px] font-black uppercase tracking-wider border border-indigo-400/35">
+          {t.tierNormalBadge}
+        </span>
+      );
+    }
+    return (
+      <span className="px-2 py-0.5 rounded-md bg-gradient-to-r from-amber-500/25 to-rose-500/25 text-amber-300 text-[9px] font-black uppercase tracking-wider border border-amber-400/50 shadow-[0_0_10px_rgba(251,191,36,0.25)]">
+        {t.tierVipBadge}
+      </span>
+    );
+  };
 
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md pointer-events-auto select-none">
@@ -366,10 +397,12 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="text-sm font-black text-white truncate">{b.name}</h3>
-                            {b.isFreeStarter && (
+                            {b.isFreeStarter ? (
                               <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider border border-emerald-400/30">
                                 {t.freeLabel}
                               </span>
+                            ) : (
+                              renderPriceTierBadge(b.priceCytes)
                             )}
                           </div>
                           <span className="text-[11px] text-neutral-400 italic block">{b.species}</span>
@@ -382,7 +415,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
 
                       <p className="text-[11px] text-neutral-300 leading-snug mb-2">{b.description}</p>
                       <p className="text-[10px] text-emerald-300/90 font-mono bg-black/30 p-2 rounded-xl mb-3 border border-white/5">
-                        Perk: {b.perkDescription}
+                        {b.perkDescription}
                       </p>
 
                       {/* Stat multipliers */}
@@ -489,19 +522,19 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
                       {/* Items Included Preview Pills */}
                       <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 space-y-1.5 text-xs mb-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-neutral-400 text-[11px]">Skin:</span>
+                          <span className="text-neutral-400 text-[11px]">{t.skinsTabTitle}:</span>
                           <span className="font-semibold text-white truncate max-w-[170px]">
                             {skinObj?.name || bundle.skinId}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-neutral-400 text-[11px]">Espora [W]:</span>
+                          <span className="text-neutral-400 text-[11px]">{t.sporeStylesTab}:</span>
                           <span className="font-semibold text-white truncate max-w-[170px]">
                             {sporeObj?.name || bundle.sporeId}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-neutral-400 text-[11px]">Cepa:</span>
+                          <span className="text-neutral-400 text-[11px]">{t.bacteriaTab}:</span>
                           <span className="font-semibold text-white truncate max-w-[170px]">
                             {bacObj?.name || bundle.bacteriaId}
                           </span>
@@ -674,8 +707,17 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
                             style={{ backgroundColor: skin.nucleusColor }}
                           />
                         </div>
-                        <div>
-                          <h3 className="text-sm font-bold text-white">{skin.name}</h3>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h3 className="text-sm font-bold text-white">{skin.name}</h3>
+                            {skin.priceCytes === 0 ? (
+                              <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-black uppercase border border-emerald-400/30">
+                                {t.freeLabel}
+                              </span>
+                            ) : (
+                              renderPriceTierBadge(skin.priceCytes)
+                            )}
+                          </div>
                           <span className="text-[10px] text-neutral-400">{skin.unlockRequirement}</span>
                         </div>
                       </div>
@@ -716,8 +758,10 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
           {activeTab === 'spores' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {SPORE_STYLES.map((spore) => {
-                const isUnlocked = profile.unlockedSporeIds.includes(spore.id);
+                const isFreeStarter = spore.id === 'spore_plasma';
+                const isUnlocked = isFreeStarter || profile.unlockedSporeIds.includes(spore.id);
                 const isSelected = profile.selectedSporeId === spore.id;
+                const isAchievementLocked = !isUnlocked && Boolean(spore.requiredAchievementId) && spore.priceCytes === 0;
 
                 return (
                   <div
@@ -727,23 +771,32 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
                         ? 'bg-emerald-950/40 border-emerald-400/80 shadow-[0_0_20px_rgba(16,185,129,0.25)]'
                         : isUnlocked
                         ? 'bg-white/5 border-white/10 hover:border-white/20'
-                        : 'bg-black/40 border-white/5 opacity-80'
+                        : 'bg-black/40 border-white/5 opacity-85'
                     }`}
                   >
                     <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <div
-                          className="w-9 h-9 rounded-full border-2 shadow-md flex items-center justify-center animate-pulse"
-                          style={{
-                            backgroundColor: spore.color,
-                            borderColor: spore.glowColor,
-                            boxShadow: `0 0 12px ${spore.glowColor}`,
-                          }}
-                        />
-                        <div>
-                          <h3 className="text-sm font-bold text-white">{spore.name}</h3>
-                          <span className="text-[10px] text-neutral-400">Rastro: {spore.trailType}</span>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-9 h-9 rounded-full border-2 shadow-md flex items-center justify-center animate-pulse shrink-0"
+                            style={{
+                              backgroundColor: spore.color,
+                              borderColor: spore.glowColor,
+                              boxShadow: `0 0 12px ${spore.glowColor}`,
+                            }}
+                          />
+                          <div>
+                            <h3 className="text-sm font-bold text-white">{spore.name}</h3>
+                            <span className="text-[10px] text-neutral-400">{t.trailLabel} {spore.trailType}</span>
+                          </div>
                         </div>
+                        {isFreeStarter ? (
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[9px] font-black uppercase border border-emerald-400/30">
+                            {t.freeLabel}
+                          </span>
+                        ) : (
+                          renderPriceTierBadge(spore.priceCytes)
+                        )}
                       </div>
                       <p className="text-xs text-neutral-400 mb-3">{spore.unlockRequirement}</p>
                     </div>
@@ -755,6 +808,8 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
                           ? 'bg-emerald-500 text-neutral-950 font-black'
                           : isUnlocked
                           ? 'bg-white/10 hover:bg-white/20 text-white'
+                          : isAchievementLocked
+                          ? 'bg-purple-950/60 border border-purple-400/40 text-purple-200'
                           : 'bg-rose-600 hover:bg-rose-500 text-white'
                       }`}
                     >
@@ -765,6 +820,11 @@ export const ShopModal: React.FC<ShopModalProps> = ({ onClose, onSkinChanged, t:
                         </>
                       ) : isUnlocked ? (
                         <span>{t.equip}</span>
+                      ) : isAchievementLocked ? (
+                        <>
+                          <Lock className="w-3.5 h-3.5 text-purple-300" />
+                          <span>{t.achievementRequiredLabel}</span>
+                        </>
                       ) : (
                         <>
                           <CyteCoinSvg size={14} />
