@@ -63,8 +63,23 @@ export interface Organism {
   hasCrown?: boolean;
   crownType?: 'gold' | 'immune' | 'pathogen';
   // Bot AI specific fields
-  aiPersonality?: 'aggressive' | 'scavenger' | 'balanced' | 'cautious';
+  aiPersonality?:
+    | 'sniper'
+    | 'zigzagger'
+    | 'opportunist'
+    | 'hormone_hunter'
+    | 'farmer'
+    | 'baiter'
+    | 'casual'
+    | 'aggressive'
+    | 'scavenger'
+    | 'balanced'
+    | 'cautious';
   aiDecisionTimer?: number;
+  aiWeavePhase?: number;
+  aiWeaveFreq?: number;
+  aiWeaveAmp?: number;
+  aiPreferredOrganIdx?: number;
 }
 
 export interface Protein {
@@ -155,10 +170,16 @@ export interface LeaderboardEntry {
   crownType?: 'gold' | 'immune' | 'pathogen';
   isDev?: boolean;
   devBadge?: {
-    enabled: boolean;
-    label: string;
+    isDev?: boolean;
+    title?: string;
+    enabled?: boolean;
+    label?: string;
     color: string;
-    svgPreset: string;
+    iconPreset1?: string;
+    iconPreset2?: string;
+    customSvg1?: string;
+    customSvg2?: string;
+    svgPreset?: string;
     customSvgPath?: string;
     customSvgCode?: string;
   } | null;
@@ -182,7 +203,55 @@ export interface GameStats {
   gameMode?: GameMode;
   playerFaction?: Faction;
   activeSuperpower?: ActiveSuperpower | null;
+  activeHormoneBuff?: ActiveHormoneBuff | null;
   hostStatus?: HostHumanStatus;
+}
+
+export type MedicalTreatmentType =
+  | 'antibiotic'      // Antibiótico Amoxicilina IV
+  | 'analgesic'       // Analgésico Ibuprofeno
+  | 'vaccine'         // Vacuna ARNm Inmunizante
+  | 'antiviral_pill'  // Pastilla Antiviral
+  | 'iv_serum'        // Suero Electrolítico IV
+  | 'antipyretic';    // Antipirético Metamizol
+
+export interface ActiveMedicalTreatment {
+  type: MedicalTreatmentType;
+  name: string;
+  clinicalEffect: string;
+  color: string;
+  remainingTime: number;
+  totalDuration: number;
+}
+
+export interface MedicalTreatmentEntity {
+  id: string;
+  type: MedicalTreatmentType;
+  name: string;
+  clinicalEffect: string;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  radius: number;
+  color: string;
+  glowColor: string;
+  pillColorA: string;
+  pillColorB: string;
+  symbol: string;
+  respawnTimer: number;
+  isAvailable: boolean;
+  rotation: number;
+}
+
+export interface ActiveHormoneBuff {
+  type: HormoneType;
+  name: string;
+  symbol: string;
+  effectDesc: string;
+  color: string;
+  remainingTime: number;
+  totalDuration: number;
 }
 
 export interface HostHumanStatus {
@@ -192,6 +261,8 @@ export interface HostHumanStatus {
   energyATP: number; // e.g. 30 to 95%
   pusLevel: number; // e.g. 0 to 100 ml de pus/exudado purulento
   activeSymptoms: string[];
+  activeTreatment?: ActiveMedicalTreatment | null;
+  treatmentsAdministered?: number;
 }
 
 export type SuperpowerType =
@@ -250,6 +321,53 @@ export interface TacticalBooster {
   themeColor: string;
 }
 
+export type HormoneType =
+  | 'adrenaline'       // Adrenalina (Epinefrina) - +65% velocidad explosiva y alerta
+  | 'noradrenaline'    // Noradrenalina - Impulso de fisión balística y enfoque
+  | 'insulin'          // Insulina - Absorción acelerada de glucosa (+45 Masa inmediata)
+  | 'glucagon'         // Glucagón - Liberación glucogénica (+35 Masa +Velocidad)
+  | 'somatotropin_gh'  // Somatotropina (GH Hormona del Crecimiento) - +60 Masa celular
+  | 'melatonin'        // Melatonina - Camuflaje pineal calmante (reduce alerta de anticuerpos)
+  | 'thyroxine_t4'     // Tiroxina (T4 Tiroidea) - +50% Metabolismo digestivo por 12s
+  | 'cortisol'         // Cortisol - Escudo anti-estrés de membrana (+Resistencia)
+  | 'dopamine'         // Dopamina - Euforia sináptica (+Velocidad y +12 Cytes)
+  | 'serotonin'        // Serotonina - Armonía celular (Recombinación rápida de células)
+  | 'oxytocin'         // Oxitocina - Regeneración vascular (+40 Masa y +10 Cytes)
+  | 'erythropoietin';  // Eritropoyetina (EPO Renal) - Síntesis de glóbulos rojos (+20 Cytes y +30 Masa)
+
+export interface HormoneEntity {
+  id: string;
+  type: HormoneType;
+  name: string;
+  organOrigin: string;
+  effectDesc: string;
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  radius: number;
+  color: string;
+  glowColor: string;
+  symbol: string;
+  massBonus: number;
+  cytesBonus: number;
+  speedBoost?: number;
+  respawnTimer: number;
+  isAvailable: boolean;
+  pulsePhase: number;
+}
+
+export interface EndocrineBarZone {
+  id: string;
+  name: string;
+  subtitle: string;
+  x: number;
+  y: number;
+  radius: number;
+  color: string;
+  glowColor: string;
+}
+
 export interface ActivePlayer {
   deviceId: string;
   name: string;
@@ -259,12 +377,19 @@ export interface ActivePlayer {
   faction: 'immune' | 'pathogen' | 'neutral';
   isRealDevice: boolean;
   lastSeen: number;
+  x?: number;
+  y?: number;
   isDev?: boolean;
   devBadge?: {
-    enabled: boolean;
-    label: string;
+    enabled?: boolean;
+    title?: string;
+    label?: string;
     color: string;
-    svgPreset: string;
+    svgPreset?: string;
+    iconPreset1?: string;
+    iconPreset2?: string;
+    customSvg1?: string;
+    customSvg2?: string;
     customSvgPath?: string;
     customSvgCode?: string;
   } | null;
@@ -284,3 +409,4 @@ export interface RoomInvitation {
   status: 'pending' | 'accepted' | 'declined';
   createdAt: number;
 }
+

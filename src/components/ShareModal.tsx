@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Share2,
   Copy,
@@ -11,12 +11,17 @@ import {
   MessageSquare,
   MessageCircle,
   Download,
-  Sparkles,
   Bookmark
 } from 'lucide-react';
 import { TranslationStrings } from '../i18n/languages';
 import { GameStats } from '../game/types';
 import { profileStorage } from '../storage/profileStorage';
+import {
+  QR_STYLE_THEMES,
+  QrThemeId,
+  generateStyledQrDataUrl,
+  renderStyledQrToCanvas,
+} from '../utils/styledQr';
 
 interface ShareModalProps {
   onClose: () => void;
@@ -25,12 +30,14 @@ interface ShareModalProps {
   stats?: GameStats | null;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang, stats }) => {
+export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, stats }) => {
   const [copied, setCopied] = useState(false);
   const [discordCopied, setDiscordCopied] = useState(false);
   const [cardDownloaded, setCardDownloaded] = useState(false);
   const [qrDownloaded, setQrDownloaded] = useState(false);
   const [showQr, setShowQr] = useState(true);
+  const [qrTheme, setQrTheme] = useState<QrThemeId>('bio_crimson');
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const profile = profileStorage.getProfile();
 
   const getShareUrl = () => {
@@ -44,6 +51,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
   };
 
   const shareUrl = getShareUrl();
+
+  useEffect(() => {
+    const dataUrl = generateStyledQrDataUrl(shareUrl, 340, qrTheme);
+    setQrDataUrl(dataUrl);
+  }, [shareUrl, qrTheme]);
 
   const getShareMessage = () => {
     const peak = stats?.peakMass ? `[Mite.io] ${t.peakMass}: ${stats.peakMass} · ` : '';
@@ -128,8 +140,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
     window.open(`https://pinterest.com/pin/create/button/?url=${url}&description=${desc}`, '_blank');
   };
 
-  // Generate downloadable Bio Identity Card PNG using Canvas
-  const handleDownloadCard = () => {
+  // Generate downloadable Bio Identity Card PNG using Canvas with real QR code
+  const handleDownloadCard = async () => {
     try {
       const canvas = document.createElement('canvas');
       canvas.width = 680;
@@ -154,17 +166,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
       ctx.lineWidth = 1;
       ctx.strokeRect(18, 18, 644, 364);
 
-      // Glowing corner accents
-      ctx.fillStyle = '#f43f5e';
-      ctx.fillRect(12, 12, 30, 6);
-      ctx.fillRect(12, 12, 6, 30);
-      ctx.fillRect(638, 12, 30, 6);
-      ctx.fillRect(662, 12, 6, 30);
-      ctx.fillRect(12, 382, 30, 6);
-      ctx.fillRect(12, 358, 6, 30);
-      ctx.fillRect(638, 382, 30, 6);
-      ctx.fillRect(662, 358, 6, 30);
-
       // Top title
       ctx.font = '900 28px sans-serif';
       ctx.fillStyle = '#ffffff';
@@ -174,27 +175,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
       ctx.fillStyle = '#f43f5e';
       ctx.fillText(t.shareBioCardHeader, 45, 84);
 
-      // Microbe circular badge
-      const badgeX = 550;
-      const badgeY = 110;
-      const badgeGrad = ctx.createRadialGradient(badgeX, badgeY, 10, badgeX, badgeY, 65);
-      badgeGrad.addColorStop(0, '#f43f5e');
-      badgeGrad.addColorStop(0.7, '#881337');
-      badgeGrad.addColorStop(1, '#1e1b4b');
-      ctx.fillStyle = badgeGrad;
-      ctx.beginPath();
-      ctx.arc(badgeX, badgeY, 55, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = '#ffffff';
-      ctx.stroke();
-
-      // Crown or star on badge
-      ctx.fillStyle = '#fbbf24';
-      ctx.font = '28px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('👑', badgeX, badgeY + 10);
-      ctx.textAlign = 'left';
+      // Real Scannable Styled QR Code on Right Side of Bio Card
+      const qrTempCanvas = document.createElement('canvas');
+      renderStyledQrToCanvas(qrTempCanvas, shareUrl, 170, qrTheme);
+      ctx.drawImage(qrTempCanvas, 465, 110, 170, 170);
 
       // Player Information Box
       ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
@@ -253,8 +237,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
     }
   };
 
-  // Build high-resolution QR Code canvas for downloading or sharing
-  const buildQrCanvas = (): HTMLCanvasElement | null => {
+  // Build high-resolution REAL ISO Scannable QR Code canvas for downloading or sharing
+  const buildQrCanvas = async (): Promise<HTMLCanvasElement | null> => {
     try {
       const canvas = document.createElement('canvas');
       canvas.width = 520;
@@ -294,57 +278,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
       ctx.roundRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 24);
       ctx.fill();
 
-      // Scale factor from 140x140 SVG coordinate space to 360x360
-      const scale = qrBoxSize / 140;
-      ctx.save();
-      ctx.translate(qrBoxX, qrBoxY);
-      ctx.scale(scale, scale);
-
-      // Corner finder patterns
-      const drawFinder = (fx: number, fy: number) => {
-        ctx.fillStyle = '#09090b';
-        ctx.fillRect(fx, fy, 34, 34);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(fx + 6, fy + 6, 22, 22);
-        ctx.fillStyle = '#e11d48';
-        ctx.fillRect(fx + 12, fy + 12, 10, 10);
-      };
-      drawFinder(10, 10);
-      drawFinder(96, 10);
-      drawFinder(10, 96);
-
-      // Data modules
-      ctx.fillStyle = '#18181b';
-      const modules: [number, number][] = [
-        [52, 12], [64, 12], [76, 12],
-        [58, 24], [70, 24], [82, 24],
-        [52, 36], [64, 36],
-        [12, 52], [24, 52], [36, 52], [48, 52], [60, 52], [72, 52], [84, 52], [96, 52], [108, 52], [120, 52],
-        [12, 68], [28, 68], [44, 68], [92, 68], [108, 68], [124, 68],
-        [12, 80], [36, 80], [52, 80], [82, 80], [102, 80], [120, 80],
-        [52, 96], [68, 96], [84, 96], [100, 96], [116, 96],
-        [52, 112], [74, 112], [92, 112], [110, 112], [124, 112],
-        [60, 124], [78, 124], [96, 124],
-      ];
-      for (const [mx, my] of modules) {
-        ctx.fillRect(mx, my, 6, 6);
-      }
-
-      // Center cell emblem
-      ctx.beginPath();
-      ctx.arc(70, 70, 14, 0, Math.PI * 2);
-      ctx.fillStyle = '#f43f5e';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(70, 70, 8, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(70, 70, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#09090b';
-      ctx.fill();
-
-      ctx.restore();
+      // Render genuine Reed-Solomon Styled QR code onto offscreen canvas and draw inside pad
+      const qrTempCanvas = document.createElement('canvas');
+      renderStyledQrToCanvas(qrTempCanvas, shareUrl, 340, qrTheme);
+      ctx.drawImage(qrTempCanvas, qrBoxX + 10, qrBoxY + 10, 340, 340);
 
       // Player & URL footer
       ctx.fillStyle = '#34d399';
@@ -365,8 +302,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
     }
   };
 
-  const handleDownloadQr = () => {
-    const canvas = buildQrCanvas();
+  const handleDownloadQr = async () => {
+    const canvas = await buildQrCanvas();
     if (!canvas) return;
     try {
       const dataUrl = canvas.toDataURL('image/png');
@@ -382,7 +319,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
   };
 
   const handleShareQr = async () => {
-    const canvas = buildQrCanvas();
+    const canvas = await buildQrCanvas();
     if (canvas && navigator.share) {
       try {
         const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
@@ -587,77 +524,48 @@ export const ShareModal: React.FC<ShareModalProps> = ({ onClose, t, currentLang,
           </div>
         </div>
 
-        {/* QR Code Display Card */}
+        {/* QR Code Display Card with Bio-Line Styling & Color Palette Selector */}
         {showQr && (
           <div className="mt-4 p-4 rounded-2xl bg-neutral-900 border border-purple-500/40 flex flex-col items-center text-center animate-fade-in">
-            <div className="p-3 bg-white rounded-2xl shadow-xl mb-2 flex items-center justify-center">
-              <svg width="140" height="140" viewBox="0 0 140 140" className="rounded-lg">
-                <rect width="140" height="140" fill="#ffffff" />
-                <rect x="10" y="10" width="34" height="34" fill="#09090b" rx="4" />
-                <rect x="16" y="16" width="22" height="22" fill="#ffffff" rx="2" />
-                <rect x="22" y="22" width="10" height="10" fill="#e11d48" rx="2" />
-                <rect x="96" y="10" width="34" height="34" fill="#09090b" rx="4" />
-                <rect x="102" y="16" width="22" height="22" fill="#ffffff" rx="2" />
-                <rect x="108" y="22" width="10" height="10" fill="#e11d48" rx="2" />
-                <rect x="10" y="96" width="34" height="34" fill="#09090b" rx="4" />
-                <rect x="16" y="102" width="22" height="22" fill="#ffffff" rx="2" />
-                <rect x="22" y="108" width="10" height="10" fill="#e11d48" rx="2" />
+            {/* Color Palette Selector */}
+            <div className="flex items-center justify-center gap-1.5 flex-wrap mb-3">
+              {QR_STYLE_THEMES.map((theme) => {
+                const isSelected = qrTheme === theme.id;
+                return (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => setQrTheme(theme.id)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-white/15 text-white border-white/50 shadow-sm'
+                        : 'bg-white/5 text-neutral-400 border-white/10 hover:text-white'
+                    }`}
+                  >
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/40"
+                      style={{
+                        background: `linear-gradient(135deg, ${theme.gradStops[0]}, ${theme.gradStops[1]})`,
+                      }}
+                    />
+                    <span>{theme.label}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-                <g fill="#18181b">
-                  <rect x="52" y="12" width="6" height="6" />
-                  <rect x="64" y="12" width="6" height="6" />
-                  <rect x="76" y="12" width="6" height="6" />
-                  <rect x="58" y="24" width="6" height="6" />
-                  <rect x="70" y="24" width="6" height="6" />
-                  <rect x="82" y="24" width="6" height="6" />
-                  <rect x="52" y="36" width="6" height="6" />
-                  <rect x="64" y="36" width="6" height="6" />
-                  <rect x="12" y="52" width="6" height="6" />
-                  <rect x="24" y="52" width="6" height="6" />
-                  <rect x="36" y="52" width="6" height="6" />
-                  <rect x="48" y="52" width="6" height="6" />
-                  <rect x="60" y="52" width="6" height="6" />
-                  <rect x="72" y="52" width="6" height="6" />
-                  <rect x="84" y="52" width="6" height="6" />
-                  <rect x="96" y="52" width="6" height="6" />
-                  <rect x="108" y="52" width="6" height="6" />
-                  <rect x="120" y="52" width="6" height="6" />
-
-                  <circle cx="70" cy="70" r="14" fill="#f43f5e" />
-                  <circle cx="70" cy="70" r="8" fill="#ffffff" />
-                  <circle cx="70" cy="70" r="4" fill="#09090b" />
-
-                  <rect x="12" y="68" width="6" height="6" />
-                  <rect x="28" y="68" width="6" height="6" />
-                  <rect x="44" y="68" width="6" height="6" />
-                  <rect x="92" y="68" width="6" height="6" />
-                  <rect x="108" y="68" width="6" height="6" />
-                  <rect x="124" y="68" width="6" height="6" />
-
-                  <rect x="12" y="80" width="6" height="6" />
-                  <rect x="36" y="80" width="6" height="6" />
-                  <rect x="52" y="80" width="6" height="6" />
-                  <rect x="82" y="80" width="6" height="6" />
-                  <rect x="102" y="80" width="6" height="6" />
-                  <rect x="120" y="80" width="6" height="6" />
-
-                  <rect x="52" y="96" width="6" height="6" />
-                  <rect x="68" y="96" width="6" height="6" />
-                  <rect x="84" y="96" width="6" height="6" />
-                  <rect x="100" y="96" width="6" height="6" />
-                  <rect x="116" y="96" width="6" height="6" />
-
-                  <rect x="52" y="112" width="6" height="6" />
-                  <rect x="74" y="112" width="6" height="6" />
-                  <rect x="92" y="112" width="6" height="6" />
-                  <rect x="110" y="112" width="6" height="6" />
-                  <rect x="124" y="112" width="6" height="6" />
-
-                  <rect x="60" y="124" width="6" height="6" />
-                  <rect x="78" y="124" width="6" height="6" />
-                  <rect x="96" y="124" width="6" height="6" />
-                </g>
-              </svg>
+            <div className="p-2.5 bg-white rounded-2xl shadow-[0_0_25px_rgba(244,63,94,0.25)] border-2 border-rose-500/40 mb-2 flex items-center justify-center">
+              {qrDataUrl ? (
+                <img
+                  src={qrDataUrl}
+                  alt={t.shareQrCode}
+                  className="w-40 h-40 sm:w-48 sm:h-48 object-contain rounded-xl block"
+                />
+              ) : (
+                <div className="w-40 h-40 flex items-center justify-center text-neutral-900 text-xs font-bold">
+                  QR...
+                </div>
+              )}
             </div>
             <p className="text-xs font-bold text-neutral-300 mb-3">{t.scanQrToPlay}</p>
 

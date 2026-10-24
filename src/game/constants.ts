@@ -1,5 +1,5 @@
 // World map dimensions (Human body vascular anatomy)
-import { Mutation, SuperpowerType } from './types';
+import { Mutation, SuperpowerType, HormoneType, EndocrineBarZone, MedicalTreatmentType } from './types';
 
 export const WORLD_RADIUS = 2800; // 5600px full body circulation
 export const WORLD_CENTER_X = 0;
@@ -165,7 +165,7 @@ export const SECRET_ZONE_RADIUS = 360;
 export const PROTEIN_COUNT = 900;
 export const RED_BLOOD_CELL_COUNT = 75;
 export const ANTIBODY_COUNT = 14;
-export const BOT_COUNT = 49; // 49 bots + 1 player = 50 maximum players per room
+export const BOT_COUNT = 100; // Minimum 100 bots active in the bloodstream
 
 // Mass & size physics
 export const MIN_START_MASS = 18;
@@ -338,3 +338,313 @@ export const SUPERPOWER_DEFS: Record<SuperpowerType, SuperpowerConfig> = {
     pillColorB: '#ccfbf1',
   },
 };
+
+// 3 Endocrine Bars / Hormone Hubs in the Middle & Strategic Junctions of the Map
+export const ENDOCRINE_BARS: EndocrineBarZone[] = [
+  {
+    id: 'bar_hypothalamic_north',
+    name: 'Bar Hipotalámico Norte',
+    subtitle: 'Surtidor de Neuro-Hormonas (Dopamina, Serotonina, Melatonina, GH)',
+    x: 0,
+    y: -1550,
+    radius: 310,
+    color: '#a855f7',
+    glowColor: '#d8b4fe',
+  },
+  {
+    id: 'bar_solar_plexus_center',
+    name: 'Bar Endocrino Central (Plexo Solar)',
+    subtitle: 'Oasis de Hormonas Metabólicas en Medio del Mapa (Insulina, Glucagón, T4, Oxitocina)',
+    x: 0,
+    y: 0,
+    radius: 350,
+    color: '#f59e0b',
+    glowColor: '#fde047',
+  },
+  {
+    id: 'bar_adrenal_south',
+    name: 'Bar Suprarrenal Sur',
+    subtitle: 'Reserva de Adrenalina, Noradrenalina, Cortisol y Eritropoyetina (EPO)',
+    x: 0,
+    y: 1350,
+    radius: 310,
+    color: '#ec4899',
+    glowColor: '#f9a8d4',
+  },
+];
+
+export interface HormoneDefinition {
+  type: HormoneType;
+  name: string;
+  symbol: string;
+  organOrigin: string;
+  effectDesc: string;
+  color: string;
+  glowColor: string;
+  massBonus: number;
+  cytesBonus: number;
+  speedBoost?: number;
+  preferredX: number;
+  preferredY: number;
+  spreadRadius: number;
+}
+
+export const HORMONE_DEFS: Record<HormoneType, HormoneDefinition> = {
+  adrenaline: {
+    type: 'adrenaline',
+    name: 'Hormona Adrenalina',
+    symbol: 'EPI',
+    organOrigin: 'Riñones / Bar Suprarrenal',
+    effectDesc: '+65% Velocidad explosiva +25 Masa',
+    color: '#ef4444',
+    glowColor: '#fca5a5',
+    massBonus: 25,
+    cytesBonus: 5,
+    speedBoost: 1.65,
+    preferredX: -520,
+    preferredY: 1300,
+    spreadRadius: 650,
+  },
+  noradrenaline: {
+    type: 'noradrenaline',
+    name: 'Hormona Noradrenalina',
+    symbol: 'NOR',
+    organOrigin: 'Corazón / Bar Suprarrenal',
+    effectDesc: '+50% Impulso arterial +28 Masa',
+    color: '#f97316',
+    glowColor: '#fdba74',
+    massBonus: 28,
+    cytesBonus: 5,
+    speedBoost: 1.5,
+    preferredX: -450,
+    preferredY: -200,
+    spreadRadius: 650,
+  },
+  insulin: {
+    type: 'insulin',
+    name: 'Hormona Insulina',
+    symbol: 'INS',
+    organOrigin: 'Estómago / Bar Endocrino Central',
+    effectDesc: 'Síntesis Glucídica: +48 Masa celular inmediata',
+    color: '#10b981',
+    glowColor: '#6ee7b7',
+    massBonus: 48,
+    cytesBonus: 6,
+    preferredX: -480,
+    preferredY: 320,
+    spreadRadius: 650,
+  },
+  glucagon: {
+    type: 'glucagon',
+    name: 'Hormona Glucagón',
+    symbol: 'GLU',
+    organOrigin: 'Hígado / Bar Endocrino Central',
+    effectDesc: 'Glucogenólisis: +36 Masa +35% Velocidad',
+    color: '#f59e0b',
+    glowColor: '#fde047',
+    massBonus: 36,
+    cytesBonus: 6,
+    speedBoost: 1.35,
+    preferredX: -320,
+    preferredY: 180,
+    spreadRadius: 600,
+  },
+  somatotropin_gh: {
+    type: 'somatotropin_gh',
+    name: 'Somatotropina (GH)',
+    symbol: 'GH',
+    organOrigin: 'Cerebro / Bar Hipotalámico',
+    effectDesc: 'Hormona del Crecimiento: +62 Masa celular',
+    color: '#8b5cf6',
+    glowColor: '#c4b5fd',
+    massBonus: 62,
+    cytesBonus: 8,
+    preferredX: -380,
+    preferredY: -1650,
+    spreadRadius: 680,
+  },
+  melatonin: {
+    type: 'melatonin',
+    name: 'Hormona Melatonina',
+    symbol: 'MEL',
+    organOrigin: 'Glándula Pineal / Bar Hipotalámico',
+    effectDesc: 'Calma anticuerpos cercanos +30 Masa',
+    color: '#6366f1',
+    glowColor: '#a5b4fc',
+    massBonus: 30,
+    cytesBonus: 7,
+    preferredX: 380,
+    preferredY: -1650,
+    spreadRadius: 680,
+  },
+  thyroxine_t4: {
+    type: 'thyroxine_t4',
+    name: 'Hormona Tiroxina (T4)',
+    symbol: 'T4',
+    organOrigin: 'Timo / Bar Endocrino Central',
+    effectDesc: 'Hiper-Metabolismo: +40 Masa +40% Velocidad',
+    color: '#06b6d4',
+    glowColor: '#67e8f9',
+    massBonus: 40,
+    cytesBonus: 7,
+    speedBoost: 1.4,
+    preferredX: 350,
+    preferredY: -350,
+    spreadRadius: 650,
+  },
+  cortisol: {
+    type: 'cortisol',
+    name: 'Hormona Cortisol',
+    symbol: 'COR',
+    organOrigin: 'Corteza Suprarrenal / Bar Sur',
+    effectDesc: 'Resistencia de Membrana: +42 Masa +8 Cytes',
+    color: '#eab308',
+    glowColor: '#fef08a',
+    massBonus: 42,
+    cytesBonus: 8,
+    preferredX: 420,
+    preferredY: 1250,
+    spreadRadius: 650,
+  },
+  dopamine: {
+    type: 'dopamine',
+    name: 'Hormona Dopamina',
+    symbol: 'DOP',
+    organOrigin: 'Sinapsis / Bar Hipotalámico Norte',
+    effectDesc: 'Euforia Neural: +55% Velocidad +12 Cytes',
+    color: '#ec4899',
+    glowColor: '#f9a8d4',
+    massBonus: 32,
+    cytesBonus: 12,
+    speedBoost: 1.55,
+    preferredX: 0,
+    preferredY: -1500,
+    spreadRadius: 620,
+  },
+  serotonin: {
+    type: 'serotonin',
+    name: 'Hormona Serotonina',
+    symbol: '5HT',
+    organOrigin: 'Plexo Entérico / Bar Central',
+    effectDesc: 'Fusión celular instantánea +38 Masa',
+    color: '#14b8a6',
+    glowColor: '#5eead4',
+    massBonus: 38,
+    cytesBonus: 9,
+    preferredX: 0,
+    preferredY: 80,
+    spreadRadius: 600,
+  },
+  oxytocin: {
+    type: 'oxytocin',
+    name: 'Hormona Oxitocina',
+    symbol: 'OXT',
+    organOrigin: 'Corazón / Bar Endocrino Central',
+    effectDesc: 'Regeneración Vascular: +45 Masa +10 Cytes',
+    color: '#f43f5e',
+    glowColor: '#fda4af',
+    massBonus: 45,
+    cytesBonus: 10,
+    preferredX: -120,
+    preferredY: -120,
+    spreadRadius: 600,
+  },
+  erythropoietin: {
+    type: 'erythropoietin',
+    name: 'Eritropoyetina (EPO)',
+    symbol: 'EPO',
+    organOrigin: 'Riñones / Bar Suprarrenal Sur',
+    effectDesc: 'Génesis de Eritrocitos: +20 Cytes +35 Masa',
+    color: '#dc2626',
+    glowColor: '#f87171',
+    massBonus: 35,
+    cytesBonus: 20,
+    speedBoost: 1.3,
+    preferredX: 0,
+    preferredY: 1350,
+    spreadRadius: 620,
+  },
+};
+
+export interface MedicalTreatmentDefinition {
+  type: MedicalTreatmentType;
+  name: string;
+  symbol: string;
+  clinicalEffect: string;
+  color: string;
+  glowColor: string;
+  pillColorA: string;
+  pillColorB: string;
+  durationSec: number;
+}
+
+export const MEDICAL_TREATMENT_DEFS: Record<MedicalTreatmentType, MedicalTreatmentDefinition> = {
+  antibiotic: {
+    type: 'antibiotic',
+    name: 'Antibiótico Amoxicilina IV',
+    symbol: 'ABX',
+    clinicalEffect: 'Lisis bacteriana: -22 ml Pus, debilita Patógenos (-20% masa) y +10% Salud Paciente',
+    color: '#06b6d4',
+    glowColor: '#22d3ee',
+    pillColorA: '#0891b2',
+    pillColorB: '#ecfeff',
+    durationSec: 12,
+  },
+  analgesic: {
+    type: 'analgesic',
+    name: 'Analgésico Ibuprofeno',
+    symbol: 'ALG',
+    clinicalEffect: 'Antiinflamatorio: -0.6 °C Fiebre, +14% Energía ATP y +30% Velocidad celular',
+    color: '#f59e0b',
+    glowColor: '#fbbf24',
+    pillColorA: '#d97706',
+    pillColorB: '#fef3c7',
+    durationSec: 12,
+  },
+  vaccine: {
+    type: 'vaccine',
+    name: 'Vacuna ARNm Inmunizante',
+    symbol: 'VAC',
+    clinicalEffect: 'Memoria Inmune: +35% Velocidad y Escudo a Leucocitos, +14% Salud y -16 ml Pus',
+    color: '#10b981',
+    glowColor: '#34d399',
+    pillColorA: '#059669',
+    pillColorB: '#d1fae5',
+    durationSec: 14,
+  },
+  antiviral_pill: {
+    type: 'antiviral_pill',
+    name: 'Pastilla Antiviral',
+    symbol: 'AVR',
+    clinicalEffect: 'Inhibidor de Replicación: Ralentiza Patógenos (-30%), -14 ml Pus y +9% Salud',
+    color: '#8b5cf6',
+    glowColor: '#c4b5fd',
+    pillColorA: '#7c3aed',
+    pillColorB: '#ede9fe',
+    durationSec: 12,
+  },
+  iv_serum: {
+    type: 'iv_serum',
+    name: 'Suero Electrolítico IV',
+    symbol: 'SUE',
+    clinicalEffect: 'Rehidratación Plasmática: +22% Hidratación, +18% Energía ATP y +35 Masa',
+    color: '#3b82f6',
+    glowColor: '#60a5fa',
+    pillColorA: '#2563eb',
+    pillColorB: '#dbeafe',
+    durationSec: 12,
+  },
+  antipyretic: {
+    type: 'antipyretic',
+    name: 'Antipirético Metamizol',
+    symbol: 'ATP',
+    clinicalEffect: 'Termorregulación Hipotalámica: Baja Fiebre (-1.1 °C), evita Shock Séptico y +8% Salud',
+    color: '#ec4899',
+    glowColor: '#f472b6',
+    pillColorA: '#db2777',
+    pillColorB: '#fce7f3',
+    durationSec: 12,
+  },
+};
+
+

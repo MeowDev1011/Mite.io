@@ -34,6 +34,10 @@ import {
   HeartHandshake,
   MessageSquareWarning,
   Send,
+  TrendingUp,
+  Palette,
+  Shuffle,
+  Eye,
 } from 'lucide-react';
 import { TranslationStrings } from '../i18n/languages';
 import {
@@ -50,9 +54,10 @@ import { signInWithGoogle, auth } from '../firebase';
 interface DevAdminModalProps {
   onClose: () => void;
   t: TranslationStrings;
+  onPreviewWarning?: (msg: string, question: string) => void;
 }
 
-export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
+export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t, onPreviewWarning }) => {
   const [activeTab, setActiveTab] = useState<'reports' | 'users' | 'badge'>('reports');
   const [reports, setReports] = useState<UserReport[]>(() => reportStorage.getReports());
   const [filter, setFilter] = useState<'all' | 'pending' | 'resolved'>('all');
@@ -65,6 +70,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
   const [devIds, setDevIds] = useState<string[]>([]);
   const [usersList, setUsersList] = useState<RegisteredUserEntry[]>([]);
   const [manualUserIdInput, setManualUserIdInput] = useState<string>('');
+  const [customCytesValue, setCustomCytesValue] = useState<string>('1000');
   const [firebaseUserEmail, setFirebaseUserEmail] = useState<string | null>(() => auth.currentUser?.email || null);
 
   // Resolution note draft per report
@@ -133,14 +139,25 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
     targetQuery: string,
     action: ModerationAction,
     warningMessage?: string,
-    warningQuestion?: string
+    warningQuestion?: string,
+    customValue?: number
   ) => {
     const cleanQuery = targetQuery.trim();
     if (!cleanQuery) {
       showToast(t.devUserNotFoundToast);
       return;
     }
-    const ok = await reportStorage.moderateUser(cleanQuery, action, warningMessage, warningQuestion);
+    const parsedVal =
+      typeof customValue === 'number'
+        ? customValue
+        : Math.max(0, Math.round(Number(customCytesValue) || 0));
+    const ok = await reportStorage.moderateUser(
+      cleanQuery,
+      action,
+      warningMessage,
+      warningQuestion,
+      parsedVal
+    );
     if (!ok) {
       showToast(t.devUserNotExistingToast);
       return;
@@ -250,23 +267,23 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
   const colorPresets = ['#fbbf24', '#f59e0b', '#ef4444', '#10b981', '#06b6d4', '#8b5cf6', '#ec4899', '#ffffff'];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md pointer-events-auto select-none animate-fade-in font-sans">
-      <div className="relative w-full max-w-2xl p-4 sm:p-7 rounded-3xl bg-neutral-950/95 border border-amber-500/40 shadow-[0_0_60px_rgba(245,158,11,0.25)] flex flex-col max-h-[92vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-black/85 backdrop-blur-md pointer-events-auto select-none animate-fade-in font-sans">
+      <div className="relative w-full max-w-2xl p-3.5 sm:p-6 rounded-3xl bg-neutral-950/95 border border-amber-500/40 shadow-[0_0_60px_rgba(245,158,11,0.25)] flex flex-col max-h-[92dvh] overflow-hidden">
         {/* Top Glow Bar */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-1 bg-gradient-to-r from-transparent via-amber-400 to-transparent" />
 
         {/* Header */}
-        <div className="flex items-center justify-between pb-3.5 border-b border-white/10 gap-3 shrink-0 flex-wrap">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 shrink-0">
+        <div className="flex items-center justify-between pb-3 border-b border-white/10 gap-2 shrink-0 flex-wrap">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 shrink-0">
               <Shield className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm sm:text-lg font-black text-white flex items-center gap-2 flex-wrap">
                 <span>{t.devPanelTitle}</span>
                 <DevBadge config={devConfig} size="md" tooltip={t.devBadgeTooltip} />
               </h3>
-              <p className="text-[11px] sm:text-xs text-neutral-400">{t.devModalSubtitle}</p>
+              <p className="text-[10px] sm:text-xs text-neutral-400">{t.devModalSubtitle}</p>
             </div>
           </div>
 
@@ -295,7 +312,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
         )}
 
         {/* Tab Selector */}
-        <div className="flex items-center gap-1.5 sm:gap-2 pt-3 pb-2 border-b border-white/5 shrink-0 flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2 pt-2.5 pb-2 border-b border-white/5 shrink-0 flex-wrap">
           <button
             onClick={() => setActiveTab('reports')}
             className={`px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${
@@ -501,13 +518,13 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
             </div>
           )}
 
-          {/* TAB 2: USER MODERATION & DEV PERMISSIONS (By ID or Username + User List) */}
+          {/* TAB 2: USER MODERATION (20 ENFORCED FUNCTIONS) & DEV PERMISSIONS */}
           {activeTab === 'users' && (
             <div className="space-y-4 text-left">
               {/* First User Automatic Detection + Security & Visibility Banner */}
               <div className="p-3.5 rounded-2xl bg-amber-950/30 border border-amber-500/40 flex flex-col gap-2.5">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div className="space-y-1 flex-1 min-w-[220px]">
+                  <div className="space-y-1 flex-1 min-w-[200px]">
                     <div className="flex items-center gap-2">
                       <Crown className="w-4 h-4 text-amber-400" />
                       <span className="text-xs font-black text-amber-300 uppercase tracking-wider">
@@ -561,6 +578,12 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                     </button>
                   </div>
 
+                  {/* Explanation of how the Warning & Mandatory Question reaches the player */}
+                  <div className="p-2.5 rounded-xl bg-black/50 border border-orange-400/30 text-[11px] space-y-1">
+                    <div className="font-black text-orange-300">{t.devWarnHowItReachesTitle}</div>
+                    <p className="text-neutral-300 leading-relaxed">{t.devWarnHowItReachesDesc}</p>
+                  </div>
+
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-orange-200 block">
                       {t.devWarnCustomMessageLabel}
@@ -589,24 +612,63 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                     />
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setWarnTargetQuery(null)}
-                      className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 text-xs font-bold cursor-pointer"
-                    >
-                      {t.devWarnCancelBtn}
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-neutral-950 font-black text-xs flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>{t.devWarnSendBtn}</span>
-                    </button>
+                  <div className="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                    {onPreviewWarning && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onPreviewWarning(
+                            warnCustomMessage.trim() || t.devWarnCustomMessagePlaceholder,
+                            warnCustomQuestion.trim() || t.devWarnQuestionPlaceholder
+                          )
+                        }
+                        className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/50 text-amber-200 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>{t.devWarnPreviewBtn}</span>
+                      </button>
+                    )}
+                    <div className="flex items-center gap-2 ml-auto">
+                      <button
+                        type="button"
+                        onClick={() => setWarnTargetQuery(null)}
+                        className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 text-xs font-bold cursor-pointer"
+                      >
+                        {t.devWarnCancelBtn}
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-neutral-950 font-black text-xs flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>{t.devWarnSendBtn}</span>
+                      </button>
+                    </div>
                   </div>
                 </form>
               )}
+
+              {/* Custom Cytes Value Input Bar for Function #9 (Raise, Lower, or Set Cytes to any Custom Amount) */}
+              <div className="p-3 rounded-2xl bg-emerald-950/25 border border-emerald-500/35 flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Coins className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span className="text-xs font-black text-emerald-200">
+                    {t.devCustomCytesInputPlaceholder}:
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    max={99999999}
+                    value={customCytesValue}
+                    onChange={(e) => setCustomCytesValue(e.target.value)}
+                    placeholder={t.devCustomCytesInputPlaceholder}
+                    className="w-28 sm:w-36 px-3 py-1.5 rounded-xl bg-black/60 border border-emerald-500/40 text-xs font-mono font-black text-emerald-300 focus:outline-none focus:border-emerald-400"
+                  />
+                  <span className="text-[11px] font-bold text-emerald-300 uppercase">{t.cytes}</span>
+                </div>
+              </div>
 
               {/* Manual Input: Enter or Paste User ID OR Username to Make DEV or Moderate (Strictly Real Users) */}
               <form
@@ -634,12 +696,13 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                   </button>
                 </div>
 
-                {/* All 17 Moderation Functions for typed ID or Username */}
+                {/* All 20 Moderation Functions for typed ID or Username */}
                 <div className="pt-1 space-y-1.5">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
-                    {t.devModerationTitle} (17):
+                    {t.devModerationTitle}:
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
+                    {/* 1. Interactive Warning + Question */}
                     <button
                       type="button"
                       onClick={() => openInteractiveWarningComposer(manualUserIdInput)}
@@ -648,6 +711,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                       <MessageSquareWarning className="w-3 h-3" />
                       <span>{t.devModInteractiveWarnBtn}</span>
                     </button>
+                    {/* 2. Mute */}
                     <button
                       type="button"
                       onClick={() => handleModerateUser(manualUserIdInput, 'toggle_mute')}
@@ -656,6 +720,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                       <VolumeX className="w-3 h-3" />
                       <span>2. {t.devModMuteBtn}</span>
                     </button>
+                    {/* 3. Freeze */}
                     <button
                       type="button"
                       onClick={() => handleModerateUser(manualUserIdInput, 'toggle_freeze')}
@@ -664,6 +729,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                       <Snowflake className="w-3 h-3" />
                       <span>{t.devModFreezeBtn}</span>
                     </button>
+                    {/* 4. Slow 50% */}
                     <button
                       type="button"
                       onClick={() => handleModerateUser(manualUserIdInput, 'toggle_slow')}
@@ -672,6 +738,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                       <Gauge className="w-3 h-3" />
                       <span>{t.devModSlowBtn}</span>
                     </button>
+                    {/* 5. Drain Mass to 18 */}
                     <button
                       type="button"
                       onClick={() => handleModerateUser(manualUserIdInput, 'drain_mass')}
@@ -680,6 +747,16 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                       <TrendingDown className="w-3 h-3" />
                       <span>{t.devModDrainMassBtn}</span>
                     </button>
+                    {/* 6. Boost Mass (+500) */}
+                    <button
+                      type="button"
+                      onClick={() => handleModerateUser(manualUserIdInput, 'boost_mass_500')}
+                      className="px-2 py-1 rounded-lg bg-lime-500/15 hover:bg-lime-500/30 border border-lime-500/30 text-lime-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <TrendingUp className="w-3 h-3" />
+                      <span>{t.devModBoostMassBtn}</span>
+                    </button>
+                    {/* 7. Lock Split */}
                     <button
                       type="button"
                       onClick={() => handleModerateUser(manualUserIdInput, 'toggle_lock_split')}
@@ -688,6 +765,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                       <Lock className="w-3 h-3" />
                       <span>{t.devModLockSplitBtn}</span>
                     </button>
+                    {/* 8. Lock Spores */}
                     <button
                       type="button"
                       onClick={() => handleModerateUser(manualUserIdInput, 'toggle_lock_eject')}
@@ -696,6 +774,34 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                       <Lock className="w-3 h-3" />
                       <span>{t.devModLockEjectBtn}</span>
                     </button>
+                    {/* 9a. Raise Custom Cytes */}
+                    <button
+                      type="button"
+                      onClick={() => handleModerateUser(manualUserIdInput, 'add_custom_cytes')}
+                      className="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/50 text-emerald-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Coins className="w-3 h-3" />
+                      <span>{t.devModAddCustomCytesBtn} (+{customCytesValue || 0})</span>
+                    </button>
+                    {/* 9b. Lower Custom Cytes */}
+                    <button
+                      type="button"
+                      onClick={() => handleModerateUser(manualUserIdInput, 'sub_custom_cytes')}
+                      className="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/50 text-amber-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Coins className="w-3 h-3" />
+                      <span>{t.devModSubCustomCytesBtn} (-{customCytesValue || 0})</span>
+                    </button>
+                    {/* 9c. Set Exact Custom Cytes */}
+                    <button
+                      type="button"
+                      onClick={() => handleModerateUser(manualUserIdInput, 'set_custom_cytes')}
+                      className="px-2 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/50 text-cyan-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Coins className="w-3 h-3" />
+                      <span>{t.devModSetCustomCytesBtn} (={customCytesValue || 0})</span>
+                    </button>
+                    {/* 10. Gift +500 Cytes */}
                     <button
                       type="button"
                       onClick={() => handleModerateUser(manualUserIdInput, 'gift_cytes')}
@@ -704,6 +810,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                       <Gift className="w-3 h-3" />
                       <span>{t.devModGiftCytesBtn}</span>
                     </button>
+                    {/* 11. Fine -250 Cytes */}
                     <button
                       type="button"
                       onClick={() => handleModerateUser(manualUserIdInput, 'fine_cytes')}
@@ -712,14 +819,16 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                       <Coins className="w-3 h-3" />
                       <span>{t.devModFineCytesBtn}</span>
                     </button>
+                    {/* 12. Reset Cytes to 0 */}
                     <button
                       type="button"
                       onClick={() => handleModerateUser(manualUserIdInput, 'reset_cytes')}
                       className="px-2 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/30 border border-cyan-500/30 text-cyan-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
                     >
                       <RotateCcw className="w-3 h-3" />
-                      <span>10. {t.devModResetBtn}</span>
+                      <span>12. {t.devModResetBtn}</span>
                     </button>
+                    {/* 13. Reset Upgrades */}
                     <button
                       type="button"
                       onClick={() => handleModerateUser(manualUserIdInput, 'reset_upgrades')}
@@ -728,6 +837,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                       <RotateCcw className="w-3 h-3" />
                       <span>{t.devModResetUpgradesBtn}</span>
                     </button>
+                    {/* 14. Strip Organs */}
                     <button
                       type="button"
                       onClick={() => handleModerateUser(manualUserIdInput, 'strip_organs')}
@@ -736,6 +846,16 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                       <Trash2 className="w-3 h-3" />
                       <span>{t.devModStripOrgansBtn}</span>
                     </button>
+                    {/* 15. Strip Skins & Spores */}
+                    <button
+                      type="button"
+                      onClick={() => handleModerateUser(manualUserIdInput, 'reset_skins')}
+                      className="px-2 py-1 rounded-lg bg-orange-500/15 hover:bg-orange-500/30 border border-orange-500/30 text-orange-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Palette className="w-3 h-3" />
+                      <span>{t.devModResetSkinsBtn}</span>
+                    </button>
+                    {/* 16. Force Sanctioned Name */}
                     <button
                       type="button"
                       onClick={() => handleModerateUser(manualUserIdInput, 'force_rename')}
@@ -744,6 +864,16 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                       <UserX className="w-3 h-3" />
                       <span>{t.devModForceRenameBtn}</span>
                     </button>
+                    {/* 17. Invert Controls */}
+                    <button
+                      type="button"
+                      onClick={() => handleModerateUser(manualUserIdInput, 'toggle_invert_controls')}
+                      className="px-2 py-1 rounded-lg bg-blue-500/15 hover:bg-blue-500/30 border border-blue-500/30 text-blue-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Shuffle className="w-3 h-3" />
+                      <span>{t.devModInvertControlsBtn}</span>
+                    </button>
+                    {/* 18. Kick from Match */}
                     <button
                       type="button"
                       onClick={() => handleModerateUser(manualUserIdInput, 'kick_match')}
@@ -752,6 +882,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                       <LogIn className="w-3 h-3" />
                       <span>{t.devModKickMatchBtn}</span>
                     </button>
+                    {/* 19. Suspend 5 Minutes */}
                     <button
                       type="button"
                       onClick={() => handleModerateUser(manualUserIdInput, 'temp_ban_5m')}
@@ -760,13 +891,14 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                       <Clock className="w-3 h-3" />
                       <span>{t.devModTempBan5mBtn}</span>
                     </button>
+                    {/* 20. Permanent Ban & Pardon */}
                     <button
                       type="button"
                       onClick={() => handleModerateUser(manualUserIdInput, 'toggle_ban')}
                       className="px-2 py-1 rounded-lg bg-rose-600/30 hover:bg-rose-600/45 border border-rose-500/50 text-rose-100 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
                     >
                       <Ban className="w-3 h-3" />
-                      <span>16. {t.devModBanBtn}</span>
+                      <span>20. {t.devModBanBtn}</span>
                     </button>
                     <button
                       type="button"
@@ -780,7 +912,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                 </div>
               </form>
 
-              {/* Strictly Real Existing Users List with Full 17-Action Moderation */}
+              {/* Strictly Real Existing Users List with Full 20-Action Moderation */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <h4 className="text-xs font-black uppercase tracking-wider text-neutral-300">
@@ -861,6 +993,11 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                                   {t.devEjectLockedBadge}
                                 </span>
                               )}
+                              {u.isInvertedControls && (
+                                <span className="px-2 py-0.5 rounded-md bg-blue-600/30 text-blue-200 text-[9px] font-black uppercase">
+                                  {t.devInvertedControlsBadge}
+                                </span>
+                              )}
                               {isTempBanned && (
                                 <span className="px-2 py-0.5 rounded-md bg-rose-500/40 text-rose-100 text-[9px] font-black uppercase">
                                   {t.devTempBannedBadge}
@@ -906,7 +1043,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                           </div>
                         </div>
 
-                        {/* 17 Moderation Action Buttons for this User */}
+                        {/* All 20 Moderation Action Buttons for this User */}
                         <div className="flex items-center gap-1 flex-wrap pt-1 border-t border-white/5">
                           {/* 1. Interactive Warning + Question */}
                           <button
@@ -958,7 +1095,17 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                             <span>{t.devModDrainMassBtn}</span>
                           </button>
 
-                          {/* 6. Lock / Unlock Split */}
+                          {/* 6. Boost Mass (+500) */}
+                          <button
+                            type="button"
+                            onClick={() => handleModerateUser(u.deviceId, 'boost_mass_500')}
+                            className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-lime-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <TrendingUp className="w-3 h-3" />
+                            <span>{t.devModBoostMassBtn}</span>
+                          </button>
+
+                          {/* 7. Lock / Unlock Split */}
                           <button
                             type="button"
                             onClick={() =>
@@ -970,7 +1117,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                             <span>{u.isSplitLocked ? t.devModUnlockSplitBtn : t.devModLockSplitBtn}</span>
                           </button>
 
-                          {/* 7. Lock / Unlock Spores */}
+                          {/* 8. Lock / Unlock Spores */}
                           <button
                             type="button"
                             onClick={() =>
@@ -982,7 +1129,37 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                             <span>{u.isEjectLocked ? t.devModUnlockEjectBtn : t.devModLockEjectBtn}</span>
                           </button>
 
-                          {/* 8. Gift +500 Cytes */}
+                          {/* 9a. Raise Custom Cytes */}
+                          <button
+                            type="button"
+                            onClick={() => handleModerateUser(u.deviceId, 'add_custom_cytes')}
+                            className="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/50 text-emerald-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <Coins className="w-3 h-3" />
+                            <span>{t.devModAddCustomCytesBtn} (+{customCytesValue || 0})</span>
+                          </button>
+
+                          {/* 9b. Lower Custom Cytes */}
+                          <button
+                            type="button"
+                            onClick={() => handleModerateUser(u.deviceId, 'sub_custom_cytes')}
+                            className="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/50 text-amber-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <Coins className="w-3 h-3" />
+                            <span>{t.devModSubCustomCytesBtn} (-{customCytesValue || 0})</span>
+                          </button>
+
+                          {/* 9c. Set Exact Custom Cytes */}
+                          <button
+                            type="button"
+                            onClick={() => handleModerateUser(u.deviceId, 'set_custom_cytes')}
+                            className="px-2 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/35 border border-cyan-400/50 text-cyan-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <Coins className="w-3 h-3" />
+                            <span>{t.devModSetCustomCytesBtn} (={customCytesValue || 0})</span>
+                          </button>
+
+                          {/* 10. Gift +500 Cytes */}
                           <button
                             type="button"
                             onClick={() => handleModerateUser(u.deviceId, 'gift_cytes')}
@@ -992,7 +1169,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                             <span>{t.devModGiftCytesBtn}</span>
                           </button>
 
-                          {/* 9. Fine -250 Cytes */}
+                          {/* 11. Fine -250 Cytes */}
                           <button
                             type="button"
                             onClick={() => handleModerateUser(u.deviceId, 'fine_cytes')}
@@ -1002,17 +1179,17 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                             <span>{t.devModFineCytesBtn}</span>
                           </button>
 
-                          {/* 10. Reset Cytes to 0 */}
+                          {/* 12. Reset Cytes to 0 */}
                           <button
                             type="button"
                             onClick={() => handleModerateUser(u.deviceId, 'reset_cytes')}
                             className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-cyan-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
                           >
                             <RotateCcw className="w-3 h-3" />
-                            <span>10. {t.devModResetBtn}</span>
+                            <span>12. {t.devModResetBtn}</span>
                           </button>
 
-                          {/* 11. Reset Upgrades */}
+                          {/* 13. Reset Upgrades */}
                           <button
                             type="button"
                             onClick={() => handleModerateUser(u.deviceId, 'reset_upgrades')}
@@ -1022,7 +1199,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                             <span>{t.devModResetUpgradesBtn}</span>
                           </button>
 
-                          {/* 12. Strip Conquered Organs */}
+                          {/* 14. Strip Conquered Organs */}
                           <button
                             type="button"
                             onClick={() => handleModerateUser(u.deviceId, 'strip_organs')}
@@ -1032,7 +1209,17 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                             <span>{t.devModStripOrgansBtn}</span>
                           </button>
 
-                          {/* 13. Force Sanctioned Name */}
+                          {/* 15. Strip Skins & Spores */}
+                          <button
+                            type="button"
+                            onClick={() => handleModerateUser(u.deviceId, 'reset_skins')}
+                            className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-orange-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <Palette className="w-3 h-3" />
+                            <span>{t.devModResetSkinsBtn}</span>
+                          </button>
+
+                          {/* 16. Force Sanctioned Name */}
                           <button
                             type="button"
                             onClick={() => handleModerateUser(u.deviceId, 'force_rename')}
@@ -1042,7 +1229,24 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                             <span>{t.devModForceRenameBtn}</span>
                           </button>
 
-                          {/* 14. Kick from Match */}
+                          {/* 17. Invert Controls / Normal Controls */}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleModerateUser(
+                                u.deviceId,
+                                u.isInvertedControls ? 'normal_controls' : 'invert_controls'
+                              )
+                            }
+                            className="px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-blue-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <Shuffle className="w-3 h-3" />
+                            <span>
+                              {u.isInvertedControls ? t.devModNormalControlsBtn : t.devModInvertControlsBtn}
+                            </span>
+                          </button>
+
+                          {/* 18. Kick from Match */}
                           <button
                             type="button"
                             onClick={() => handleModerateUser(u.deviceId, 'kick_match')}
@@ -1052,7 +1256,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                             <span>{t.devModKickMatchBtn}</span>
                           </button>
 
-                          {/* 15. Suspend 5 Minutes */}
+                          {/* 19. Suspend 5 Minutes */}
                           {!isPrimary && (
                             <button
                               type="button"
@@ -1064,7 +1268,7 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                             </button>
                           )}
 
-                          {/* 16. Permanent Ban / Unban */}
+                          {/* 20. Permanent Ban / Unban + Pardon */}
                           {!isPrimary && (
                             <button
                               type="button"
@@ -1072,11 +1276,10 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                               className="px-2 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/35 border border-rose-500/40 text-rose-200 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
                             >
                               <Ban className="w-3 h-3" />
-                              <span>16. {u.isBanned ? t.devModUnbanBtn : t.devModBanBtn}</span>
+                              <span>20. {u.isBanned ? t.devModUnbanBtn : t.devModBanBtn}</span>
                             </button>
                           )}
 
-                          {/* 17. Pardon & Clear All Sanctions */}
                           <button
                             type="button"
                             onClick={() => handleModerateUser(u.deviceId, 'pardon')}
@@ -1141,18 +1344,48 @@ export const DevAdminModal: React.FC<DevAdminModalProps> = ({ onClose, t }) => {
                 </div>
               </div>
 
-              {/* Title / Role Input */}
+              {/* Title / Role Input (Max 15 chars: "MITE.IO CREATOR") + Default DEV & 5 Quick Shortcuts */}
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-neutral-300 block mb-1">
-                  {t.devCustomRole}
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold uppercase tracking-wider text-neutral-300">
+                    {t.devCustomRole}
+                  </label>
+                  <span className="text-[10px] font-mono font-bold text-amber-400">
+                    {(devConfig.title || '').length}/15
+                  </span>
+                </div>
                 <input
                   type="text"
-                  maxLength={12}
+                  maxLength={15}
                   value={devConfig.title}
-                  onChange={(e) => setDevConfig({ ...devConfig, title: e.target.value.toUpperCase() })}
+                  onChange={(e) => setDevConfig({ ...devConfig, title: e.target.value.toUpperCase().slice(0, 15) })}
+                  placeholder="MITE.IO CREATOR"
                   className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-mono font-black text-white focus:outline-none focus:border-amber-400"
                 />
+                <div className="mt-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block mb-1.5">
+                    {t.devQuickShortcutsLabel}
+                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {['DEV', 'MITE.IO CREATOR', 'FOUNDER', 'ADMIN', 'MOD LEADER', 'CORE DEV'].map((shortcut) => {
+                      const isActive = (devConfig.title || 'DEV') === shortcut;
+                      return (
+                        <button
+                          key={shortcut}
+                          type="button"
+                          onClick={() => setDevConfig({ ...devConfig, title: shortcut })}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-black uppercase tracking-wider border transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-amber-500 text-neutral-950 border-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.4)]'
+                              : 'bg-white/5 hover:bg-white/10 text-amber-200 border-white/10'
+                          }`}
+                        >
+                          {shortcut === 'DEV' ? '★ DEV (Defecto)' : shortcut}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
               {/* Hex Color Picker & Presets */}

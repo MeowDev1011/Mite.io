@@ -27,6 +27,7 @@ import { HomeUpgradesModal } from './components/HomeUpgradesModal';
 import { ShareModal } from './components/ShareModal';
 import { ReportModal } from './components/ReportModal';
 import { DevAdminModal } from './components/DevAdminModal';
+import { DailyLeaderboardModal } from './components/DailyLeaderboardModal';
 import { reportStorage, InteractiveWarningEntry } from './storage/reportStorage';
 import { AlertTriangle, Send, Ban } from 'lucide-react';
 
@@ -79,7 +80,25 @@ export default function App() {
   const [showShareModal, setShowShareModal] = useState<boolean>(false);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
   const [showDevModal, setShowDevModal] = useState<boolean>(false);
+  const [showDailyLeaderboard, setShowDailyLeaderboard] = useState<boolean>(false);
   const [isCurrentUserDev, setIsCurrentUserDev] = useState<boolean>(() => reportStorage.getDevConfig().isDev);
+  const achievementQueueRef = useRef<string[]>([]);
+  const isShowingAchToastRef = useRef<boolean>(false);
+  const liveGameStateRef = useRef<GameState>(gameState);
+  const liveOrganRef = useRef<string>(currentOrgan);
+  const liveStatsRef = useRef<GameStats | null>(stats);
+
+  useEffect(() => {
+    liveGameStateRef.current = gameState;
+  }, [gameState]);
+
+  useEffect(() => {
+    liveOrganRef.current = currentOrgan;
+  }, [currentOrgan]);
+
+  useEffect(() => {
+    liveStatsRef.current = stats;
+  }, [stats]);
 
   // Real-time Moderation & Interactive Warning State
   const [activeInteractiveWarning, setActiveInteractiveWarning] = useState<InteractiveWarningEntry | null>(null);
@@ -87,16 +106,20 @@ export default function App() {
   const [banStatusMessage, setBanStatusMessage] = useState<string | null>(null);
   const lastModTriggersRef = useRef<{
     drainMass: number;
+    boostMass: number;
     cytesOverride: number;
     resetUpgrades: number;
     stripOrgans: number;
+    resetSkins: number;
     forcedName: number;
     kickMatch: number;
   }>({
     drainMass: 0,
+    boostMass: 0,
     cytesOverride: 0,
     resetUpgrades: 0,
     stripOrgans: 0,
+    resetSkins: 0,
     forcedName: 0,
     kickMatch: 0,
   });
@@ -175,11 +198,27 @@ export default function App() {
       setLastReward(reward);
     };
 
-    engine.onAchievementUnlocked = (achId: string) => {
-      setAchievementToastId(achId);
+    const showNextQueuedAchievement = () => {
+      if (achievementQueueRef.current.length === 0) {
+        isShowingAchToastRef.current = false;
+        setAchievementToastId(null);
+        return;
+      }
+      isShowingAchToastRef.current = true;
+      const nextId = achievementQueueRef.current.shift()!;
+      setAchievementToastId(nextId);
       setTimeout(() => {
-        setAchievementToastId((curr) => (curr === achId ? null : curr));
-      }, 4500);
+        showNextQueuedAchievement();
+      }, 2600);
+    };
+
+    engine.onAchievementUnlocked = (achId: string) => {
+      if (!achievementQueueRef.current.includes(achId)) {
+        achievementQueueRef.current.push(achId);
+      }
+      if (!isShowingAchToastRef.current) {
+        showNextQueuedAchievement();
+      }
     };
 
     // Start engine render loop
@@ -271,7 +310,7 @@ export default function App() {
     };
   }, []);
 
-  // Heartbeat, DEV Status Verification, and Real-Time Moderation Enforcement Polling
+  // Heartbeat, Real-Time Online Multiplayer Sync, DEV Status Verification, and 20-Function Moderation Enforcement
   useEffect(() => {
     const deviceId = profileStorage.getDeviceId();
     reportStorage
@@ -301,16 +340,48 @@ export default function App() {
     const sendHeartbeat = async () => {
       try {
         const profile = profileStorage.getProfile();
+        const playerCentroid =
+          engineRef.current?.player && engineRef.current.player.pieces.length > 0
+            ? engineRef.current.calculateCentroid(engineRef.current.player)
+            : { x: 1500, y: 1500 };
+        const liveMass =
+          engineRef.current?.player && engineRef.current.player.pieces.length > 0
+            ? Math.round(engineRef.current.calculateTotalMass(engineRef.current.player))
+            : liveStatsRef.current?.currentMass || profile.stats?.highestMass || 18;
+        const liveSurvivalSec = Math.max(
+          liveStatsRef.current?.survivalTime || 0,
+          profile.stats?.longestSurvivalSec || 0
+        );
+        const topBotsPayload =
+          engineRef.current && Array.isArray(engineRef.current.bots)
+            ? engineRef.current.bots
+                .filter((b) => b.isAlive && !b.isRemotePlayer && b.pieces.length > 0)
+                .map((b) => ({
+                  name: b.name,
+                  mass: Math.round(engineRef.current!.calculateTotalMass(b)),
+                  personality: b.aiPersonality || 'opportunist',
+                  faction: b.faction || 'pathogen',
+                  survivalSec: Math.max(30, liveStatsRef.current?.survivalTime || 60),
+                }))
+                .sort((a, b) => b.mass - a.mass)
+                .slice(0, 6)
+            : [];
+
         const hbRes = await fetch('/api/players/heartbeat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             deviceId,
             name: profile.name,
-            status: gameState === 'PLAYING' ? 'in_game' : 'online',
-            currentOrgan,
-            mass: stats?.currentMass || 18,
+            status: liveGameStateRef.current === 'PLAYING' ? 'in_game' : 'online',
+            currentOrgan: liveOrganRef.current,
+            mass: liveMass,
+            survivalSec: liveSurvivalSec,
+            cytes: profile.cytes || 0,
+            topBots: topBotsPayload,
             faction: engineRef.current?.playerFaction || 'immune',
+            x: Math.round(playerCentroid.x),
+            y: Math.round(playerCentroid.y),
           }),
         });
 
@@ -324,23 +395,38 @@ export default function App() {
             }
           }
 
+          // Real-Time Online Players Detection & Live Multiplayer Sync
+          if (typeof hbJson.activeCount === 'number') {
+            setActivePlayerCount(hbJson.activeCount);
+          }
+          if (Array.isArray(hbJson.activePlayers) && engineRef.current) {
+            engineRef.current.syncRemotePlayers(hbJson.activePlayers, deviceId);
+          }
+
           const mod = hbJson.moderation || {};
 
-          // 1. Live engine physics & ability locks (Freeze, Slow 50%, Lock Split, Lock Spores)
+          // 1. Live engine physics & ability locks (Freeze, Slow 50%, Lock Split, Lock Spores, Invert Controls)
           if (engineRef.current) {
             engineRef.current.modFrozen = Boolean(mod.isFrozen);
             engineRef.current.modSlowed = Boolean(mod.isSlowed);
             engineRef.current.modSplitLocked = Boolean(mod.isSplitLocked);
             engineRef.current.modEjectLocked = Boolean(mod.isEjectLocked);
+            engineRef.current.modInvertControls = Boolean(mod.isInvertedControls);
           }
 
-          // 2. Drain Mass Trigger
+          // 2. Drain Mass Trigger (#5)
           if (mod.drainMassTrigger && mod.drainMassTrigger > lastModTriggersRef.current.drainMass) {
             lastModTriggersRef.current.drainMass = mod.drainMassTrigger;
             engineRef.current?.drainPlayerMassToBase();
           }
 
-          // 3. Cytes Gift / Fine / Reset Trigger
+          // 3. Boost Mass +500 Trigger (#6)
+          if (mod.boostMassTrigger && mod.boostMassTrigger > lastModTriggersRef.current.boostMass) {
+            lastModTriggersRef.current.boostMass = mod.boostMassTrigger;
+            engineRef.current?.boostPlayerMass(500);
+          }
+
+          // 4. Cytes Custom / Gift / Fine / Reset Trigger (#9, #10, #11, #12)
           if (mod.cytesOverrideTrigger && mod.cytesOverrideTrigger > lastModTriggersRef.current.cytesOverride) {
             lastModTriggersRef.current.cytesOverride = mod.cytesOverrideTrigger;
             if (typeof mod.cytesOverride === 'number') {
@@ -348,19 +434,25 @@ export default function App() {
             }
           }
 
-          // 4. Reset Upgrades Trigger
+          // 5. Reset Upgrades Trigger (#13)
           if (mod.resetUpgradesTrigger && mod.resetUpgradesTrigger > lastModTriggersRef.current.resetUpgrades) {
             lastModTriggersRef.current.resetUpgrades = mod.resetUpgradesTrigger;
             profileStorage.resetUpgradesToZero();
           }
 
-          // 5. Strip Conquered Organs Trigger
+          // 6. Strip Conquered Organs Trigger (#14)
           if (mod.stripOrgansTrigger && mod.stripOrgansTrigger > lastModTriggersRef.current.stripOrgans) {
             lastModTriggersRef.current.stripOrgans = mod.stripOrgansTrigger;
             profileStorage.clearConqueredOrgans();
           }
 
-          // 6. Force Sanctioned Name Trigger
+          // 7. Reset Skins & Spores Trigger (#15)
+          if (mod.resetSkinsTrigger && mod.resetSkinsTrigger > lastModTriggersRef.current.resetSkins) {
+            lastModTriggersRef.current.resetSkins = mod.resetSkinsTrigger;
+            profileStorage.resetSkinsAndSporesToDefault();
+          }
+
+          // 8. Force Sanctioned Name Trigger (#16)
           if (mod.forcedNameTrigger && mod.forcedNameTrigger > lastModTriggersRef.current.forcedName) {
             lastModTriggersRef.current.forcedName = mod.forcedNameTrigger;
             if (mod.forcedName) {
@@ -371,7 +463,7 @@ export default function App() {
             }
           }
 
-          // 7. Kick from Match / Temp Ban / Permanent Ban
+          // 9. Kick from Match / Temp Ban / Permanent Ban (#18, #19, #20)
           const isTempBanned = Boolean(mod.tempBanUntil && mod.tempBanUntil > Date.now());
           if (mod.isBanned) {
             setBanStatusMessage(t.bannedAccountNotice);
@@ -396,32 +488,37 @@ export default function App() {
             }
           }
 
-          // 8. Check for Unanswered Interactive Warning with Custom Message & Mandatory Question
+          // 10. Check for Unanswered Interactive Warning with Custom Message & Mandatory Question (#1)
           if (Array.isArray(mod.interactiveWarnings)) {
             const unanswered = mod.interactiveWarnings.find((w: InteractiveWarningEntry) => !w.answered);
-            setActiveInteractiveWarning(unanswered || null);
-          }
-        }
-
-        const activeRes = await fetch('/api/players/active');
-        if (activeRes.ok) {
-          const activeJson = await activeRes.json();
-          if (activeJson.players) {
-            setActivePlayerCount(activeJson.players.length);
+            setActiveInteractiveWarning((prev) => {
+              if (prev && prev.id.startsWith('PREVIEW-')) return prev;
+              return unanswered || null;
+            });
           }
         }
       } catch {}
     };
 
-    const invInterval = setInterval(checkInvitations, 3500);
-    const hbInterval = setInterval(sendHeartbeat, 4000);
+    const invInterval = setInterval(checkInvitations, 3000);
+    const hbInterval = setInterval(sendHeartbeat, 2000);
     sendHeartbeat();
+
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        sendHeartbeat();
+      }
+    };
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
 
     return () => {
       clearInterval(invInterval);
       clearInterval(hbInterval);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
     };
-  }, [gameState, currentOrgan, stats?.currentMass, t.bannedAccountNotice, t.tempBannedAccountNotice]);
+  }, [t.bannedAccountNotice, t.tempBannedAccountNotice]);
 
   const handleStartGame = useCallback(
     (playerName: string, mode: GameMode = 'ffa', faction: Faction = 'immune', humansOnly: boolean = false) => {
@@ -443,6 +540,11 @@ export default function App() {
   const handleSubmitWarningAnswer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeInteractiveWarning || !warningAnswerInput.trim()) return;
+    if (activeInteractiveWarning.id.startsWith('PREVIEW-')) {
+      setActiveInteractiveWarning(null);
+      setWarningAnswerInput('');
+      return;
+    }
     const ok = await reportStorage.respondToWarning(activeInteractiveWarning.id, warningAnswerInput.trim());
     if (ok) {
       setActiveInteractiveWarning(null);
@@ -585,7 +687,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-[#080204]">
+    <div className="relative w-full max-w-[100vw] h-[100dvh] max-h-[100dvh] overflow-hidden bg-[#080204]">
       {/* 60fps Canvas Render Target */}
       <canvas ref={canvasRef} className="absolute inset-0 block w-full h-full cursor-crosshair" />
 
@@ -616,6 +718,7 @@ export default function App() {
           onOpenSkins={() => setShowSkins(true)}
           onOpenShop={() => setShowShop(true)}
           onOpenActivePlayers={() => setShowActivePlayers(true)}
+          onOpenDailyLeaderboard={() => setShowDailyLeaderboard(true)}
           onOpenReport={() => setShowReportModal(true)}
           onOpenDevPanel={isCurrentUserDev ? () => setShowDevModal(true) : undefined}
           activePlayerCount={activePlayerCount}
@@ -640,6 +743,11 @@ export default function App() {
           onOpenReport={() => setShowReportModal(true)}
           onOpenDevPanel={isCurrentUserDev ? () => setShowDevModal(true) : undefined}
           onConquerTerritory={handleConquerTerritory}
+          onAdministerTreatment={(type) => {
+            if (engineRef.current) {
+              engineRef.current.applyMedicalTreatment(type);
+            }
+          }}
           currentLang={currentLang}
           onSelectLanguage={handleSelectLanguage}
           t={t}
@@ -788,11 +896,33 @@ export default function App() {
         />
       )}
 
+      {/* 24-Hour Daily Leaderboard Modal (Players [No-Bots] & Bots, Cytes / Survival / Mass) */}
+      {showDailyLeaderboard && (
+        <DailyLeaderboardModal
+          onClose={() => setShowDailyLeaderboard(false)}
+          t={t}
+        />
+      )}
+
       {/* Official DEV & Admin Command Center (Strictly Exclusive to DEVs) */}
       {showDevModal && isCurrentUserDev && (
         <DevAdminModal
-          onClose={() => setShowDevModal(false)}
+          onClose={() => {
+            setShowDevModal(false);
+            if (engineRef.current) {
+              engineRef.current.playerDevBadge = isCurrentUserDev ? reportStorage.getDevConfig() : null;
+            }
+          }}
           t={t}
+          onPreviewWarning={(msg, question) => {
+            setActiveInteractiveWarning({
+              id: `PREVIEW-${Date.now()}`,
+              message: msg,
+              question: question,
+              timestamp: Date.now(),
+              answered: false,
+            });
+          }}
         />
       )}
 

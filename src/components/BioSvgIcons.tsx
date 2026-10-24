@@ -261,7 +261,7 @@ export const BacteriaIllustrationSvg: React.FC<{
   }
 };
 
-// SVG Achievement Badges (100% vector, replacing emojis)
+// SVG Achievement & Mutation Badges (100% vector, replacing emojis and raw icon IDs)
 export const AchievementBadgeSvg: React.FC<{ icon: string; size?: number; className?: string }> = ({
   icon,
   size = 24,
@@ -269,6 +269,7 @@ export const AchievementBadgeSvg: React.FC<{ icon: string; size?: number; classN
 }) => {
   switch (icon) {
     case 'blood':
+    case 'droplet':
     case 'first_blood':
       return (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
@@ -278,10 +279,58 @@ export const AchievementBadgeSvg: React.FC<{ icon: string; size?: number; classN
             stroke="#fca5a5"
             strokeWidth="1.5"
           />
-          <path d="M10 13C10 10.5 12 7.5 12 7.5" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
+          <path d="M9.5 14C9.5 11.2 12 7.5 12 7.5" stroke="#ffffff" strokeWidth="1.6" strokeLinecap="round" opacity="0.85" />
         </svg>
       );
 
+    case 'zap':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+          <path
+            d="M13 2L4 14H12L11 22L20 10H12L13 2Z"
+            fill="#eab308"
+            stroke="#fef08a"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+
+    case 'diamond':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+          <path
+            d="M6 3H18L22 9L12 21L2 9L6 3Z"
+            fill="#06b6d4"
+            stroke="#a5f3fc"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <path d="M2 9H22M12 21L8 9L6 3M12 21L16 9L18 3" stroke="#cffafe" strokeWidth="1.1" opacity="0.8" />
+        </svg>
+      );
+
+    case 'swords':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+          <path d="M14.5 17.5L3 6V3H6L17.5 14.5" stroke="#f87171" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M13 19L19 13M16 16L20 20M19 21L21 19" stroke="#fca5a5" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="M9.5 17.5L21 6V3H18L6.5 14.5" stroke="#fbbf24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M11 19L5 13M8 16L4 20M5 21L3 19" stroke="#fde68a" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
+
+    case 'split':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+          <circle cx="8" cy="12" r="5.5" fill="#10b981" stroke="#6ee7b7" strokeWidth="1.5" />
+          <circle cx="16" cy="12" r="5.5" fill="#06b6d4" stroke="#67e8f9" strokeWidth="1.5" />
+          <circle cx="7.5" cy="11.5" r="2" fill="#ffffff" opacity="0.85" />
+          <circle cx="16.5" cy="11.5" r="2" fill="#ffffff" opacity="0.85" />
+        </svg>
+      );
+
+    case 'trending':
     case 'cell':
     case 'mass_100':
       return (
@@ -289,6 +338,43 @@ export const AchievementBadgeSvg: React.FC<{ icon: string; size?: number; classN
           <circle cx="12" cy="12" r="9" fill="#10b981" stroke="#6ee7b7" strokeWidth="1.5" />
           <ellipse cx="12" cy="12" rx="4" ry="3.5" fill="#ffffff" opacity="0.85" />
           <circle cx="15" cy="9" r="1.5" fill="#ffffff" opacity="0.9" />
+        </svg>
+      );
+
+    case 'sparkles':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+          <path
+            d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"
+            fill="#f59e0b"
+            stroke="#fef08a"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <circle cx="12" cy="12" r="2.2" fill="#ffffff" />
+        </svg>
+      );
+
+    case 'trophy':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+          <path d="M8 21H16M12 17V21" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" />
+          <path
+            d="M7 4H17V9C17 12.2 14.8 15 12 15C9.2 15 7 12.2 7 9V4Z"
+            fill="#f59e0b"
+            stroke="#fef08a"
+            strokeWidth="1.5"
+          />
+          <path d="M7 6H4V8C4 10 5.5 11.5 7 11.5M17 6H20V8C20 10 18.5 11.5 17 11.5" stroke="#fde047" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      );
+
+    case 'globe':
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
+          <circle cx="12" cy="12" r="9" fill="#0284c7" stroke="#7dd3fc" strokeWidth="1.5" />
+          <ellipse cx="12" cy="12" rx="4.2" ry="9" stroke="#bae6fd" strokeWidth="1.3" />
+          <line x1="3" y1="12" x2="21" y2="12" stroke="#bae6fd" strokeWidth="1.3" />
         </svg>
       );
 

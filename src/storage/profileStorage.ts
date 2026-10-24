@@ -1,6 +1,6 @@
-// Device-Associated Database Storage & Profile Manager for Mite.io
-// Connects client device identity with backend database and offline PWA cache.
-// Ensures fresh accounts start strictly with 0 Cytes as requested.
+// Firebase Firestore & Backend Database Profile Manager for Mite.io
+// Persists player profiles and primary DEV registration directly in the user's Firebase Firestore database (mite-io)
+// across both the named database and the '(default)' database, and synchronizes with the backend server API.
 
 import { ACHIEVEMENTS_LIST, Achievement } from '../game/achievements';
 import { detectDeviceType, detectDeviceLanguage } from '../i18n/languages';
@@ -8,18 +8,11 @@ import { getOrCreateDeviceId } from './deviceId';
 import { PlayerUpgrades } from '../game/types';
 import {
   db,
-  auth,
+  defaultDb,
   doc,
   getDoc,
-  setDoc,
-  updateDoc,
-  serverTimestamp,
-  onAuthStateChanged,
-  handleFirestoreError,
-  OperationType,
+  setDocDual,
 } from '../firebase';
-
-const CACHE_KEY = 'mite_io_device_profile_cache_v5';
 
 export interface CytesRewardBreakdown {
   timeReward: number;
@@ -49,11 +42,21 @@ export interface PlayerProfile {
     totalKills: number;
     totalRBCDevoured: number;
     secretZoneFound: boolean;
+    longestSurvivalSec?: number;
   };
   preferredLanguage: string;
+  isDev?: boolean;
+  isFirstDev?: boolean;
 }
 
 const currentDeviceId = getOrCreateDeviceId();
+
+export function isGenericDefaultName(name?: string): boolean {
+  if (!name || !name.trim()) return true;
+  return /^(Microbio|Microbe|Micróbio|Mikrobe|Microbo|Микроб|微生物|微细胞|미생물|ميكروب|रोगाणु|Mikrop|Mikrob|Mikrobi|Μικρόβιο|Mikroba|Microb|Мікроб|ViKhuẩn|จุลินทรีย์|Mikrobyo|חיידק|জীবাণু)-[A-Z0-9]{4}$/i.test(
+    name.trim()
+  );
+}
 
 export function getDefaultLocalizedName(lang?: string, deviceId?: string): string {
   const shortId = (deviceId || currentDeviceId).slice(-4).toUpperCase();
@@ -92,7 +95,6 @@ export function getDefaultLocalizedName(lang?: string, deviceId?: string): strin
 
 export const UPGRADE_MAX_LEVEL = 1500;
 
-// Dynamic cost formula scaling progressively from Basic (cheap) to Normal (medium) to VIP (expensive)
 export function getUpgradeCost(currentLvl: number): number {
   if (currentLvl >= UPGRADE_MAX_LEVEL) return 0;
   return Math.floor(35 + Math.pow(currentLvl, 1.45) * 18 + currentLvl * 15);
@@ -108,7 +110,6 @@ export function getTotalUpgradeCost(currentLvl: number, count: number): { totalC
   return { totalCost, actualCount, targetLevel };
 }
 
-// Backward compatibility tier preview for initial levels
 export const UPGRADE_TIERS = [
   { level: 1, costCytes: getUpgradeCost(0), title: 'Nivel 1' },
   { level: 2, costCytes: getUpgradeCost(1), title: 'Nivel 2' },
@@ -121,7 +122,7 @@ const DEFAULT_PROFILE: PlayerProfile = {
   deviceId: currentDeviceId,
   name: getDefaultLocalizedName(),
   deviceType: detectDeviceType(),
-  cytes: 0, // Strictly 0 Cytes initial balance as per user instruction
+  cytes: 0,
   totalCytesEarned: 0,
   selectedSkinId: 'emerald_mite',
   selectedSporeId: 'spore_plasma',
@@ -144,104 +145,172 @@ const DEFAULT_PROFILE: PlayerProfile = {
     totalKills: 0,
     totalRBCDevoured: 0,
     secretZoneFound: false,
+    longestSurvivalSec: 0,
   },
-  preferredLanguage: 'es',
+  preferredLanguage: detectDeviceLanguage() || 'es',
 };
 
 class ProfileStorage {
   private profile: PlayerProfile;
   private syncTimer: any = null;
+  private listeners: Set<(profile: PlayerProfile) => void> = new Set();
+  private hasUserCustomizedName: boolean = false;
 
   constructor() {
-    this.profile = this.loadLocalCache();
-    // Synchronize with server database
-    this.fetchFromServer();
+    this.profile = {
+      ...DEFAULT_PROFILE,
+      deviceType: detectDeviceType(),
+    };
+    this.initFromDatabases();
+  }
 
-    // Listen to Firebase Auth state changes to sync profile with Firestore
-    onAuthStateChanged(auth, async (user) => {
-      if (user && user.emailVerified) {
-        await this.syncFromFirestore(user.uid);
-      }
+  public subscribe(listener: (profile: PlayerProfile) => void): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private notifyListeners() {
+    const snap = this.getProfile();
+    this.listeners.forEach((fn) => {
+      try {
+        fn(snap);
+      } catch {}
     });
   }
 
-  private async syncFromFirestore(uid: string) {
-    const path = `profiles/${uid}`;
+  private resolveBestName(currentName: string, incomingName?: string): string {
+    if (this.hasUserCustomizedName && !isGenericDefaultName(currentName)) {
+      return currentName;
+    }
+    if (incomingName && !isGenericDefaultName(incomingName)) {
+      return incomingName.trim();
+    }
+    if (!isGenericDefaultName(currentName)) {
+      return currentName.trim();
+    }
+    return incomingName || currentName || getDefaultLocalizedName(this.profile.preferredLanguage, currentDeviceId);
+  }
+
+  private async initFromDatabases() {
+    await this.syncFromFirestore();
+    await this.fetchFromServer();
+  }
+
+  private async syncFromFirestore() {
     try {
-      const snap = await getDoc(doc(db, 'profiles', uid));
-      if (snap.exists()) {
-        const data = snap.data();
+      const primaryRef = doc(db, 'devs', 'primary_dev');
+      const primarySnap = await getDoc(primaryRef);
+      let firstDevId = currentDeviceId;
+
+      if (!primarySnap.exists()) {
+        const primaryPayload = {
+          deviceId: currentDeviceId,
+          firstDevId: currentDeviceId,
+          isPrimaryDev: true,
+          isDev: true,
+          title: 'DEV',
+          color: '#fbbf24',
+          iconPreset1: 'code',
+          iconPreset2: 'shield',
+          updatedAt: Date.now(),
+        };
+        await setDocDual('devs', 'primary_dev', primaryPayload);
+        await setDocDual('devs', currentDeviceId, primaryPayload);
+      } else {
+        const pData = primarySnap.data();
+        if (pData && pData.firstDevId) {
+          firstDevId = pData.firstDevId;
+        }
+      }
+
+      const isMePrimaryDev = firstDevId === currentDeviceId;
+      const devDocSnap = await getDoc(doc(db, 'devs', currentDeviceId));
+      const isMeDev = isMePrimaryDev || (devDocSnap.exists() && devDocSnap.data()?.isDev !== false);
+
+      // Check named DB first, then fallback to defaultDb
+      let profSnap = await getDoc(doc(db, 'profiles', currentDeviceId));
+      if (!profSnap.exists()) {
+        profSnap = await getDoc(doc(defaultDb, 'profiles', currentDeviceId));
+      }
+
+      if (profSnap.exists()) {
+        const data = profSnap.data();
+        const bestName = this.resolveBestName(this.profile.name, data.name);
         this.profile = {
           ...this.profile,
-          name: data.name || this.profile.name,
+          ...data,
+          name: bestName,
+          deviceId: currentDeviceId,
+          deviceType: detectDeviceType(),
           cytes: typeof data.cytes === 'number' ? Math.max(this.profile.cytes, data.cytes) : this.profile.cytes,
           totalCytesEarned:
             typeof data.totalCytesEarned === 'number'
               ? Math.max(this.profile.totalCytesEarned, data.totalCytesEarned)
               : this.profile.totalCytesEarned,
-          selectedSkinId: data.selectedSkinId || this.profile.selectedSkinId,
-          selectedSporeId: data.selectedSporeId || this.profile.selectedSporeId,
-          selectedBacteriaId: data.selectedBacteriaId || this.profile.selectedBacteriaId,
-          preferredLanguage: data.preferredLanguage || this.profile.preferredLanguage,
-        };
-        this.saveLocalCache();
-      } else {
-        // Create initial Firestore profile document
-        const payload: Record<string, any> = {
-          deviceId: currentDeviceId.slice(0, 128),
-          ownerUid: uid,
-          name: (this.profile.name || 'Microbio').slice(0, 64),
-          deviceType: (this.profile.deviceType || 'Desktop').slice(0, 32),
-          cytes: Math.max(0, this.profile.cytes),
-          totalCytesEarned: Math.max(0, this.profile.totalCytesEarned),
-          selectedSkinId: (this.profile.selectedSkinId || 'emerald_mite').slice(0, 64),
-          selectedSporeId: (this.profile.selectedSporeId || 'spore_plasma').slice(0, 64),
-          selectedBacteriaId: (this.profile.selectedBacteriaId || 'bacillus_subtilis').slice(0, 64),
-          preferredLanguage: (this.profile.preferredLanguage || 'es').slice(0, 16),
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        };
-        if (auth.currentUser?.email === 'carmenmena1204@gmail.com') {
-          payload.isDev = true;
-        }
-        await setDoc(doc(db, 'profiles', uid), payload);
-      }
-    } catch (error) {
-      handleFirestoreError(error, OperationType.GET, path);
-    }
-  }
-
-  private loadLocalCache(): PlayerProfile {
-    try {
-      const data = localStorage.getItem(CACHE_KEY);
-      if (data) {
-        const parsed = JSON.parse(data);
-        return {
-          ...DEFAULT_PROFILE,
-          ...parsed,
-          deviceId: currentDeviceId,
-          deviceType: detectDeviceType(),
-          cytes: typeof parsed.cytes === 'number' ? parsed.cytes : 0,
-          unlockedSkinIds: parsed.unlockedSkinIds || DEFAULT_PROFILE.unlockedSkinIds,
-          unlockedSporeIds: parsed.unlockedSporeIds || DEFAULT_PROFILE.unlockedSporeIds,
-          selectedBacteriaId: parsed.selectedBacteriaId || DEFAULT_PROFILE.selectedBacteriaId,
-          unlockedBacteriaIds: parsed.unlockedBacteriaIds || DEFAULT_PROFILE.unlockedBacteriaIds,
-          conqueredOrgans: parsed.conqueredOrgans || DEFAULT_PROFILE.conqueredOrgans,
+          unlockedSkinIds: Array.isArray(data.unlockedSkinIds) ? data.unlockedSkinIds : this.profile.unlockedSkinIds,
+          unlockedSporeIds: Array.isArray(data.unlockedSporeIds) ? data.unlockedSporeIds : this.profile.unlockedSporeIds,
+          unlockedBacteriaIds: Array.isArray(data.unlockedBacteriaIds)
+            ? data.unlockedBacteriaIds
+            : this.profile.unlockedBacteriaIds,
+          conqueredOrgans: Array.isArray(data.conqueredOrgans) ? data.conqueredOrgans : this.profile.conqueredOrgans,
           upgrades: {
             ...DEFAULT_PROFILE.upgrades,
-            ...(parsed.upgrades || {}),
+            ...(data.upgrades || {}),
           },
           stats: {
             ...DEFAULT_PROFILE.stats,
-            ...(parsed.stats || {}),
+            ...(data.stats || {}),
           },
+          achievements: {
+            ...(data.achievements || {}),
+            ...this.profile.achievements,
+          },
+          isDev: isMeDev || Boolean(data.isDev),
+          isFirstDev: isMePrimaryDev,
         };
+        this.notifyListeners();
+        await this.writeToFirestore();
+      } else {
+        this.profile.isDev = isMeDev;
+        this.profile.isFirstDev = isMePrimaryDev;
+        this.notifyListeners();
+        await this.writeToFirestore();
       }
-    } catch {}
-    return {
-      ...DEFAULT_PROFILE,
-      deviceType: detectDeviceType(),
-    };
+    } catch {
+      // Handled gracefully if offline
+    }
+  }
+
+  private async writeToFirestore() {
+    try {
+      const payload = {
+        deviceId: currentDeviceId.slice(0, 128),
+        name: (this.profile.name || getDefaultLocalizedName()).slice(0, 64),
+        deviceType: (this.profile.deviceType || detectDeviceType()).slice(0, 32),
+        cytes: Math.max(0, Number(this.profile.cytes) || 0),
+        totalCytesEarned: Math.max(0, Number(this.profile.totalCytesEarned) || 0),
+        selectedSkinId: (this.profile.selectedSkinId || 'emerald_mite').slice(0, 64),
+        selectedSporeId: (this.profile.selectedSporeId || 'spore_plasma').slice(0, 64),
+        selectedBacteriaId: (this.profile.selectedBacteriaId || 'bacillus_subtilis').slice(0, 64),
+        preferredLanguage: (this.profile.preferredLanguage || detectDeviceLanguage() || 'es').slice(0, 16),
+        unlockedSkinIds: this.profile.unlockedSkinIds || ['emerald_mite'],
+        unlockedSporeIds: this.profile.unlockedSporeIds || ['spore_plasma'],
+        unlockedBacteriaIds: this.profile.unlockedBacteriaIds || ['bacillus_subtilis'],
+        conqueredOrgans: this.profile.conqueredOrgans || [],
+        upgrades: this.profile.upgrades || DEFAULT_PROFILE.upgrades,
+        stats: this.profile.stats || DEFAULT_PROFILE.stats,
+        achievements: this.profile.achievements || {},
+        isDev: Boolean(this.profile.isDev),
+        isFirstDev: Boolean(this.profile.isFirstDev),
+        isRealUser: true,
+        updatedAt: Date.now(),
+      };
+      await setDocDual('profiles', currentDeviceId, payload, { merge: true });
+    } catch {
+      // Handled silently if offline
+    }
   }
 
   private async fetchFromServer() {
@@ -250,60 +319,50 @@ class ProfileStorage {
       if (res.ok) {
         const json = await res.json();
         if (json.success && json.profile) {
+          const bestName = this.resolveBestName(this.profile.name, json.profile.name);
           this.profile = {
             ...this.profile,
             ...json.profile,
+            name: bestName,
             deviceId: currentDeviceId,
+            deviceType: detectDeviceType(),
+            cytes: Math.max(Number(this.profile.cytes) || 0, Number(json.profile.cytes) || 0),
+            totalCytesEarned: Math.max(
+              Number(this.profile.totalCytesEarned) || 0,
+              Number(json.profile.totalCytesEarned) || 0
+            ),
+            isDev: Boolean(json.isDev ?? json.profile.isDev ?? this.profile.isDev),
+            isFirstDev: json.firstDevId === currentDeviceId || Boolean(this.profile.isFirstDev),
           };
-          this.saveLocalCache();
+          this.notifyListeners();
+          await this.writeToFirestore();
         }
       }
-    } catch (err) {
-      // Offline fallback: continue using local cache seamlessly
+    } catch {
+      // Continues using Firestore state
     }
   }
 
-  private saveLocalCache() {
+  private async flushSyncImmediately() {
+    if (this.syncTimer) {
+      clearTimeout(this.syncTimer);
+      this.syncTimer = null;
+    }
+    await this.writeToFirestore();
     try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify(this.profile));
+      await fetch(`/api/profile/${currentDeviceId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(this.profile),
+      });
     } catch {}
   }
 
   private queueServerSync() {
-    this.saveLocalCache();
     if (this.syncTimer) clearTimeout(this.syncTimer);
-    this.syncTimer = setTimeout(async () => {
-      try {
-        await fetch(`/api/profile/${currentDeviceId}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(this.profile),
-        });
-      } catch (e) {
-        // Handled silently for offline mode
-      }
-
-      // Sync to Firebase Firestore if signed in with verified email
-      const user = auth.currentUser;
-      if (user && user.emailVerified) {
-        const path = `profiles/${user.uid}`;
-        try {
-          await updateDoc(doc(db, 'profiles', user.uid), {
-            name: (this.profile.name || 'Microbio').slice(0, 64),
-            deviceType: (this.profile.deviceType || 'Desktop').slice(0, 32),
-            cytes: Math.max(0, this.profile.cytes),
-            totalCytesEarned: Math.max(0, this.profile.totalCytesEarned),
-            selectedSkinId: (this.profile.selectedSkinId || 'emerald_mite').slice(0, 64),
-            selectedSporeId: (this.profile.selectedSporeId || 'spore_plasma').slice(0, 64),
-            selectedBacteriaId: (this.profile.selectedBacteriaId || 'bacillus_subtilis').slice(0, 64),
-            preferredLanguage: (this.profile.preferredLanguage || 'es').slice(0, 16),
-            updatedAt: serverTimestamp(),
-          });
-        } catch (error) {
-          handleFirestoreError(error, OperationType.UPDATE, path);
-        }
-      }
-    }, 400);
+    this.syncTimer = setTimeout(() => {
+      this.flushSyncImmediately();
+    }, 150);
   }
 
   public getDeviceId(): string {
@@ -315,12 +374,19 @@ class ProfileStorage {
   }
 
   public saveProfile() {
+    this.notifyListeners();
     this.queueServerSync();
   }
 
   public setPlayerName(name: string) {
-    this.profile.name = name.trim() || `Microbio-${currentDeviceId.slice(-4).toUpperCase()}`;
-    this.saveProfile();
+    const trimmed = name.trim();
+    if (trimmed && !isGenericDefaultName(trimmed)) {
+      this.hasUserCustomizedName = true;
+    }
+    this.profile.name = trimmed || getDefaultLocalizedName(this.profile.preferredLanguage, currentDeviceId);
+    this.notifyListeners();
+    // Flush immediately so name changes are saved right away in Firebase Firestore and Server
+    this.flushSyncImmediately();
   }
 
   public setPreferredLanguage(lang: string) {
@@ -337,7 +403,7 @@ class ProfileStorage {
 
   public setCytesBalance(amount: number) {
     this.profile.cytes = Math.max(0, Math.floor(amount));
-    this.saveLocalCache();
+    this.saveProfile();
   }
 
   public resetUpgradesToZero() {
@@ -348,12 +414,20 @@ class ProfileStorage {
       metabolism: 0,
       sporesFission: 0,
     };
-    this.saveLocalCache();
+    this.saveProfile();
   }
 
   public clearConqueredOrgans() {
     this.profile.conqueredOrgans = [];
-    this.saveLocalCache();
+    this.saveProfile();
+  }
+
+  public resetSkinsAndSporesToDefault() {
+    this.profile.unlockedSkinIds = ['emerald_mite'];
+    this.profile.unlockedSporeIds = ['spore_plasma'];
+    this.profile.selectedSkinId = 'emerald_mite';
+    this.profile.selectedSporeId = 'spore_plasma';
+    this.saveProfile();
   }
 
   public spendCytes(amount: number): boolean {
@@ -481,7 +555,6 @@ class ProfileStorage {
       this.profile.conqueredOrgans.push(organId);
       this.saveProfile();
 
-      // Post to global server database
       try {
         fetch('/api/conquest', {
           method: 'POST',
@@ -506,8 +579,11 @@ class ProfileStorage {
 
   public unlockAchievement(achievementId: string): boolean {
     if (this.profile.achievements[achievementId]?.unlocked) {
-      return false; // Already unlocked
+      return false;
     }
+
+    const achDef = ACHIEVEMENTS_LIST.find((a) => a.id === achievementId);
+    if (!achDef) return false;
 
     const now = new Date().toISOString();
     this.profile.achievements[achievementId] = {
@@ -515,7 +591,6 @@ class ProfileStorage {
       unlockedAt: now,
     };
 
-    // Auto-unlock corresponding skin rewards from achievements
     if (achievementId === 'first_blood') {
       if (!this.profile.unlockedSkinIds.includes('crimson_phage')) this.profile.unlockedSkinIds.push('crimson_phage');
       if (!this.profile.unlockedSporeIds.includes('spore_hemoglobin_ruby')) this.profile.unlockedSporeIds.push('spore_hemoglobin_ruby');
@@ -546,10 +621,11 @@ class ProfileStorage {
       this.profile.unlockedSporeIds.push('spore_cosmic');
     }
 
-    // Award balanced bonus Cytes for completing achievement
-    this.addCytes(25);
+    const rewardAmount = achDef.rewardCytes || 25;
+    this.profile.cytes += rewardAmount;
+    this.profile.totalCytesEarned += rewardAmount;
 
-    this.saveProfile();
+    this.flushSyncImmediately();
     return true;
   }
 
@@ -584,6 +660,9 @@ class ProfileStorage {
     if (finalMass > this.profile.stats.highestMass) {
       this.profile.stats.highestMass = Math.round(finalMass);
     }
+    if (survivalSec > (this.profile.stats.longestSurvivalSec || 0)) {
+      this.profile.stats.longestSurvivalSec = Math.round(survivalSec);
+    }
     this.profile.stats.totalKills += kills;
     this.profile.stats.totalRBCDevoured += rbcs;
     if (secretFound) {
@@ -593,7 +672,7 @@ class ProfileStorage {
     const reward = this.calculateGameReward(survivalSec, finalMass, sporesInvaded, kills);
     this.addCytes(reward.totalEarned);
 
-    this.saveProfile();
+    this.flushSyncImmediately();
     return reward;
   }
 

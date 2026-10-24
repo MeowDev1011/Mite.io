@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Users,
   Zap,
@@ -19,6 +19,12 @@ import {
 import { GameMode, Faction } from '../game/types';
 import { TranslationStrings } from '../i18n/languages';
 import { profileStorage } from '../storage/profileStorage';
+import {
+  QR_STYLE_THEMES,
+  QrThemeId,
+  generateStyledQrDataUrl,
+  renderStyledQrToCanvas,
+} from '../utils/styledQr';
 
 interface InsufficientPlayersModalProps {
   mode: GameMode;
@@ -47,6 +53,8 @@ export const InsufficientPlayersModal: React.FC<InsufficientPlayersModalProps> =
   const [cardDownloaded, setCardDownloaded] = useState(false);
   const [qrDownloaded, setQrDownloaded] = useState(false);
   const [showQr, setShowQr] = useState(false);
+  const [qrTheme, setQrTheme] = useState<QrThemeId>('bio_crimson');
+  const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const canvasCardRef = useRef<HTMLCanvasElement | null>(null);
 
   const profile = profileStorage.getProfile();
@@ -55,7 +63,11 @@ export const InsufficientPlayersModal: React.FC<InsufficientPlayersModalProps> =
   const encodedUrl = encodeURIComponent(shareUrl);
   const encodedText = encodeURIComponent(shareMessage);
   const encodedTitle = encodeURIComponent(t.shareTitle);
-  const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&color=f43f5e&bgcolor=0a0204&data=${encodedUrl}`;
+
+  useEffect(() => {
+    const dataUrl = generateStyledQrDataUrl(shareUrl, 320, qrTheme);
+    setQrDataUrl(dataUrl);
+  }, [shareUrl, qrTheme]);
 
   const handleCopyLink = async () => {
     try {
@@ -111,7 +123,7 @@ export const InsufficientPlayersModal: React.FC<InsufficientPlayersModalProps> =
     }
   };
 
-  const handleDownloadBioCard = () => {
+  const handleDownloadBioCard = async () => {
     const canvas = canvasCardRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -156,6 +168,13 @@ export const InsufficientPlayersModal: React.FC<InsufficientPlayersModalProps> =
     ctx.font = '800 22px sans-serif';
     ctx.fillText(`${profile.name}`, 165, 152);
 
+    // Draw real styled QR code on the right side of the card
+    try {
+      const qrTemp = document.createElement('canvas');
+      renderStyledQrToCanvas(qrTemp, shareUrl, 130, qrTheme);
+      ctx.drawImage(qrTemp, 480, 42, 130, 130);
+    } catch {}
+
     ctx.fillStyle = 'rgba(255,255,255,0.06)';
     ctx.fillRect(30, 185, 580, 75);
 
@@ -197,7 +216,7 @@ export const InsufficientPlayersModal: React.FC<InsufficientPlayersModalProps> =
     }
   };
 
-  const buildQrCanvas = (): HTMLCanvasElement | null => {
+  const buildQrCanvas = async (): Promise<HTMLCanvasElement | null> => {
     try {
       const canvas = document.createElement('canvas');
       canvas.width = 520;
@@ -233,53 +252,9 @@ export const InsufficientPlayersModal: React.FC<InsufficientPlayersModalProps> =
       ctx.roundRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 24);
       ctx.fill();
 
-      const scale = qrBoxSize / 140;
-      ctx.save();
-      ctx.translate(qrBoxX, qrBoxY);
-      ctx.scale(scale, scale);
-
-      const drawFinder = (fx: number, fy: number) => {
-        ctx.fillStyle = '#09090b';
-        ctx.fillRect(fx, fy, 34, 34);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(fx + 6, fy + 6, 22, 22);
-        ctx.fillStyle = '#e11d48';
-        ctx.fillRect(fx + 12, fy + 12, 10, 10);
-      };
-      drawFinder(10, 10);
-      drawFinder(96, 10);
-      drawFinder(10, 96);
-
-      ctx.fillStyle = '#18181b';
-      const modules: [number, number][] = [
-        [52, 12], [64, 12], [76, 12],
-        [58, 24], [70, 24], [82, 24],
-        [52, 36], [64, 36],
-        [12, 52], [24, 52], [36, 52], [48, 52], [60, 52], [72, 52], [84, 52], [96, 52], [108, 52], [120, 52],
-        [12, 68], [28, 68], [44, 68], [92, 68], [108, 68], [124, 68],
-        [12, 80], [36, 80], [52, 80], [82, 80], [102, 80], [120, 80],
-        [52, 96], [68, 96], [84, 96], [100, 96], [116, 96],
-        [52, 112], [74, 112], [92, 112], [110, 112], [124, 112],
-        [60, 124], [78, 124], [96, 124],
-      ];
-      for (const [mx, my] of modules) {
-        ctx.fillRect(mx, my, 6, 6);
-      }
-
-      ctx.beginPath();
-      ctx.arc(70, 70, 14, 0, Math.PI * 2);
-      ctx.fillStyle = '#f43f5e';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(70, 70, 8, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(70, 70, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#09090b';
-      ctx.fill();
-
-      ctx.restore();
+      const qrTempCanvas = document.createElement('canvas');
+      renderStyledQrToCanvas(qrTempCanvas, shareUrl, 340, qrTheme);
+      ctx.drawImage(qrTempCanvas, qrBoxX + 10, qrBoxY + 10, 340, 340);
 
       ctx.fillStyle = '#34d399';
       ctx.font = '800 18px sans-serif';
@@ -299,8 +274,8 @@ export const InsufficientPlayersModal: React.FC<InsufficientPlayersModalProps> =
     }
   };
 
-  const handleDownloadQr = () => {
-    const canvas = buildQrCanvas();
+  const handleDownloadQr = async () => {
+    const canvas = await buildQrCanvas();
     if (!canvas) return;
     try {
       const dataUrl = canvas.toDataURL('image/png');
@@ -316,7 +291,7 @@ export const InsufficientPlayersModal: React.FC<InsufficientPlayersModalProps> =
   };
 
   const handleShareQr = async () => {
-    const canvas = buildQrCanvas();
+    const canvas = await buildQrCanvas();
     if (canvas && navigator.share) {
       try {
         const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
@@ -597,11 +572,42 @@ export const InsufficientPlayersModal: React.FC<InsufficientPlayersModalProps> =
             </p>
           )}
 
-          {/* Scannable QR Code Panel with Download & Share */}
+          {/* Scannable Styled QR Code Panel with Color Theme Selector, Download & Share */}
           {showQr && (
             <div className="p-3 rounded-2xl bg-black/70 border border-purple-500/40 flex flex-col items-center text-center animate-fade-in">
-              <div className="p-2 rounded-xl bg-white border border-rose-500/40 mb-1.5">
-                <img src={qrCodeApiUrl} alt="Mite.io QR Code" className="w-32 h-32 rounded-lg" />
+              <div className="flex items-center justify-center gap-1 flex-wrap mb-2">
+                {QR_STYLE_THEMES.map((theme) => {
+                  const isSelected = qrTheme === theme.id;
+                  return (
+                    <button
+                      key={theme.id}
+                      type="button"
+                      onClick={() => setQrTheme(theme.id)}
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[9px] font-bold border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-white/15 text-white border-white/50'
+                          : 'bg-white/5 text-neutral-400 border-white/10 hover:text-white'
+                      }`}
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{
+                          background: `linear-gradient(135deg, ${theme.gradStops[0]}, ${theme.gradStops[1]})`,
+                        }}
+                      />
+                      <span>{theme.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="p-2 rounded-xl bg-white border-2 border-rose-500/40 mb-1.5 shadow-[0_0_20px_rgba(244,63,94,0.2)]">
+                {qrDataUrl ? (
+                  <img src={qrDataUrl} alt="Mite.io QR Code" className="w-40 h-40 object-contain rounded-lg block" />
+                ) : (
+                  <div className="w-40 h-40 flex items-center justify-center text-neutral-900 text-xs font-bold">
+                    QR...
+                  </div>
+                )}
               </div>
               <p className="text-[11px] text-purple-200 font-semibold mb-2.5">{t.scanQrToPlay}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">

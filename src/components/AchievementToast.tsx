@@ -18,44 +18,41 @@ export const AchievementToast: React.FC<AchievementToastProps> = ({ achievementI
 
   return (
     <div
-      onClick={onClose}
-      className="fixed top-3 right-3 sm:top-5 sm:right-5 z-50 flex items-center gap-2.5 px-3 py-2 rounded-2xl bg-neutral-950/90 border border-amber-400/60 shadow-[0_4px_24px_rgba(245,158,11,0.3)] backdrop-blur-md cursor-pointer transition-all hover:scale-105 pointer-events-auto max-w-[280px] sm:max-w-xs animate-fade-in select-none"
+      className="fixed top-2 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-neutral-950/88 border border-amber-400/50 shadow-[0_2px_14px_rgba(245,158,11,0.25)] backdrop-blur-md pointer-events-none max-w-[250px] sm:max-w-[290px] animate-fade-in select-none"
     >
-      {/* SVG Badge with biological glow (0 emojis) */}
+      {/* Compact SVG Badge */}
       <div
-        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-inner"
+        className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 border"
         style={{
-          backgroundColor: `${achievement.badgeColor}20`,
+          backgroundColor: `${achievement.badgeColor}25`,
           borderColor: `${achievement.badgeColor}80`,
         }}
       >
-        <AchievementBadgeSvg icon={achievement.icon} size={18} />
+        <AchievementBadgeSvg icon={achievement.icon} size={13} />
       </div>
 
-      <div className="flex flex-col text-left pr-1 min-w-0">
+      <div className="flex flex-col text-left min-w-0 flex-1 leading-tight">
         <div className="flex items-center gap-1">
-          <Award className="w-3 h-3 text-amber-400 shrink-0" />
-          <span className="text-[9px] uppercase tracking-wider text-amber-300 font-extrabold truncate">
-            {t.achievementUnlockedLabel}
+          <Award className="w-2.5 h-2.5 text-amber-400 shrink-0" />
+          <span className="text-[8px] uppercase tracking-wider text-amber-300 font-black truncate">
+            #{achievement.number} · {t.achievementUnlockedLabel}
           </span>
         </div>
-        <span className="text-[11px] sm:text-xs font-black text-white leading-tight truncate">
+        <span className="text-[10px] sm:text-[11px] font-black text-white truncate">
           {achievement.title}
         </span>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          <CyteCoinSvg size={11} />
-          <span className="text-[9px] sm:text-[10px] text-emerald-400 font-semibold truncate">
+        <div className="flex items-center gap-1">
+          <CyteCoinSvg size={9} />
+          <span className="text-[8.5px] text-emerald-400 font-bold truncate">
             {achievement.rewardText}
           </span>
         </div>
       </div>
 
       <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onClose();
-        }}
-        className="text-neutral-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer shrink-0 ml-auto"
+        type="button"
+        onClick={onClose}
+        className="text-neutral-400 hover:text-white p-0.5 rounded-full transition-colors cursor-pointer pointer-events-auto shrink-0"
         aria-label="Cerrar"
       >
         <X className="w-3 h-3" />

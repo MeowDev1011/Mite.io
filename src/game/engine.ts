@@ -21,6 +21,12 @@ import {
   SuperpowerType,
   PlayerUpgrades,
   HostHumanStatus,
+  HormoneEntity,
+  HormoneType,
+  ActiveHormoneBuff,
+  MedicalTreatmentType,
+  MedicalTreatmentEntity,
+  ActivePlayer,
 } from './types';
 import {
   WORLD_RADIUS,
@@ -53,9 +59,13 @@ import {
   SUPERPOWER_DURATION_SEC,
   SUPERPOWER_RESPAWN_SEC,
   SUPERPOWER_DEFS,
+  ENDOCRINE_BARS,
+  HORMONE_DEFS,
+  MEDICAL_TREATMENT_DEFS,
 } from './constants';
 import { BOT_PRESETS, IMMUNE_BOT_PRESETS, PATHOGEN_BOT_PRESETS } from './botNames';
 import { BACTERIA_STRAINS } from './bacteria';
+import { getTranslations } from '../i18n/languages';
 
 export class GameEngine {
   private canvas: HTMLCanvasElement;
@@ -91,7 +101,10 @@ export class GameEngine {
   public particles: BiologicalParticle[] = [];
   public floatingTexts: FloatingText[] = [];
   public superpowers: SuperpowerEntity[] = [];
+  public hormones: HormoneEntity[] = [];
+  public medicalTreatments: MedicalTreatmentEntity[] = [];
   public activeSuperpower: ActiveSuperpower | null = null;
+  public activeHormoneBuff: ActiveHormoneBuff | null = null;
   public playerUpgrades: PlayerUpgrades = { attraction: 0, speed: 0, armor: 0, metabolism: 0, sporesFission: 0 };
   public pusPustules: {
     id: string;
@@ -110,14 +123,16 @@ export class GameEngine {
     energyATP: 95,
     pusLevel: 0,
     activeSymptoms: [],
+    activeTreatment: null,
+    treatmentsAdministered: 0,
   };
   private toxicPulseCooldown: number = 0;
 
-  // Camera & Viewport
+  // Camera & Viewport (Wide Panoramic View)
   public cameraX: number = 0;
   public cameraY: number = 0;
-  public cameraZoom: number = 1.0;
-  public targetZoom: number = 1.0;
+  public cameraZoom: number = 0.54;
+  public targetZoom: number = 0.54;
   public screenShake: number = 0;
 
   // Controls & Input
@@ -141,14 +156,39 @@ export class GameEngine {
   private splitsCount: number = 0;
   private secretZoneDiscoveredThisGame: boolean = false;
   private statsDispatchTimer: number = 0;
+  private hormonesAbsorbedThisMatch: number = 0;
+  private superpowersTakenThisMatch: number = 0;
+  private pusHandledThisMatch: number = 0;
+  private treatmentsUsedThisMatch: number = 0;
 
   // Real-time moderation state enforced on local player
   public modFrozen: boolean = false;
   public modSlowed: boolean = false;
   public modSplitLocked: boolean = false;
   public modEjectLocked: boolean = false;
+  public modInvertControls: boolean = false;
   public isPlayerDev: boolean = false;
-  public playerDevBadge: { title?: string; color?: string } | null = null;
+  public playerDevBadge: {
+    isDev?: boolean;
+    title?: string;
+    color?: string;
+    iconPreset1?: string;
+    iconPreset2?: string;
+    customSvg1?: string;
+    customSvg2?: string;
+  } | null = null;
+  private remotePlayerBadges: Map<
+    string,
+    {
+      isDev?: boolean;
+      title?: string;
+      color?: string;
+      iconPreset1?: string;
+      iconPreset2?: string;
+      customSvg1?: string;
+      customSvg2?: string;
+    }
+  > = new Map();
 
   public drainPlayerMassToBase() {
     if (!this.player || !this.player.isAlive || this.player.pieces.length === 0) return;
@@ -160,6 +200,108 @@ export class GameEngine {
     mainPiece.vy = 0;
     this.player.pieces = [mainPiece];
     this.addFloatingText(mainPiece.x, mainPiece.y - 30, '¡MASA DRENADA POR DEV (18)!', '#f43f5e');
+  }
+
+  public boostPlayerMass(amount: number = 500) {
+    if (!this.player || !this.player.isAlive || this.player.pieces.length === 0) return;
+    const mainPiece = this.player.pieces[0];
+    mainPiece.mass += amount;
+    mainPiece.targetRadius = GameEngine.massToRadius(mainPiece.mass);
+    mainPiece.radius = mainPiece.targetRadius;
+    this.player.score += amount;
+    soundEngine.playLevelUp();
+    this.addFloatingText(mainPiece.x, mainPiece.y - 35, `¡+${amount} MASA OTORGADA POR DEV!`, '#10b981');
+  }
+
+  // Synchronize real online human players into the live bloodstream
+  public syncRemotePlayers(activePlayers: ActivePlayer[], localDeviceId: string) {
+    const remoteHumans = activePlayers.filter((p) => p.isRealDevice && p.deviceId !== localDeviceId);
+    const activeIds = new Set(remoteHumans.map((p) => `human_${p.deviceId}`));
+
+    // Remove disconnected remote humans
+    this.bots = this.bots.filter((b) => !b.id.startsWith('human_') || activeIds.has(b.id));
+
+    for (const rp of remoteHumans) {
+      const entityId = `human_${rp.deviceId}`;
+      if (rp.isDev && rp.devBadge) {
+        const dbadge = rp.devBadge as any;
+        this.remotePlayerBadges.set(entityId, {
+          isDev: true,
+          title: dbadge.title || dbadge.label || 'DEV',
+          color: dbadge.color || '#fbbf24',
+          iconPreset1: dbadge.iconPreset1 || dbadge.svgPreset || 'code',
+          iconPreset2: dbadge.iconPreset2 || 'shield',
+          customSvg1: dbadge.customSvg1,
+          customSvg2: dbadge.customSvg2,
+        });
+      } else {
+        this.remotePlayerBadges.delete(entityId);
+      }
+
+      const existing = this.bots.find((b) => b.id === entityId);
+      const targetMass = Math.max(18, rp.mass || 24);
+      const r = GameEngine.massToRadius(targetMass);
+      const px = typeof rp.x === 'number' && (rp.x !== 0 || rp.y !== -400) ? rp.x : (rp.faction === 'pathogen' ? 650 : -650);
+      const py = typeof rp.y === 'number' ? rp.y : -250;
+
+      if (existing) {
+        existing.name = rp.name;
+        existing.faction = rp.faction === 'pathogen' ? 'pathogen' : 'immune';
+        existing.isAlive = true;
+        if (existing.pieces.length > 0) {
+          existing.pieces[0].mass = targetMass;
+          existing.pieces[0].targetRadius = r;
+          // Smoothly guide towards remote player's reported bloodstream coordinates
+          const dx = px - existing.pieces[0].x;
+          const dy = py - existing.pieces[0].y;
+          const dist = Math.hypot(dx, dy);
+          if (dist > 1400) {
+            existing.pieces[0].x = px;
+            existing.pieces[0].y = py;
+          } else if (dist > 25) {
+            existing.targetHeading = { x: dx / dist, y: dy / dist };
+          }
+        }
+      } else {
+        const isPathogen = rp.faction === 'pathogen';
+        this.bots.unshift({
+          id: entityId,
+          name: rp.name,
+          isPlayer: false,
+          mode: this.gameMode,
+          faction: isPathogen ? 'pathogen' : 'immune',
+          color: isPathogen ? '#f43f5e' : '#06b6d4',
+          secondaryColor: isPathogen ? '#be123c' : '#0284c7',
+          ciliaColor: isPathogen ? '#fda4af' : '#7dd3fc',
+          aiPersonality: 'balanced',
+          aiDecisionTimer: 0.5,
+          targetHeading: { x: 0, y: 0 },
+          speedMultiplier: 1.05,
+          mutations: new Set(),
+          isAlive: true,
+          score: Math.floor(targetMass),
+          kills: 0,
+          pieces: [
+            {
+              id: `hp_${rp.deviceId}_0`,
+              x: px + (Math.random() - 0.5) * 120,
+              y: py + (Math.random() - 0.5) * 120,
+              vx: 0,
+              vy: 0,
+              mass: targetMass,
+              targetRadius: r,
+              radius: r,
+              remergeTimer: 0,
+              totalRemergeTime: 1,
+              wobbleOffsets: Array.from({ length: 16 }, () => 0),
+              wobbleSpeed: 3.0,
+              impulseX: 0,
+              impulseY: 0,
+            },
+          ],
+        });
+      }
+    }
   }
 
   constructor(canvas: HTMLCanvasElement) {
@@ -228,8 +370,98 @@ export class GameEngine {
       this.spawnBot(i);
     }
 
-    // Initialize the 4 Central Map Superpowers
+    // Initialize the 4 Central Map Superpowers, 36 Biological Hormones & Battle Medical Treatments
     this.initSuperpowers();
+    this.initHormones();
+    this.initMedicalTreatments();
+  }
+
+  public initMedicalTreatments() {
+    this.medicalTreatments = [];
+    const treatmentTypes = Object.keys(MEDICAL_TREATMENT_DEFS) as MedicalTreatmentType[];
+    const locations = [
+      { x: -1050, y: -400 },  // Heart
+      { x: -750, y: 350 },    // Liver
+      { x: 1050, y: -400 },   // Thymus
+      { x: 1450, y: 250 },    // Spleen
+      { x: -1250, y: 550 },   // Stomach
+      { x: -1050, y: 1250 },  // Kidneys
+      { x: 0, y: -650 },      // Thoracic Aorta
+      { x: 0, y: 650 },       // Abdominal Aorta
+      { x: -1050, y: -1900 }, // Brain
+      { x: 1050, y: 1100 },   // Lymph Nodes
+      { x: -1450, y: -750 },  // Lungs
+      { x: 1050, y: -1900 },  // Cerebellum
+    ];
+
+    for (let i = 0; i < 12; i++) {
+      const tType = treatmentTypes[i % treatmentTypes.length];
+      const def = MEDICAL_TREATMENT_DEFS[tType];
+      const loc = locations[i % locations.length];
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 120 + Math.random() * 240;
+      this.medicalTreatments.push({
+        id: `med_${tType}_${i}`,
+        type: tType,
+        name: def.name,
+        clinicalEffect: def.clinicalEffect,
+        x: loc.x + Math.cos(angle) * dist,
+        y: loc.y + Math.sin(angle) * dist,
+        vx: (Math.random() - 0.5) * 18,
+        vy: (Math.random() - 0.5) * 18,
+        radius: 26,
+        color: def.color,
+        glowColor: def.glowColor,
+        pillColorA: def.pillColorA,
+        pillColorB: def.pillColorB,
+        symbol: def.symbol,
+        respawnTimer: 0,
+        isAvailable: true,
+        rotation: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+
+  public initHormones() {
+    this.hormones = [];
+    const hormoneKeys = Object.keys(HORMONE_DEFS) as HormoneType[];
+    // Spawn 36 hormone molecules (3 of each of the 12 hormone types: 1 in its Endocrine Bar + 2 circulating in organs/vessels)
+    for (let i = 0; i < 36; i++) {
+      const hType = hormoneKeys[i % hormoneKeys.length];
+      const def = HORMONE_DEFS[hType];
+      const bar = ENDOCRINE_BARS[i % ENDOCRINE_BARS.length];
+      const spawnInBar = i < 12; // First 12 directly inside the 3 Endocrine Bars!
+      const angle = Math.random() * Math.PI * 2;
+      const dist = spawnInBar
+        ? Math.random() * (bar.radius * 0.78)
+        : Math.random() * def.spreadRadius;
+      const baseX = spawnInBar ? bar.x : def.preferredX;
+      const baseY = spawnInBar ? bar.y : def.preferredY;
+      const x = Math.max(-WORLD_RADIUS + 180, Math.min(WORLD_RADIUS - 180, baseX + Math.cos(angle) * dist));
+      const y = Math.max(-WORLD_RADIUS + 180, Math.min(WORLD_RADIUS - 180, baseY + Math.sin(angle) * dist));
+
+      this.hormones.push({
+        id: `hormone_${hType}_${i}`,
+        type: hType,
+        name: def.name,
+        organOrigin: def.organOrigin,
+        effectDesc: def.effectDesc,
+        x,
+        y,
+        vx: (Math.random() - 0.5) * 22,
+        vy: (Math.random() - 0.5) * 22,
+        radius: 17,
+        color: def.color,
+        glowColor: def.glowColor,
+        symbol: def.symbol,
+        massBonus: def.massBonus,
+        cytesBonus: def.cytesBonus,
+        speedBoost: def.speedBoost,
+        respawnTimer: 0,
+        isAvailable: true,
+        pulsePhase: Math.random() * Math.PI * 2,
+      });
+    }
   }
 
   public initSuperpowers() {
@@ -445,7 +677,7 @@ export class GameEngine {
     const x = Math.cos(angle) * dist;
     const y = Math.sin(angle) * dist;
 
-    const startMass = 16 + Math.random() * 45;
+    const startMass = 18 + Math.random() * 55;
     const r = GameEngine.massToRadius(startMass);
 
     const bot: Organism = {
@@ -456,9 +688,13 @@ export class GameEngine {
       secondaryColor: preset.secondaryColor,
       ciliaColor: preset.ciliaColor,
       aiPersonality: preset.personality,
-      aiDecisionTimer: Math.random() * 2,
+      aiDecisionTimer: Math.random() * 0.6,
+      aiWeavePhase: Math.random() * Math.PI * 2,
+      aiWeaveFreq: 1.5 + Math.random() * 2.5,
+      aiWeaveAmp: 0.16 + Math.random() * 0.34,
+      aiPreferredOrganIdx: index % ANATOMICAL_ORGANS.length,
       targetHeading: { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2 },
-      speedMultiplier: 1.0,
+      speedMultiplier: 0.96 + Math.random() * 0.12,
       mutations: new Set(),
       isAlive: true,
       score: Math.floor(startMass),
@@ -503,11 +739,15 @@ export class GameEngine {
     this.redCellsEaten = 0;
     this.rivalsEaten = 0;
     this.causeOfDeath = '';
-    this.nextMilestone = 100;
+    this.nextMilestone = 160;
     this.unlockedMutations = new Set();
     this.splitsCount = 0;
     this.secretZoneDiscoveredThisGame = false;
     this.sporesFiredCount = 0;
+    this.hormonesAbsorbedThisMatch = 0;
+    this.superpowersTakenThisMatch = 0;
+    this.pusHandledThisMatch = 0;
+    this.treatmentsUsedThisMatch = 0;
     this.territoryExplored.clear();
     this.playerUpgrades = profileStorage.getUpgrades();
     this.activeSuperpower = null;
@@ -545,7 +785,10 @@ export class GameEngine {
         energyATP: 88,
         pusLevel: 20,
         activeSymptoms: ['symptomInflammation', 'symptomPurulentExudate'],
+        activeTreatment: null,
+        treatmentsAdministered: 0,
       };
+      this.initMedicalTreatments();
       this.pusPustules = [];
       for (let i = 0; i < 18; i++) {
         const angle = Math.random() * Math.PI * 2;
@@ -643,27 +886,33 @@ export class GameEngine {
     const botTotal = BOT_COUNT; // 49 bots + 1 player = 50 in room!
 
     if (mode === 'ffa') {
+      // Shuffle realistic multilingual & casual presets so every match has unique names without robotic -1/-2 numbers
+      const shuffledPresets = [...BOT_PRESETS].sort(() => Math.random() - 0.5);
       for (let i = 0; i < botTotal; i++) {
-        const preset = BOT_PRESETS[i % BOT_PRESETS.length];
+        const preset = shuffledPresets[i % shuffledPresets.length];
         const angle = Math.random() * Math.PI * 2;
         const dist = 300 + Math.random() * (WORLD_RADIUS - 600);
         const x = Math.cos(angle) * dist;
         const y = Math.sin(angle) * dist;
-        const startMass = 16 + Math.random() * 55;
+        const startMass = 16 + Math.random() * 60;
         const r = GameEngine.massToRadius(startMass);
 
         this.bots.push({
           id: 'bot_' + i + '_' + Math.random().toString(36).substring(2, 6),
-          name: `${preset.name}-${i + 1}`,
+          name: preset.name,
           isPlayer: false,
           mode: 'ffa',
           color: preset.color,
           secondaryColor: preset.secondaryColor,
           ciliaColor: preset.ciliaColor,
           aiPersonality: preset.personality,
-          aiDecisionTimer: Math.random() * 2,
+          aiDecisionTimer: Math.random() * 0.6,
+          aiWeavePhase: Math.random() * Math.PI * 2,
+          aiWeaveFreq: 1.5 + Math.random() * 2.5,
+          aiWeaveAmp: 0.16 + Math.random() * 0.34,
+          aiPreferredOrganIdx: i % ANATOMICAL_ORGANS.length,
           targetHeading: { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2 },
-          speedMultiplier: 1.0,
+          speedMultiplier: 0.96 + Math.random() * 0.12,
           mutations: new Set(),
           isAlive: true,
           score: Math.floor(startMass),
@@ -689,11 +938,15 @@ export class GameEngine {
         });
       }
     } else {
-      // Team Battle: 24 teammates + 25 rivals = 50 players in room
-      const sameTeamCount = 24;
-      const rivalTeamCount = 25;
-      const samePresets = playerFaction === 'immune' ? IMMUNE_BOT_PRESETS : PATHOGEN_BOT_PRESETS;
-      const rivalPresets = playerFaction === 'immune' ? PATHOGEN_BOT_PRESETS : IMMUNE_BOT_PRESETS;
+      // Team Battle: 50 teammates + 50 rivals = 100 bots in room
+      const sameTeamCount = Math.floor(BOT_COUNT / 2);
+      const rivalTeamCount = BOT_COUNT - sameTeamCount;
+      const samePresets = [...(playerFaction === 'immune' ? IMMUNE_BOT_PRESETS : PATHOGEN_BOT_PRESETS)].sort(
+        () => Math.random() - 0.5
+      );
+      const rivalPresets = [...(playerFaction === 'immune' ? PATHOGEN_BOT_PRESETS : IMMUNE_BOT_PRESETS)].sort(
+        () => Math.random() - 0.5
+      );
       const rivalFaction: Faction = playerFaction === 'immune' ? 'pathogen' : 'immune';
 
       // Spawn teammates
@@ -715,9 +968,13 @@ export class GameEngine {
           secondaryColor: preset.secondaryColor,
           ciliaColor: preset.ciliaColor,
           aiPersonality: preset.personality,
-          aiDecisionTimer: Math.random() * 2,
+          aiDecisionTimer: Math.random() * 0.6,
+          aiWeavePhase: Math.random() * Math.PI * 2,
+          aiWeaveFreq: 1.5 + Math.random() * 2.5,
+          aiWeaveAmp: 0.16 + Math.random() * 0.34,
+          aiPreferredOrganIdx: i % ANATOMICAL_ORGANS.length,
           targetHeading: { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2 },
-          speedMultiplier: 1.0,
+          speedMultiplier: 0.96 + Math.random() * 0.12,
           mutations: new Set(),
           isAlive: true,
           score: Math.floor(startMass),
@@ -762,9 +1019,13 @@ export class GameEngine {
           secondaryColor: preset.secondaryColor,
           ciliaColor: preset.ciliaColor,
           aiPersonality: preset.personality,
-          aiDecisionTimer: Math.random() * 2,
+          aiDecisionTimer: Math.random() * 0.6,
+          aiWeavePhase: Math.random() * Math.PI * 2,
+          aiWeaveFreq: 1.5 + Math.random() * 2.5,
+          aiWeaveAmp: 0.16 + Math.random() * 0.34,
+          aiPreferredOrganIdx: (i + 5) % ANATOMICAL_ORGANS.length,
           targetHeading: { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2 },
-          speedMultiplier: 1.0,
+          speedMultiplier: 0.96 + Math.random() * 0.12,
           mutations: new Set(),
           isAlive: true,
           score: Math.floor(startMass),
@@ -985,9 +1246,12 @@ export class GameEngine {
         const newRadius = GameEngine.massToRadius(halfMass);
         const impulse = SPLIT_IMPULSE;
 
-        const splitImpulseBonus = organism.isPlayer
-          ? 1.0 + Math.min(2.0, Math.log10(1 + (this.playerUpgrades?.sporesFission || 0)) * 0.6)
-          : 1.0;
+        const noradrenalineSplitBonus =
+          organism.isPlayer && this.activeHormoneBuff?.type === 'noradrenaline' ? 1.4 : 1.0;
+        const splitImpulseBonus =
+          (organism.isPlayer
+            ? 1.0 + Math.min(2.0, Math.log10(1 + (this.playerUpgrades?.sporesFission || 0)) * 0.6)
+            : 1.0) * noradrenalineSplitBonus;
 
         const newPiece: CellPiece = {
           id: 'piece_' + Math.random().toString(36).substring(2, 9),
@@ -1134,10 +1398,6 @@ export class GameEngine {
       if (this.onAchievementUnlocked) {
         this.onAchievementUnlocked(id);
       }
-      if (this.player && this.player.pieces.length > 0) {
-        const p = this.player.pieces[0];
-        this.addFloatingText(p.x, p.y - 50, '¡LOGRO DESBLOQUEADO!', '#fbbf24');
-      }
     }
   }
 
@@ -1176,7 +1436,7 @@ export class GameEngine {
   private updateTitleWorld(dt: number) {
     this.cameraX = Math.cos(performance.now() * 0.0003) * 600;
     this.cameraY = Math.sin(performance.now() * 0.0003) * 600;
-    this.cameraZoom = 0.85;
+    this.cameraZoom = 0.56;
 
     // Gentle bot movement
     for (const bot of this.bots) {
@@ -1306,8 +1566,9 @@ export class GameEngine {
       }
     }
 
-    // 7c. Update 4 Central Superpowers (Respawn, Collisions & 15s Active Effects)
+    // 7c. Update 4 Central Superpowers & 36 Biological Hormones
     this.updateSuperpowers(dt);
+    this.updateHormones(dt);
 
     // 7d. Update Pus Pustules and Host Human Status (Battle Mode)
     this.updatePusAndHostStatus(dt);
@@ -1361,10 +1622,11 @@ export class GameEngine {
 
   private updatePlayerHeading() {
     if (!this.player || this.player.pieces.length === 0) return;
+    const inv = this.modInvertControls ? -1 : 1;
 
     // 1. Virtual Joystick on-screen panel has top priority
     if (this.joystickHeading !== null) {
-      this.player.targetHeading = { ...this.joystickHeading };
+      this.player.targetHeading = { x: this.joystickHeading.x * inv, y: this.joystickHeading.y * inv };
       return;
     }
 
@@ -1378,13 +1640,13 @@ export class GameEngine {
 
     if (kx !== 0 || ky !== 0) {
       const len = Math.hypot(kx, ky);
-      this.player.targetHeading = { x: kx / len, y: ky / len };
+      this.player.targetHeading = { x: (kx / len) * inv, y: (ky / len) * inv };
       return;
     }
 
     // Touch joystick support
     if (this.isTouchActive) {
-      this.player.targetHeading = { ...this.touchHeading };
+      this.player.targetHeading = { x: this.touchHeading.x * inv, y: this.touchHeading.y * inv };
       return;
     }
 
@@ -1398,7 +1660,7 @@ export class GameEngine {
     const dist = Math.hypot(dx, dy);
 
     if (dist > 15) {
-      this.player.targetHeading = { x: dx / dist, y: dy / dist };
+      this.player.targetHeading = { x: (dx / dist) * inv, y: (dy / dist) * inv };
     }
   }
 
@@ -1512,95 +1774,145 @@ export class GameEngine {
     }
   }
 
-  // AI Logic for competing bloodstream microbes
+  // Realistic Human-Like AI Logic with 7 Distinct Movement Personalities
   private updateBotAI(bot: Organism, dt: number) {
-    if (!bot.isAlive || bot.pieces.length === 0) return;
+    if (!bot.isAlive || bot.pieces.length === 0 || bot.id.startsWith('human_')) return;
 
     bot.aiDecisionTimer = (bot.aiDecisionTimer || 0) - dt;
     if (bot.aiDecisionTimer > 0) return;
-    bot.aiDecisionTimer = 0.2 + Math.random() * 0.25;
+
+    const pType = bot.aiPersonality || 'balanced';
+    // Each personality has its own reaction cadence
+    bot.aiDecisionTimer =
+      pType === 'sniper' || pType === 'zigzagger'
+        ? 0.14 + Math.random() * 0.14
+        : pType === 'casual'
+        ? 0.35 + Math.random() * 0.45
+        : 0.18 + Math.random() * 0.24;
 
     const mainPiece = bot.pieces[0];
     const botTotalMass = this.calculateTotalMass(bot);
+    const nowSec = performance.now() * 0.001;
+    const weavePhase = bot.aiWeavePhase ?? 0;
+    const weaveFreq = bot.aiWeaveFreq ?? 2.0;
+    const weaveAmp = bot.aiWeaveAmp ?? 0.25;
+
+    const applyHumanWeave = (hx: number, hy: number, extraAmp: number = 1.0): { x: number; y: number } => {
+      const len = Math.hypot(hx, hy) || 1;
+      const nx = hx / len;
+      const ny = hy / len;
+      // Perpendicular vector for natural mouse/joystick strafing
+      const px = -ny;
+      const py = nx;
+      const wave = Math.sin(nowSec * weaveFreq + weavePhase) * weaveAmp * extraAmp;
+      const rx = nx + px * wave;
+      const ry = ny + py * wave;
+      const rLen = Math.hypot(rx, ry) || 1;
+      return { x: rx / rLen, y: ry / rLen };
+    };
 
     // 1. Check for immediate Antibody threat
     for (const ab of this.antibodies) {
-      const dist = Math.hypot(ab.x - mainPiece.x, ab.y - mainPiece.y);
-      if (botTotalMass > ANTIBODY_DETECTION_MASS && dist < 450) {
-        // Run away in terror from antibody!
+      if (botTotalMass > ANTIBODY_DETECTION_MASS) {
         const dx = mainPiece.x - ab.x;
         const dy = mainPiece.y - ab.y;
-        const len = Math.hypot(dx, dy) || 1;
-        bot.targetHeading = { x: dx / len, y: dy / len };
-        return;
+        if (Math.abs(dx) < 480 && Math.abs(dy) < 480) {
+          const dist = Math.hypot(dx, dy);
+          if (dist < 460) {
+            bot.targetHeading = applyHumanWeave(dx, dy, 1.3);
+            return;
+          }
+        }
       }
     }
 
-    // 2. Check for predators (Player or bigger Bots)
+    // 2. Scan nearby organisms for predators and prey
     let closestPredatorDist = 99999;
     let fleeVector = { x: 0, y: 0 };
+    let closestPreyDist = 99999;
+    let huntVector = { x: 0, y: 0 };
+    let targetPreyPiece: CellPiece | null = null;
 
-    const candidates = this.player && this.player.isAlive ? [this.player, ...this.bots] : [...this.bots];
+    const candidates = this.player && this.player.isAlive ? [this.player, ...this.bots] : this.bots;
+    const predatorDetectRange = pType === 'farmer' || pType === 'cautious' ? 470 : 380;
 
     for (const other of candidates) {
       if (other.id === bot.id || !other.isAlive) continue;
       if (this.gameMode === 'team' && other.faction === bot.faction) continue;
 
       for (const op of other.pieces) {
-        for (const bp of bot.pieces) {
-          const dist = Math.hypot(op.x - bp.x, op.y - bp.y);
-          if (op.mass > bp.mass * 1.15 && dist < 380) {
-            if (dist < closestPredatorDist) {
-              closestPredatorDist = dist;
-              fleeVector = { x: bp.x - op.x, y: bp.y - op.y };
-            }
+        const dx = op.x - mainPiece.x;
+        const dy = op.y - mainPiece.y;
+        if (Math.abs(dx) > 520 || Math.abs(dy) > 520) continue;
+        const dist = Math.hypot(dx, dy);
+
+        if (op.mass > mainPiece.mass * 1.15 && dist < predatorDetectRange) {
+          if (dist < closestPredatorDist) {
+            closestPredatorDist = dist;
+            fleeVector = { x: -dx, y: -dy };
+          }
+        } else if (mainPiece.mass > op.mass * 1.22 && dist < 460) {
+          if (dist < closestPreyDist) {
+            closestPreyDist = dist;
+            // Lead target slightly using prey velocity like a human player
+            huntVector = { x: dx + op.vx * 0.22, y: dy + op.vy * 0.22 };
+            targetPreyPiece = op;
           }
         }
       }
     }
 
-    if (closestPredatorDist < 350) {
-      const len = Math.hypot(fleeVector.x, fleeVector.y) || 1;
-      bot.targetHeading = { x: fleeVector.x / len, y: fleeVector.y / len };
+    // Flee if a predator is dangerously close
+    if (closestPredatorDist < predatorDetectRange) {
+      // Zigzagger & Sniper juke sharply at an angle when fleeing
+      const jukeMult = pType === 'zigzagger' ? 1.8 : pType === 'farmer' ? 0.8 : 1.2;
+      bot.targetHeading = applyHumanWeave(fleeVector.x, fleeVector.y, jukeMult);
       return;
     }
 
-    // 3. Hunt smaller targets if aggressive
-    if (bot.aiPersonality === 'aggressive' || bot.aiPersonality === 'balanced') {
-      let closestPreyDist = 99999;
-      let huntVector = { x: 0, y: 0 };
-      let targetPreyPiece: CellPiece | null = null;
+    // 3. Personality-Specific Behaviors
+    // 3A. HORMONE HUNTER: Seeks circulating Hormones, Superpower Capsules, and Endocrine Bars
+    if (pType === 'hormone_hunter') {
+      let bestSpecialDist = 900;
+      let specialVec: { x: number; y: number } | null = null;
 
-      for (const other of candidates) {
-        if (other.id === bot.id || !other.isAlive) continue;
-        if (this.gameMode === 'team' && other.faction === bot.faction) continue;
-
-        for (const op of other.pieces) {
-          for (const bp of bot.pieces) {
-            const dist = Math.hypot(op.x - bp.x, op.y - bp.y);
-            if (bp.mass > op.mass * 1.25 && dist < 420) {
-              if (dist < closestPreyDist) {
-                closestPreyDist = dist;
-                huntVector = { x: op.x - bp.x, y: op.y - bp.y };
-                targetPreyPiece = op;
-              }
-            }
+      for (const sp of this.superpowers) {
+        if (!sp.isAvailable) continue;
+        const d = Math.hypot(sp.x - mainPiece.x, sp.y - mainPiece.y);
+        if (d < bestSpecialDist) {
+          bestSpecialDist = d;
+          specialVec = { x: sp.x - mainPiece.x, y: sp.y - mainPiece.y };
+        }
+      }
+      if (!specialVec) {
+        for (const h of this.hormones) {
+          if (!h.isAvailable) continue;
+          const d = Math.hypot(h.x - mainPiece.x, h.y - mainPiece.y);
+          if (d < bestSpecialDist) {
+            bestSpecialDist = d;
+            specialVec = { x: h.x - mainPiece.x, y: h.y - mainPiece.y };
           }
         }
       }
+      if (specialVec) {
+        bot.targetHeading = applyHumanWeave(specialVec.x, specialVec.y, 0.9);
+        return;
+      }
+    }
 
-      if (targetPreyPiece && closestPreyDist < 380) {
-        const len = Math.hypot(huntVector.x, huntVector.y) || 1;
-        bot.targetHeading = { x: huntVector.x / len, y: huntVector.y / len };
-
-        // Tactical bot split: if close enough and aggressive, split to snipe prey!
+    // 3B. BAITER: Pretends to slow down or drift away when prey is at medium distance, then lunges/splits!
+    if (pType === 'baiter' && targetPreyPiece) {
+      if (closestPreyDist > 210 && closestPreyDist < 360) {
+        // Fake slow drift tangential to prey to bait them closer
+        bot.targetHeading = applyHumanWeave(-huntVector.y, huntVector.x, 0.6);
+        return;
+      } else if (closestPreyDist <= 210) {
+        bot.targetHeading = applyHumanWeave(huntVector.x, huntVector.y, 0.3);
         if (
-          bot.aiPersonality === 'aggressive' &&
-          closestPreyDist < 220 &&
           bot.pieces.length === 1 &&
-          mainPiece.mass > MIN_SPLIT_MASS * 1.4 &&
+          mainPiece.mass > MIN_SPLIT_MASS * 1.35 &&
           mainPiece.mass * 0.5 > targetPreyPiece.mass * 1.15 &&
-          Math.random() < 0.2
+          Math.random() < 0.32
         ) {
           this.splitOrganism(bot);
         }
@@ -1608,26 +1920,69 @@ export class GameEngine {
       }
     }
 
-    // 4. Default: Scavenge nutrients (Proteins or Red Blood Cells)
+    // 3C. SNIPER / AGGRESSIVE / ZIGZAGGER: Hunts smaller prey and executes tactical split-snipes
+    if (
+      targetPreyPiece &&
+      closestPreyDist < 420 &&
+      (pType === 'sniper' || pType === 'aggressive' || pType === 'zigzagger' || pType === 'balanced')
+    ) {
+      const weaveIntensity = pType === 'zigzagger' ? 1.65 : pType === 'sniper' ? 0.35 : 0.85;
+      bot.targetHeading = applyHumanWeave(huntVector.x, huntVector.y, weaveIntensity);
+
+      if (
+        (pType === 'sniper' || pType === 'aggressive') &&
+        closestPreyDist < 235 &&
+        bot.pieces.length <= 2 &&
+        mainPiece.mass > MIN_SPLIT_MASS * 1.4 &&
+        mainPiece.mass * 0.5 > targetPreyPiece.mass * 1.16 &&
+        Math.random() < 0.25
+      ) {
+        this.splitOrganism(bot);
+      }
+      return;
+    }
+
+    // 3D. OPPORTUNIST: Prioritizes ejected spores and red blood cells dropped in skirmishes
+    if (pType === 'opportunist') {
+      for (const sp of this.spores) {
+        const d = Math.hypot(sp.x - mainPiece.x, sp.y - mainPiece.y);
+        if (d < 460 && !sp.isToxic) {
+          bot.targetHeading = applyHumanWeave(sp.x - mainPiece.x, sp.y - mainPiece.y, 1.1);
+          return;
+        }
+      }
+    }
+
+    // 3E. CASUAL PLAYER: Occasional playful spore shot or natural direction shift
+    if (pType === 'casual' && mainPiece.mass > 55 && Math.random() < 0.015) {
+      this.ejectSpore(bot);
+    }
+
+    // 4. Scavenge Nutrients (Red Blood Cells & Proteins, weighted toward preferred organ for Farmers)
     let closestFoodDist = 99999;
     let targetX = mainPiece.x;
     let targetY = mainPiece.y;
 
-    // Check nearby red blood cells (rich mass)
     for (const rbc of this.redBloodCells) {
-      const dist = Math.hypot(rbc.x - mainPiece.x, rbc.y - mainPiece.y);
-      if (dist < 450 && dist < closestFoodDist && mainPiece.mass > rbc.mass * 1.2) {
+      const dx = rbc.x - mainPiece.x;
+      const dy = rbc.y - mainPiece.y;
+      if (Math.abs(dx) > 480 || Math.abs(dy) > 480) continue;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 460 && dist < closestFoodDist && mainPiece.mass > rbc.mass * 1.18) {
         closestFoodDist = dist;
         targetX = rbc.x;
         targetY = rbc.y;
       }
     }
 
-    // If no RBC nearby, seek nearest protein
-    if (closestFoodDist > 300) {
-      for (let i = 0; i < Math.min(this.proteins.length, 120); i++) {
+    if (closestFoodDist > 280) {
+      const scanLimit = Math.min(this.proteins.length, 140);
+      for (let i = 0; i < scanLimit; i++) {
         const p = this.proteins[i];
-        const dist = Math.hypot(p.x - mainPiece.x, p.y - mainPiece.y);
+        const dx = p.x - mainPiece.x;
+        const dy = p.y - mainPiece.y;
+        if (Math.abs(dx) > 420 || Math.abs(dy) > 420) continue;
+        const dist = Math.hypot(dx, dy);
         if (dist < closestFoodDist) {
           closestFoodDist = dist;
           targetX = p.x;
@@ -1636,10 +1991,16 @@ export class GameEngine {
       }
     }
 
+    // If no nearby food found, patrol toward preferred anatomical organ
+    if (closestFoodDist > 9000) {
+      const organ = ANATOMICAL_ORGANS[(bot.aiPreferredOrganIdx ?? 0) % ANATOMICAL_ORGANS.length];
+      targetX = organ.x + Math.cos(nowSec * 0.5 + weavePhase) * 250;
+      targetY = organ.y + Math.sin(nowSec * 0.5 + weavePhase) * 250;
+    }
+
     const dx = targetX - mainPiece.x;
     const dy = targetY - mainPiece.y;
-    const len = Math.hypot(dx, dy) || 1;
-    bot.targetHeading = { x: dx / len, y: dy / len };
+    bot.targetHeading = applyHumanWeave(dx, dy, pType === 'zigzagger' ? 1.5 : 1.0);
   }
 
   // Update Patrol Antibodies (Security Bots of the Bloodstream)
@@ -1678,7 +2039,10 @@ export class GameEngine {
         }
       }
 
-      if (threatTarget?.isPlayer && this.activeSuperpower?.type === 'cloaking_ghost') {
+      if (
+        threatTarget?.isPlayer &&
+        (this.activeSuperpower?.type === 'cloaking_ghost' || this.activeHormoneBuff?.type === 'melatonin')
+      ) {
         threatTarget = null;
         threatPiece = null;
       }
@@ -1760,7 +2124,11 @@ export class GameEngine {
 
     const hasDenseMembrane = target.mutations.has('dense_membrane');
     const armorReduction = target.isPlayer ? (this.playerUpgrades?.armor || 0) * 0.12 : 0;
-    const damageRatio = (hasDenseMembrane ? ANTIBODY_DAMAGE_RATIO * 0.75 : ANTIBODY_DAMAGE_RATIO) * Math.max(0.4, 1.0 - armorReduction);
+    const cortisolShield = target.isPlayer && this.activeHormoneBuff?.type === 'cortisol' ? 0.35 : 1.0;
+    const damageRatio =
+      (hasDenseMembrane ? ANTIBODY_DAMAGE_RATIO * 0.75 : ANTIBODY_DAMAGE_RATIO) *
+      Math.max(0.4, 1.0 - armorReduction) *
+      cortisolShield;
 
     const lostMass = piece.mass * damageRatio;
     piece.mass = Math.max(MIN_START_MASS, piece.mass - lostMass);
@@ -1801,34 +2169,48 @@ export class GameEngine {
     if (target.isPlayer) {
       soundEngine.playAntibodyRupture();
       this.screenShake = 16;
+      this.checkAchievement('antibody_survivor');
       this.addFloatingText(piece.x, piece.y - 40, '¡RUPTURA POR ANTICUERPO!', '#ef4444');
     }
   }
 
-  // Check all eating interactions
+  // Check all eating interactions (Optimized with fast AABB bounding-box pre-check for silky 60fps fluidity)
   private checkConsumptions() {
-    const organisms = this.player && this.player.isAlive ? [this.player, ...this.bots] : [...this.bots];
+    const organisms = this.player && this.player.isAlive ? [this.player, ...this.bots] : this.bots;
 
     for (const org of organisms) {
       if (!org.isAlive) continue;
 
       for (const piece of org.pieces) {
+        const pr = piece.radius;
+        const px = piece.x;
+        const py = piece.y;
+
         const superGrowthBonus =
           this.activeSuperpower?.type === 'growth_serum'
             ? 2.8
             : this.activeSuperpower?.type === 'toxic_nanobot'
             ? 1.5
             : 1.0;
+        const hormoneMetabolismBonus =
+          org.isPlayer && this.activeHormoneBuff?.type === 'thyroxine_t4'
+            ? 2.0
+            : org.isPlayer && this.activeHormoneBuff?.type === 'glucagon'
+            ? 1.6
+            : 1.0;
         const metabolismMultiplier = org.isPlayer
-          ? (1 + (this.playerUpgrades?.metabolism || 0) * 0.1) * superGrowthBonus
+          ? (1 + (this.playerUpgrades?.metabolism || 0) * 0.1) * superGrowthBonus * hormoneMetabolismBonus
           : 1.0;
 
-        // 1. Eat Proteins
+        // 1. Eat Proteins (Fast AABB filter before hypot)
         for (let i = this.proteins.length - 1; i >= 0; i--) {
           const protein = this.proteins[i];
-          const dist = Math.hypot(protein.x - piece.x, protein.y - piece.y);
+          const dx = protein.x - px;
+          if (dx > pr || dx < -pr) continue;
+          const dy = protein.y - py;
+          if (dy > pr || dy < -pr) continue;
 
-          if (dist < piece.radius) {
+          if (dx * dx + dy * dy < pr * pr) {
             const gained = protein.mass * metabolismMultiplier;
             piece.mass += gained;
             org.score += Math.round(gained);
@@ -1847,36 +2229,38 @@ export class GameEngine {
 
         for (let i = this.redBloodCells.length - 1; i >= 0; i--) {
           const rbc = this.redBloodCells[i];
-          const dist = Math.hypot(rbc.x - piece.x, rbc.y - piece.y);
+          if (piece.mass <= rbc.mass * 1.15) continue;
+          const dx = rbc.x - px;
+          if (dx > pr || dx < -pr) continue;
+          const dy = rbc.y - py;
+          if (dy > pr || dy < -pr) continue;
 
-          if (dist < piece.radius && piece.mass > rbc.mass * 1.15) {
+          if (dx * dx + dy * dy < pr * pr) {
             const gainedMass = rbc.mass * massBonus * metabolismMultiplier;
             piece.mass += gainedMass;
             org.score += Math.round(gainedMass);
             this.redBloodCells.splice(i, 1);
 
-            // Burst particles
-            for (let p = 0; p < 8; p++) {
-              this.particles.push({
-                x: rbc.x,
-                y: rbc.y,
-                vx: (Math.random() - 0.5) * 100,
-                vy: (Math.random() - 0.5) * 100,
-                radius: 4 + Math.random() * 3,
-                color: '#ef4444',
-                alpha: 0.9,
-                life: 0.4,
-                maxLife: 0.4,
-              });
+            if (this.particles.length < 130) {
+              for (let p = 0; p < 5; p++) {
+                this.particles.push({
+                  x: rbc.x,
+                  y: rbc.y,
+                  vx: (Math.random() - 0.5) * 100,
+                  vy: (Math.random() - 0.5) * 100,
+                  radius: 4 + Math.random() * 2,
+                  color: '#ef4444',
+                  alpha: 0.9,
+                  life: 0.35,
+                  maxLife: 0.35,
+                });
+              }
             }
 
             if (org.isPlayer) {
               this.redCellsEaten++;
               soundEngine.playEatRedBloodCell();
               this.addFloatingText(rbc.x, rbc.y - 25, `+${Math.round(gainedMass)} Masa`, '#f87171');
-              if (this.redCellsEaten >= 10) {
-                this.checkAchievement('erythrocyte_feast');
-              }
             }
           }
         }
@@ -1884,10 +2268,12 @@ export class GameEngine {
         // 3. Eat Ejected Spores
         for (let i = this.spores.length - 1; i >= 0; i--) {
           const spore = this.spores[i];
-          const dist = Math.hypot(spore.x - piece.x, spore.y - piece.y);
+          const dx = spore.x - px;
+          if (dx > pr || dx < -pr) continue;
+          const dy = spore.y - py;
+          if (dy > pr || dy < -pr) continue;
 
-          if (dist < piece.radius) {
-            // If toxic spore from an enemy, apply speed slow
+          if (dx * dx + dy * dy < pr * pr) {
             if (spore.isToxic && spore.ownerId !== org.id) {
               org.speedMultiplier = 0.65;
               setTimeout(() => {
@@ -1908,17 +2294,19 @@ export class GameEngine {
         // 4. Devour Other Microbes
         for (const rival of organisms) {
           if (rival.id === org.id || !rival.isAlive) continue;
-          // In Team Battle, teammates cannot eat each other
           if (this.gameMode === 'team' && rival.faction === org.faction) continue;
-          // Player is invulnerable while Shield Capsule superpower is active!
           if (rival.isPlayer && this.activeSuperpower?.type === 'shield_capsule') continue;
 
           for (let rIdx = rival.pieces.length - 1; rIdx >= 0; rIdx--) {
             const rivalPiece = rival.pieces[rIdx];
-            const dist = Math.hypot(rivalPiece.x - piece.x, rivalPiece.y - piece.y);
+            if (piece.mass <= rivalPiece.mass * 1.15) continue;
+            const dx = rivalPiece.x - px;
+            if (dx > pr || dx < -pr) continue;
+            const dy = rivalPiece.y - py;
+            if (dy > pr || dy < -pr) continue;
 
-            // Must be at least 15% larger and overlapping center
-            if (piece.mass > rivalPiece.mass * 1.15 && dist < piece.radius - rivalPiece.radius * 0.3) {
+            const dist = Math.hypot(dx, dy);
+            if (dist < pr - rivalPiece.radius * 0.3) {
               piece.mass += rivalPiece.mass;
               org.score += Math.round(rivalPiece.mass);
               org.kills++;
@@ -1940,22 +2328,24 @@ export class GameEngine {
                   this.triggerGameOver();
                   return;
                 } else {
-                  // Respawn bot after 3 seconds to keep room populated at 50 capacity
                   setTimeout(() => {
                     if (this.state === 'PLAYING' && !this.humansOnly) {
                       const faction = rival.faction || (Math.random() < 0.5 ? 'immune' : 'pathogen');
-                      const presets = faction === 'immune' ? IMMUNE_BOT_PRESETS : PATHOGEN_BOT_PRESETS;
+                      const presets = this.gameMode === 'team'
+                        ? (faction === 'immune' ? IMMUNE_BOT_PRESETS : PATHOGEN_BOT_PRESETS)
+                        : BOT_PRESETS;
                       const preset = presets[Math.floor(Math.random() * presets.length)];
-                      const baseX = faction === 'immune' ? -1050 : 1050;
-                      const x = baseX + (Math.random() - 0.5) * 800;
+                      const baseX = this.gameMode === 'team' ? (faction === 'immune' ? -1050 : 1050) : 0;
+                      const x = baseX + (Math.random() - 0.5) * 1400;
                       const y = (Math.random() - 0.5) * 2400;
-                      const startMass = 18 + Math.random() * 45;
+                      const startMass = 18 + Math.random() * 50;
                       const r = GameEngine.massToRadius(startMass);
                       rival.name = preset.name;
                       rival.faction = faction;
                       rival.color = preset.color;
                       rival.secondaryColor = preset.secondaryColor;
                       rival.ciliaColor = preset.ciliaColor;
+                      rival.aiPersonality = preset.personality;
                       rival.isAlive = true;
                       rival.score = Math.floor(startMass);
                       rival.pieces = [{
@@ -2022,8 +2412,7 @@ export class GameEngine {
         this.peakMass = totalMass;
       }
     } else {
-      // If player died, spectate the largest organism in the match or stay smooth
-      const aliveOrgs = [...this.bots].filter((b) => b.isAlive && b.pieces.length > 0);
+      const aliveOrgs = this.bots.filter((b) => b.isAlive && b.pieces.length > 0);
       if (aliveOrgs.length > 0) {
         aliveOrgs.sort((a, b) => this.calculateTotalMass(b) - this.calculateTotalMass(a));
         const leader = aliveOrgs[0];
@@ -2034,20 +2423,19 @@ export class GameEngine {
       }
     }
 
-    // Dynamic zoom: scale out smoothly as cell grows to provide an expansive, grand panorama
-    const targetZoom = Math.max(0.24, Math.min(0.96, 0.92 - Math.log10(Math.max(15, totalMass) / 15) * 0.26));
+    // Wide panoramic camera zoom so players can see a much broader view of organs, hormones, and rivals
+    const targetZoom = Math.max(0.18, Math.min(0.58, 0.56 - Math.log10(Math.max(15, totalMass) / 15) * 0.19));
     this.cameraZoom += (targetZoom - this.cameraZoom) * Math.min(1, dt * 3);
 
-    // Smooth camera lerp
     this.cameraX += (targetX - this.cameraX) * Math.min(1, dt * 5);
     this.cameraY += (targetY - this.cameraY) * Math.min(1, dt * 5);
 
-    // Check Evolution Milestones (100, 250, 500, 1000 mass)
-    if (totalMass >= this.nextMilestone && this.nextMilestone <= 1000) {
+    // Check Evolution Milestones (160, 350, 700, 1200 mass — balanced so it never jumps on screen right at spawn)
+    if (totalMass >= this.nextMilestone && this.nextMilestone <= 1200) {
       const milestone = this.nextMilestone;
-      if (this.nextMilestone === 100) this.nextMilestone = 250;
-      else if (this.nextMilestone === 250) this.nextMilestone = 500;
-      else if (this.nextMilestone === 500) this.nextMilestone = 1000;
+      if (this.nextMilestone === 160) this.nextMilestone = 350;
+      else if (this.nextMilestone === 350) this.nextMilestone = 700;
+      else if (this.nextMilestone === 700) this.nextMilestone = 1200;
       else this.nextMilestone = 999999;
 
       if (this.onMutationTrigger) {
@@ -2073,10 +2461,149 @@ export class GameEngine {
     return org.pieces.reduce((acc, p) => acc + p.mass, 0);
   }
 
+  private evaluateAllAchievements(totalMass: number, rank: number, timeAliveSec: number) {
+    if (!this.player) return;
+    const prof = profileStorage.getProfile();
+    const totalKills = (prof.stats?.totalKills || 0) + this.rivalsEaten;
+    const totalRBC = (prof.stats?.totalRBCDevoured || 0) + this.redCellsEaten;
+    const organsCount = prof.conqueredOrgans?.length || 0;
+    const upg = prof.upgrades || { attraction: 0, speed: 0, armor: 0, metabolism: 0, sporesFission: 0 };
+    const totalUpgradeLevels =
+      (upg.attraction || 0) + (upg.speed || 0) + (upg.armor || 0) + (upg.metabolism || 0) + (upg.sporesFission || 0);
+    const totalCytesEarned = prof.totalCytesEarned || prof.cytes || 0;
+
+    // 1. Mass achievements (balanced: first mass achievement requires 140 mass)
+    if (totalMass >= 140) this.checkAchievement('mass_100');
+    if (totalMass >= 180) this.checkAchievement('mass_180');
+    if (totalMass >= 250) this.checkAchievement('mass_250');
+    if (totalMass >= 350) this.checkAchievement('mass_350');
+    if (totalMass >= 500) this.checkAchievement('mass_500');
+    if (totalMass >= 750) this.checkAchievement('mass_750');
+    if (totalMass >= 1000) this.checkAchievement('mass_1000');
+    if (totalMass >= 1300) this.checkAchievement('mass_1300');
+    if (totalMass >= 1800) this.checkAchievement('mass_1800');
+    if (totalMass >= 2500) this.checkAchievement('mass_2500');
+    if (totalMass >= 3500) this.checkAchievement('mass_3500');
+    if (totalMass >= 5000) this.checkAchievement('mass_5000');
+    if (totalMass >= 7500) this.checkAchievement('mass_7500');
+    if (totalMass >= 10000) this.checkAchievement('mass_10000');
+
+    // 2. Rank & Leaderboard achievements
+    if (rank <= 10 && totalMass >= 130) this.checkAchievement('rank_top10');
+    if (rank === 1 && totalMass >= 300) this.checkAchievement('bloodstream_king');
+
+    // 3. Proteins eaten in match
+    if (this.proteinsEaten >= 40) this.checkAchievement('proteins_40');
+    if (this.proteinsEaten >= 90) this.checkAchievement('proteins_90');
+    if (this.proteinsEaten >= 200) this.checkAchievement('proteins_200_match');
+    if (this.proteinsEaten >= 400) this.checkAchievement('proteins_400_match');
+    if (this.proteinsEaten >= 800) this.checkAchievement('proteins_800_match');
+
+    // 4. Red Blood Cells devoured
+    if (this.redCellsEaten >= 5) this.checkAchievement('rbc_5');
+    if (this.redCellsEaten >= 12) this.checkAchievement('erythrocyte_feast');
+    if (this.redCellsEaten >= 25) this.checkAchievement('rbc_25_match');
+    if (this.redCellsEaten >= 50) this.checkAchievement('rbc_50_match');
+    if (this.redCellsEaten >= 100) this.checkAchievement('rbc_100_match');
+    if (totalRBC >= 100) this.checkAchievement('rbc_total_100');
+    if (totalRBC >= 250) this.checkAchievement('rbc_total_250');
+    if (totalRBC >= 600) this.checkAchievement('rbc_total_600');
+    if (totalRBC >= 1200) this.checkAchievement('rbc_total_1200');
+    if (totalRBC >= 2500) this.checkAchievement('rbc_total_2500');
+
+    // 5. Mitosis & Active Cell Division
+    if (this.splitsCount >= 3) this.checkAchievement('split_3');
+    if (this.splitsCount >= 6) this.checkAchievement('mitosis_master');
+    if (this.splitsCount >= 15) this.checkAchievement('splits_15_match');
+    if (this.splitsCount >= 35) this.checkAchievement('splits_35_match');
+    if (this.player.pieces.length >= 8) this.checkAchievement('cells_8_active');
+    if (this.player.pieces.length >= 16) this.checkAchievement('cells_16_active');
+
+    // 6. Spores Fired
+    if (this.sporesFiredCount >= 8) this.checkAchievement('spores_8');
+    if (this.sporesFiredCount >= 20) this.checkAchievement('spores_20');
+    if (this.sporesFiredCount >= 50) this.checkAchievement('spores_50_match');
+    if (this.sporesFiredCount >= 120) this.checkAchievement('spores_120_match');
+
+    // 7. Combat Kills (Match & Total)
+    if (this.rivalsEaten >= 1) this.checkAchievement('first_blood');
+    if (this.rivalsEaten >= 2) this.checkAchievement('kills_2_match');
+    if (this.rivalsEaten >= 4) this.checkAchievement('kills_4_match');
+    if (this.rivalsEaten >= 7) this.checkAchievement('kills_7_match');
+    if (this.rivalsEaten >= 10) this.checkAchievement('kills_10_match');
+    if (this.rivalsEaten >= 15) this.checkAchievement('kills_15_match');
+    if (this.rivalsEaten >= 25) this.checkAchievement('kills_25_match');
+    if (this.rivalsEaten >= 40) this.checkAchievement('kills_40_match');
+    if (totalKills >= 15) this.checkAchievement('kills_total_15');
+    if (totalKills >= 35) this.checkAchievement('kills_total_35');
+    if (totalKills >= 75) this.checkAchievement('kills_total_75');
+    if (totalKills >= 150) this.checkAchievement('kills_total_150');
+    if (totalKills >= 300) this.checkAchievement('kills_total_300');
+    if (totalKills >= 500) this.checkAchievement('kills_total_500');
+
+    // 8. Survival Time
+    if (timeAliveSec >= 60) this.checkAchievement('survive_60s');
+    if (timeAliveSec >= 120) this.checkAchievement('survive_120s');
+    if (timeAliveSec >= 240) this.checkAchievement('survive_240s');
+    if (timeAliveSec >= 360) this.checkAchievement('survive_360s');
+    if (timeAliveSec >= 600) this.checkAchievement('survive_600s');
+    if (timeAliveSec >= 900) this.checkAchievement('survive_900s');
+    if (timeAliveSec >= 1800) this.checkAchievement('survive_1800s');
+
+    // 9. Exploration & Organ Conquests
+    if (this.territoryExplored.size >= 15) this.checkAchievement('explore_15');
+    if (organsCount >= 1) this.checkAchievement('territory_conqueror');
+    if (organsCount >= 2) this.checkAchievement('conquer_2_organs');
+    if (organsCount >= 3) this.checkAchievement('conquer_3_organs');
+    if (organsCount >= 4) this.checkAchievement('conquer_4_organs');
+    if (organsCount >= 5) this.checkAchievement('conquer_5_organs');
+    if (organsCount >= 6) this.checkAchievement('conquer_6_organs');
+    if (organsCount >= 8) this.checkAchievement('conquer_8_organs');
+    if (organsCount >= 10) this.checkAchievement('conquer_10_organs');
+    if (organsCount >= 11) this.checkAchievement('conquer_all_11_organs');
+
+    // 10. Hormones, Superpowers & Battle Mode
+    if (this.hormonesAbsorbedThisMatch >= 1) this.checkAchievement('hormone_1');
+    if (this.hormonesAbsorbedThisMatch >= 4) this.checkAchievement('hormones_4_match');
+    if (this.hormonesAbsorbedThisMatch >= 8) this.checkAchievement('hormones_8_match');
+    if (this.hormonesAbsorbedThisMatch >= 15) this.checkAchievement('hormones_15_match');
+
+    if (this.superpowersTakenThisMatch >= 1) this.checkAchievement('superpower_1');
+    if (this.superpowersTakenThisMatch >= 3) this.checkAchievement('superpowers_3_match');
+    if (this.superpowersTakenThisMatch >= 7) this.checkAchievement('superpowers_7_match');
+
+    if (this.treatmentsUsedThisMatch >= 3) this.checkAchievement('battle_treatment_3');
+    if (this.treatmentsUsedThisMatch >= 10) this.checkAchievement('battle_treatments_10');
+    if (this.pusHandledThisMatch >= 10) this.checkAchievement('battle_pus_10');
+
+    if (this.gameMode === 'team' && this.calculateTeamPercentage(this.playerFaction) >= 80) {
+      this.checkAchievement('battle_dominance_80');
+    }
+
+    // 11. Laboratory Upgrades, Skins, Bacteria & Total Cytes
+    if (totalUpgradeLevels >= 1) this.checkAchievement('upgrade_lvl_1');
+    if (totalUpgradeLevels >= 10) this.checkAchievement('upgrades_total_10');
+    if (totalUpgradeLevels >= 25) this.checkAchievement('upgrades_total_25');
+    if (totalUpgradeLevels >= 75) this.checkAchievement('upgrades_total_75');
+    if (totalUpgradeLevels >= 150) this.checkAchievement('upgrades_total_150');
+    if (totalUpgradeLevels >= 300) this.checkAchievement('upgrades_total_300');
+    if (totalUpgradeLevels >= 750) this.checkAchievement('upgrades_total_750');
+
+    if ((prof.unlockedSkinIds?.length || 0) >= 5) this.checkAchievement('unlock_5_skins');
+    if ((prof.unlockedBacteriaIds?.length || 0) >= 6) this.checkAchievement('unlock_6_bacteria');
+
+    if (totalCytesEarned >= 100) this.checkAchievement('cytes_earned_100');
+    if (totalCytesEarned >= 1000) this.checkAchievement('cytes_earned_1000');
+    if (totalCytesEarned >= 5000) this.checkAchievement('cytes_earned_5000');
+    if (totalCytesEarned >= 20000) this.checkAchievement('cytes_earned_20000');
+    if (totalCytesEarned >= 100000) this.checkAchievement('cytes_earned_100000');
+  }
+
   private dispatchStats() {
     if (!this.player) return;
 
     const totalMass = Math.round(this.calculateTotalMass(this.player));
+    const timeAliveSec = Math.floor((Date.now() - this.startTime) / 1000);
 
     // Sort all microbes by mass for real-time leaderboard
     const allOrganisms = [this.player, ...this.bots].filter((o) => o.isAlive);
@@ -2084,16 +2611,8 @@ export class GameEngine {
 
     const rank = allOrganisms.findIndex((o) => o.id === this.player?.id) + 1;
 
-    // Check achievement triggers
-    if (rank === 1 && totalMass >= 70) {
-      this.checkAchievement('bloodstream_king');
-    }
-    if (totalMass >= 100) {
-      this.checkAchievement('mass_100');
-    }
-    if (totalMass >= 500) {
-      this.checkAchievement('mass_500');
-    }
+    // Evaluate all 100 balanced achievements
+    this.evaluateAllAchievements(totalMass, rank, timeAliveSec);
 
     // Reset all crown flags
     for (const org of allOrganisms) {
@@ -2107,7 +2626,6 @@ export class GameEngine {
         allOrganisms[0].crownType = 'gold';
       }
     } else {
-      // Team Battle: 1 King for Immune, 1 King for Pathogen
       const topImmune = allOrganisms.find((o) => o.faction === 'immune');
       const topPathogen = allOrganisms.find((o) => o.faction === 'pathogen');
       if (topImmune) {
@@ -2120,16 +2638,35 @@ export class GameEngine {
       }
     }
 
-    const leaderboard: LeaderboardEntry[] = allOrganisms.slice(0, 10).map((o) => ({
-      id: o.id,
-      name: o.name,
-      mass: Math.round(this.calculateTotalMass(o)),
-      isPlayer: o.isPlayer,
-      faction: o.faction,
-      hasCrown: o.hasCrown,
-      crownType: o.crownType,
-      isDev: o.isPlayer ? this.isPlayerDev : false,
-    }));
+    const leaderboard: LeaderboardEntry[] = allOrganisms.slice(0, 10).map((o) => {
+      const remoteBadge = this.remotePlayerBadges.get(o.id);
+      const badgeSource = o.isPlayer ? this.playerDevBadge : remoteBadge;
+      const isEntryDev = o.isPlayer ? this.isPlayerDev : Boolean(remoteBadge);
+      return {
+        id: o.id,
+        name: o.name,
+        mass: Math.round(this.calculateTotalMass(o)),
+        isPlayer: o.isPlayer,
+        faction: o.faction,
+        hasCrown: o.hasCrown,
+        crownType: o.crownType,
+        isDev: isEntryDev,
+        devBadge:
+          isEntryDev && badgeSource
+            ? {
+                isDev: true,
+                enabled: true,
+                title: badgeSource.title || 'DEV',
+                label: badgeSource.title || 'DEV',
+                color: badgeSource.color || '#fbbf24',
+                iconPreset1: badgeSource.iconPreset1 || 'code',
+                iconPreset2: badgeSource.iconPreset2 || 'shield',
+                customSvg1: badgeSource.customSvg1,
+                customSvg2: badgeSource.customSvg2,
+              }
+            : null,
+      };
+    });
 
     if (this.onLeaderboardUpdate) {
       this.onLeaderboardUpdate(leaderboard);
@@ -2145,7 +2682,7 @@ export class GameEngine {
         proteinsEaten: this.proteinsEaten,
         redCellsEaten: this.redCellsEaten,
         rivalsEaten: this.rivalsEaten,
-        timeAliveSec: Math.floor((Date.now() - this.startTime) / 1000),
+        timeAliveSec,
         causeOfDeath: this.causeOfDeath,
         canConquer: this.canConquerTerritory(),
         conqueredOrgansCount: profileStorage.getProfile().conqueredOrgans.length,
@@ -2154,6 +2691,7 @@ export class GameEngine {
         gameMode: this.gameMode,
         playerFaction: this.playerFaction,
         activeSuperpower: this.activeSuperpower,
+        activeHormoneBuff: this.activeHormoneBuff,
         hostStatus: this.hostStatus,
       });
     }
@@ -2231,6 +2769,9 @@ export class GameEngine {
     // 1b. Draw Human Anatomy & Organs
     this.renderHumanAnatomy(ctx);
 
+    // 1b-2. Draw the 3 Endocrine Bars (Hormone Hubs in the Middle & Strategic Junctions)
+    this.renderEndocrineBars(ctx);
+
     // 1c. Draw Secret Lymphatic Crypt
     this.renderSecretZone(ctx);
 
@@ -2246,11 +2787,13 @@ export class GameEngine {
     // 5. Draw Ejected Spores
     this.renderSpores(ctx);
 
-    // 5b. Draw 4 Central Map Superpowers (Medicine Capsules)
+    // 5b. Draw 4 Central Map Superpowers (Medicine Capsules) & 12 Biological Hormone Types
     this.renderSuperpowers(ctx);
+    this.renderHormones(ctx);
 
-    // 5c. Draw Battle Mode Pus Pustules
+    // 5c. Draw Battle Mode Pus Pustules & Medical Treatments
     this.renderPusPustules(ctx);
+    this.renderMedicalTreatments(ctx);
 
     // 6. Draw AI Bot Microbes
     for (const bot of this.bots) {
@@ -2864,6 +3407,7 @@ export class GameEngine {
               }
 
               if (org.isPlayer) {
+                this.superpowersTakenThisMatch++;
                 this.activeSuperpower = {
                   type: sp.type,
                   name: sp.name,
@@ -2889,14 +3433,17 @@ export class GameEngine {
 
     // 2. Active Superpower & Permanent Attraction logic for Player
     if (this.player && this.player.isAlive) {
-      // 2a. Attraction Upgrade Gravitational Field (Permanent) + Super Magnet Pill
+      // 2a. Attraction Upgrade Gravitational Field (Permanent) + Super Magnet Pill + Insulin Hormone (2.2x glucose suction)
       const attractionLvl = this.playerUpgrades?.attraction || 0;
       const isMagnetPill = this.activeSuperpower?.type === 'magnet_pill';
+      const isInsulinActive = this.activeHormoneBuff?.type === 'insulin';
+      const isEpoActive = this.activeHormoneBuff?.type === 'erythropoietin';
 
-      if (attractionLvl > 0 || isMagnetPill) {
+      if (attractionLvl > 0 || isMagnetPill || isInsulinActive || isEpoActive) {
         for (const piece of this.player.pieces) {
-          const suctionRadius = isMagnetPill ? 650 : piece.radius + 35 + attractionLvl * 30;
-          const suctionForce = isMagnetPill ? 480 : 180 + attractionLvl * 35;
+          const baseSuction = piece.radius + 35 + attractionLvl * 30;
+          const suctionRadius = isMagnetPill ? 650 : isInsulinActive ? Math.max(420, baseSuction * 2.2) : Math.max(320, baseSuction);
+          const suctionForce = isMagnetPill ? 480 : isInsulinActive ? 360 : 180 + attractionLvl * 35;
 
           // Pull proteins
           for (const protein of this.proteins) {
@@ -3093,6 +3640,7 @@ export class GameEngine {
               this.hostStatus.health = Math.max(0, +(this.hostStatus.health - 0.8).toFixed(1));
 
               if (org.isPlayer) {
+                this.pusHandledThisMatch++;
                 soundEngine.playEjectSpore();
                 this.addFloatingText(pus.x, pus.y - 25, '+35 PUS (INFECCIÓN)', '#a3e635');
               }
@@ -3103,6 +3651,7 @@ export class GameEngine {
               this.hostStatus.temperature = Math.max(37.0, +(this.hostStatus.temperature - 0.1).toFixed(1));
 
               if (org.isPlayer) {
+                this.pusHandledThisMatch++;
                 soundEngine.playCollect();
                 profileStorage.addCytes(2);
                 this.addFloatingText(pus.x, pus.y - 25, '¡PUS SANADO! +3% SALUD (+2 Cytes)', '#22d3ee');
@@ -3151,6 +3700,63 @@ export class GameEngine {
     this.hostStatus.hydration = Math.max(20, Math.round(75 - (100 - this.hostStatus.health) * 0.45));
     this.hostStatus.energyATP = Math.max(10, Math.round(95 - (100 - this.hostStatus.health) * 0.65));
 
+    // 5. Update Active Medical Treatment timer & circulating Medical Treatment entities in Battle Mode
+    if (this.hostStatus.activeTreatment) {
+      this.hostStatus.activeTreatment.remainingTime = Math.max(
+        0,
+        +(this.hostStatus.activeTreatment.remainingTime - dt).toFixed(2)
+      );
+      // Continuous treatment effects while active
+      if (this.hostStatus.activeTreatment.type === 'antibiotic') {
+        this.hostStatus.pusLevel = Math.max(0, +(this.hostStatus.pusLevel - 1.4 * dt).toFixed(1));
+        this.hostStatus.health = Math.min(100, +(this.hostStatus.health + 0.7 * dt).toFixed(2));
+      } else if (this.hostStatus.activeTreatment.type === 'vaccine') {
+        this.hostStatus.health = Math.min(100, +(this.hostStatus.health + 0.9 * dt).toFixed(2));
+        this.hostStatus.pusLevel = Math.max(0, +(this.hostStatus.pusLevel - 1.1 * dt).toFixed(1));
+      } else if (this.hostStatus.activeTreatment.type === 'antipyretic') {
+        this.hostStatus.temperature = Math.max(36.8, +(this.hostStatus.temperature - 0.15 * dt).toFixed(1));
+      } else if (this.hostStatus.activeTreatment.type === 'iv_serum') {
+        this.hostStatus.hydration = Math.min(100, Math.round(this.hostStatus.hydration + 2 * dt));
+        this.hostStatus.energyATP = Math.min(100, Math.round(this.hostStatus.energyATP + 2 * dt));
+      }
+
+      if (this.hostStatus.activeTreatment.remainingTime <= 0) {
+        this.hostStatus.activeTreatment = null;
+      }
+    }
+
+    // Update circulating Medical Treatments in bloodstream
+    for (const med of this.medicalTreatments) {
+      med.rotation += dt * 1.4;
+      if (!med.isAvailable) {
+        med.respawnTimer -= dt;
+        if (med.respawnTimer <= 0) {
+          med.isAvailable = true;
+          med.respawnTimer = 0;
+        }
+        continue;
+      }
+      med.x += med.vx * dt;
+      med.y += med.vy * dt;
+      if (Math.hypot(med.x, med.y) > WORLD_RADIUS - 160) {
+        med.vx = -med.vx;
+        med.vy = -med.vy;
+      }
+
+      for (const org of allOrganisms) {
+        if (!org.isAlive) continue;
+        for (const piece of org.pieces) {
+          if (Math.hypot(piece.x - med.x, piece.y - med.y) < piece.radius + med.radius) {
+            med.isAvailable = false;
+            med.respawnTimer = 18;
+            this.applyMedicalTreatment(med.type, med.x, med.y, org);
+            break;
+          }
+        }
+        if (!med.isAvailable) break;
+      }
+    }
+
     // Dynamic symptoms
     const symptoms: string[] = [];
     if (this.hostStatus.pusLevel > 15) symptoms.push('symptomPurulentExudate');
@@ -3161,6 +3767,134 @@ export class GameEngine {
     if (this.hostStatus.health < 15) symptoms.push('symptomSepticShock');
     if (immunePct >= 65) symptoms.push('symptomImmuneSurge');
     this.hostStatus.activeSymptoms = symptoms;
+  }
+
+  public applyMedicalTreatment(
+    type: MedicalTreatmentType,
+    originX?: number,
+    originY?: number,
+    triggeredBy?: Organism
+  ) {
+    const def = MEDICAL_TREATMENT_DEFS[type];
+    if (!def) return;
+    const t = getTranslations(profileStorage.getProfile().preferredLanguage || 'es');
+
+    const localizedNames: Record<MedicalTreatmentType, string> = {
+      antibiotic: t.treatmentAntibiotic,
+      analgesic: t.treatmentAnalgesic,
+      vaccine: t.treatmentVaccine,
+      antiviral_pill: t.treatmentAntiviral,
+      iv_serum: t.treatmentIvSerum,
+      antipyretic: t.treatmentAntipyretic,
+    };
+    const localizedEffects: Record<MedicalTreatmentType, string> = {
+      antibiotic: t.treatmentAntibioticEffect,
+      analgesic: t.treatmentAnalgesicEffect,
+      vaccine: t.treatmentVaccineEffect,
+      antiviral_pill: t.treatmentAntiviralEffect,
+      iv_serum: t.treatmentIvSerumEffect,
+      antipyretic: t.treatmentAntipyreticEffect,
+    };
+
+    const name = localizedNames[type] || def.name;
+    const clinicalEffect = localizedEffects[type] || def.clinicalEffect;
+
+    this.hostStatus.activeTreatment = {
+      type,
+      name,
+      clinicalEffect,
+      color: def.color,
+      remainingTime: def.durationSec,
+      totalDuration: def.durationSec,
+    };
+    this.hostStatus.treatmentsAdministered = (this.hostStatus.treatmentsAdministered || 0) + 1;
+    if (!triggeredBy || triggeredBy.isPlayer) {
+      this.treatmentsUsedThisMatch++;
+    }
+
+    const allOrgs: Organism[] = [];
+    if (this.player && this.player.isAlive) allOrgs.push(this.player);
+    for (const b of this.bots) if (b.isAlive) allOrgs.push(b);
+
+    if (type === 'antibiotic') {
+      // Lisis bacteriana: -22 ml Pus, shrinks Pathogens by 20%, +10% Patient Health
+      this.hostStatus.pusLevel = Math.max(0, +(this.hostStatus.pusLevel - 22).toFixed(1));
+      this.hostStatus.health = Math.min(100, +(this.hostStatus.health + 10).toFixed(1));
+      // Clear up to 6 pus pustules
+      this.pusPustules.splice(0, Math.min(6, this.pusPustules.length));
+      for (const org of allOrgs) {
+        if (org.faction === 'pathogen') {
+          for (const p of org.pieces) {
+            p.mass = Math.max(MIN_START_MASS, p.mass * 0.8);
+            p.targetRadius = GameEngine.massToRadius(p.mass);
+          }
+        }
+      }
+    } else if (type === 'analgesic') {
+      // Anti-inflammatory: -0.6 °C Fever, +14% ATP, +30% speed to collector/Immune
+      this.hostStatus.temperature = Math.max(36.8, +(this.hostStatus.temperature - 0.6).toFixed(1));
+      this.hostStatus.energyATP = Math.min(100, Math.round(this.hostStatus.energyATP + 14));
+      this.hostStatus.health = Math.min(100, +(this.hostStatus.health + 6).toFixed(1));
+      const target = triggeredBy || this.player;
+      if (target) {
+        const prev = target.speedMultiplier;
+        target.speedMultiplier = Math.max(target.speedMultiplier, 1.3);
+        setTimeout(() => {
+          target.speedMultiplier = prev;
+        }, 10000);
+      }
+    } else if (type === 'vaccine') {
+      // mRNA Vaccine: +35% speed to Immune cells, +14% Health, -16 ml Pus
+      this.hostStatus.health = Math.min(100, +(this.hostStatus.health + 14).toFixed(1));
+      this.hostStatus.pusLevel = Math.max(0, +(this.hostStatus.pusLevel - 16).toFixed(1));
+      for (const org of allOrgs) {
+        if (org.faction === 'immune') {
+          const prev = org.speedMultiplier;
+          org.speedMultiplier = Math.max(org.speedMultiplier, 1.35);
+          for (const p of org.pieces) {
+            p.mass += 20;
+            p.targetRadius = GameEngine.massToRadius(p.mass);
+          }
+          setTimeout(() => {
+            org.speedMultiplier = prev;
+          }, 12000);
+        }
+      }
+    } else if (type === 'antiviral_pill') {
+      // Antiviral Pill: Slows Pathogens by 30%, -14 ml Pus, +9% Health
+      this.hostStatus.pusLevel = Math.max(0, +(this.hostStatus.pusLevel - 14).toFixed(1));
+      this.hostStatus.health = Math.min(100, +(this.hostStatus.health + 9).toFixed(1));
+      for (const org of allOrgs) {
+        if (org.faction === 'pathogen') {
+          const prev = org.speedMultiplier;
+          org.speedMultiplier = 0.7;
+          setTimeout(() => {
+            org.speedMultiplier = prev;
+          }, 10000);
+        }
+      }
+    } else if (type === 'iv_serum') {
+      // IV Serum: +22% Hydration, +18% ATP, +35 Mass to collector/player
+      this.hostStatus.hydration = Math.min(100, Math.round(this.hostStatus.hydration + 22));
+      this.hostStatus.energyATP = Math.min(100, Math.round(this.hostStatus.energyATP + 18));
+      this.hostStatus.health = Math.min(100, +(this.hostStatus.health + 7).toFixed(1));
+      const target = triggeredBy || this.player;
+      if (target && target.pieces.length > 0) {
+        target.pieces[0].mass += 35;
+        target.pieces[0].targetRadius = GameEngine.massToRadius(target.pieces[0].mass);
+      }
+    } else if (type === 'antipyretic') {
+      // Antipyretic: Drops Fever by -1.1 °C, +8% Health
+      this.hostStatus.temperature = Math.max(36.8, +(this.hostStatus.temperature - 1.1).toFixed(1));
+      this.hostStatus.health = Math.min(100, +(this.hostStatus.health + 8).toFixed(1));
+    }
+
+    const fx = originX ?? (this.player?.pieces[0]?.x || 0);
+    const fy = originY ?? (this.player?.pieces[0]?.y || 0);
+    soundEngine.playCollect();
+    this.addFloatingText(fx, fy - 35, `💊 ${name.toUpperCase()}`, def.glowColor);
+    this.addFloatingText(fx, fy - 14, clinicalEffect, '#ffffff');
+    this.dispatchStats();
   }
 
   // Render Battle Mode Pus Pustules on the canvas
@@ -3198,6 +3932,77 @@ export class GameEngine {
       ctx.beginPath();
       ctx.arc(r * 0.35, r * 0.2, r * 0.18, 0, Math.PI * 2);
       ctx.fill();
+
+      ctx.restore();
+    }
+  }
+
+  // Render Battle Mode Medical Treatments (Antibiotics, Analgesics, Vaccines, Antiviral Pills, IV Serum, Antipyretics)
+  private renderMedicalTreatments(ctx: CanvasRenderingContext2D) {
+    if (this.gameMode !== 'team') return;
+    const t = getTranslations(profileStorage.getProfile().preferredLanguage || 'es');
+    const localizedNames: Record<MedicalTreatmentType, string> = {
+      antibiotic: t.treatmentAntibiotic,
+      analgesic: t.treatmentAnalgesic,
+      vaccine: t.treatmentVaccine,
+      antiviral_pill: t.treatmentAntiviral,
+      iv_serum: t.treatmentIvSerum,
+      antipyretic: t.treatmentAntipyretic,
+    };
+
+    for (const med of this.medicalTreatments) {
+      if (!med.isAvailable) continue;
+      if (this.isOutsideViewport(med.x, med.y, med.radius * 3.5)) continue;
+
+      ctx.save();
+      ctx.translate(med.x, med.y);
+
+      // Medical cross / aura ring
+      ctx.beginPath();
+      ctx.arc(0, 0, med.radius * 1.45, 0, Math.PI * 2);
+      ctx.fillStyle = `${med.color}28`;
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = med.glowColor;
+      ctx.setLineDash([5, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Capsule body
+      ctx.save();
+      ctx.rotate(med.rotation * 0.5);
+      const w = med.radius * 1.5;
+      const h = med.radius * 0.82;
+      ctx.beginPath();
+      ctx.roundRect(-w / 2, -h / 2, w / 2, h, [h / 2, 0, 0, h / 2]);
+      ctx.fillStyle = med.pillColorA;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.roundRect(0, -h / 2, w / 2, h, [0, h / 2, h / 2, 0]);
+      ctx.fillStyle = med.pillColorB;
+      ctx.fill();
+      ctx.lineWidth = 1.8;
+      ctx.strokeStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect(-w / 2, -h / 2, w, h, h / 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // Symbol & Name
+      ctx.font = "800 9px 'JetBrains Mono', monospace";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+      ctx.strokeText(med.symbol, 0, 0);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(med.symbol, 0, 0);
+
+      const displayName = localizedNames[med.type] || med.name;
+      ctx.font = "800 10px 'Plus Jakarta Sans', sans-serif";
+      ctx.strokeText(`💊 ${displayName}`, 0, -med.radius - 10);
+      ctx.fillStyle = med.glowColor;
+      ctx.fillText(`💊 ${displayName}`, 0, -med.radius - 10);
 
       ctx.restore();
     }
@@ -3560,16 +4365,141 @@ export class GameEngine {
       ctx.fillStyle = '#fde047';
       ctx.fillText(Math.round(piece.mass).toString(), 0, fontSize * 0.9);
 
-      // 4b. Public DEV Badge pill above DEV microbe name (visible to everyone in-game)
-      if (org.isPlayer && this.isPlayerDev && this.playerDevBadge && piece === org.pieces[0]) {
-        const badgeText = `[${this.playerDevBadge.title || 'DEV'}]`;
-        const badgeColor = this.playerDevBadge.color || '#fbbf24';
-        ctx.font = `800 ${Math.max(10, Math.round(fontSize * 0.72))}px 'Plus Jakarta Sans', system-ui, sans-serif`;
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
-        ctx.strokeText(badgeText, 0, -fontSize * 0.95);
+      // 4b. Authentic Capsule Pill DEV Badge above DEV microbe name (Matches Profile & DEV Panel Preview 100%)
+      const remoteDevBadge = !org.isPlayer ? this.remotePlayerBadges.get(org.id) : undefined;
+      if (((org.isPlayer && this.isPlayerDev && this.playerDevBadge) || remoteDevBadge) && piece === org.pieces[0]) {
+        const activeBadge = org.isPlayer ? this.playerDevBadge : remoteDevBadge;
+        const badgeTitle = (activeBadge?.title || 'DEV').toUpperCase();
+        const badgeColor = activeBadge?.color || '#fbbf24';
+        const icon1 = activeBadge?.iconPreset1 || 'code';
+        const icon2 = activeBadge?.iconPreset2 || 'shield';
+
+        const pillFontSize = Math.max(6.5, Math.min(9.5, Math.round(fontSize * 0.44)));
+        ctx.save();
+        ctx.font = `900 ${pillFontSize}px 'JetBrains Mono', monospace`;
+        const textWidth = ctx.measureText(badgeTitle).width;
+        const iconSz = pillFontSize * 0.85;
+        const padX = pillFontSize * 0.5;
+        const gap = pillFontSize * 0.32;
+        const pillW = padX * 2 + iconSz * 2 + gap * 2 + textWidth;
+        const pillH = pillFontSize * 1.38;
+        const pillY = -fontSize * 0.95 - pillH * 0.35;
+
+        // Pill background & subtle glowing border matching DevBadge.tsx
+        ctx.beginPath();
+        ctx.roundRect(-pillW / 2, pillY - pillH / 2, pillW, pillH, pillH / 2);
+        ctx.fillStyle = `${badgeColor}28`;
+        ctx.shadowColor = badgeColor;
+        ctx.shadowBlur = 6;
+        ctx.fill();
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = badgeColor;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Helper to draw vector icon preset on canvas
+        const drawPresetIcon = (preset: string, cx: number, cy: number, r: number) => {
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.strokeStyle = badgeColor;
+          ctx.fillStyle = badgeColor;
+          ctx.lineWidth = Math.max(1.3, r * 0.24);
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+
+          if (preset === 'shield') {
+            ctx.beginPath();
+            ctx.moveTo(0, -r);
+            ctx.lineTo(r * 0.85, -r * 0.55);
+            ctx.lineTo(r * 0.7, r * 0.35);
+            ctx.lineTo(0, r);
+            ctx.lineTo(-r * 0.7, r * 0.35);
+            ctx.lineTo(-r * 0.85, -r * 0.55);
+            ctx.closePath();
+            ctx.stroke();
+          } else if (preset === 'crown') {
+            ctx.beginPath();
+            ctx.moveTo(-r * 0.85, r * 0.65);
+            ctx.lineTo(-r * 0.95, -r * 0.45);
+            ctx.lineTo(-r * 0.35, r * 0.05);
+            ctx.lineTo(0, -r * 0.75);
+            ctx.lineTo(r * 0.35, r * 0.05);
+            ctx.lineTo(r * 0.95, -r * 0.45);
+            ctx.lineTo(r * 0.85, r * 0.65);
+            ctx.closePath();
+            ctx.stroke();
+          } else if (preset === 'zap') {
+            ctx.beginPath();
+            ctx.moveTo(r * 0.15, -r * 0.95);
+            ctx.lineTo(-r * 0.7, r * 0.1);
+            ctx.lineTo(r * 0.05, r * 0.1);
+            ctx.lineTo(-r * 0.15, r * 0.95);
+            ctx.lineTo(r * 0.7, -r * 0.1);
+            ctx.lineTo(-r * 0.05, -r * 0.1);
+            ctx.closePath();
+            ctx.fill();
+          } else if (preset === 'star' || preset === 'sparkles') {
+            ctx.beginPath();
+            for (let s = 0; s < 4; s++) {
+              const a = (s / 4) * Math.PI * 2;
+              ctx.moveTo(0, 0);
+              ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+            }
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(0, 0, r * 0.35, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (preset === 'flame') {
+            ctx.beginPath();
+            ctx.arc(0, r * 0.2, r * 0.65, 0, Math.PI);
+            ctx.lineTo(0, -r * 0.95);
+            ctx.closePath();
+            ctx.fill();
+          } else if (preset === 'check') {
+            ctx.beginPath();
+            ctx.arc(0, 0, r * 0.9, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(-r * 0.4, 0);
+            ctx.lineTo(-r * 0.1, r * 0.35);
+            ctx.lineTo(r * 0.45, -r * 0.35);
+            ctx.stroke();
+          } else if (preset === 'terminal') {
+            ctx.beginPath();
+            ctx.moveTo(-r * 0.75, -r * 0.5);
+            ctx.lineTo(-r * 0.15, 0);
+            ctx.lineTo(-r * 0.75, r * 0.5);
+            ctx.moveTo(r * 0.05, r * 0.5);
+            ctx.lineTo(r * 0.75, r * 0.5);
+            ctx.stroke();
+          } else {
+            // 'code' </>
+            ctx.beginPath();
+            ctx.moveTo(-r * 0.35, -r * 0.55);
+            ctx.lineTo(-r * 0.9, 0);
+            ctx.lineTo(-r * 0.35, r * 0.55);
+            ctx.moveTo(r * 0.35, -r * 0.55);
+            ctx.lineTo(r * 0.9, 0);
+            ctx.lineTo(r * 0.35, r * 0.55);
+            ctx.stroke();
+          }
+          ctx.restore();
+        };
+
+        const leftIconCenter = -pillW / 2 + padX + iconSz / 2;
+        const rightIconCenter = pillW / 2 - padX - iconSz / 2;
+        drawPresetIcon(icon1, leftIconCenter, pillY, iconSz * 0.52);
+        drawPresetIcon(icon2, rightIconCenter, pillY, iconSz * 0.52);
+
+        // Center Title Text
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.85)';
+        ctx.strokeText(badgeTitle, 0, pillY + 0.5);
         ctx.fillStyle = badgeColor;
-        ctx.fillText(badgeText, 0, -fontSize * 0.95);
+        ctx.fillText(badgeTitle, 0, pillY + 0.5);
+        ctx.restore();
       }
 
       // 5. Royal Crown floating above leader cell (Grand scaled crown for the biggest microbe)
@@ -3873,6 +4803,313 @@ export class GameEngine {
     ctx.restore();
   }
 
+  // Update 36 Biological Hormones across the 3 Endocrine Bars & Organs
+  private updateHormones(dt: number) {
+    const organisms = this.player && this.player.isAlive ? [this.player, ...this.bots] : [...this.bots];
+    const t = getTranslations(profileStorage.getProfile().preferredLanguage || 'es');
+
+    // Update active player hormone buff timer & continuous physiological effects
+    if (this.activeHormoneBuff && this.player && this.player.isAlive) {
+      this.activeHormoneBuff.remainingTime = Math.max(0, +(this.activeHormoneBuff.remainingTime - dt).toFixed(2));
+
+      // Somatotropin (GH): continuous +4 mass/sec cellular growth
+      if (this.activeHormoneBuff.type === 'somatotropin_gh') {
+        for (const piece of this.player.pieces) {
+          piece.mass += 4.0 * dt;
+          piece.targetRadius = GameEngine.massToRadius(piece.mass);
+        }
+      }
+      // Serotonin (5HT): maintain 0s remerge timer during buff
+      if (this.activeHormoneBuff.type === 'serotonin') {
+        for (const piece of this.player.pieces) {
+          piece.remergeTimer = 0;
+        }
+      }
+      // Melatonin (MEL): keep antibodies calmed around player
+      if (this.activeHormoneBuff.type === 'melatonin') {
+        for (const ab of this.antibodies) {
+          if (ab.targetOrganismId === this.player.id) {
+            ab.targetOrganismId = null;
+            ab.alertLevel = 0;
+          }
+        }
+      }
+
+      if (this.activeHormoneBuff.remainingTime <= 0) {
+        this.activeHormoneBuff = null;
+      }
+    }
+
+    const hormoneNameMap: Record<HormoneType, string> = {
+      adrenaline: t.hormoneAdrenaline,
+      noradrenaline: t.hormoneNoradrenaline,
+      insulin: t.hormoneInsulin,
+      glucagon: t.hormoneGlucagon,
+      somatotropin_gh: t.hormoneSomatotropin,
+      melatonin: t.hormoneMelatonin,
+      thyroxine_t4: t.hormoneThyroxine,
+      cortisol: t.hormoneCortisol,
+      dopamine: t.hormoneDopamine,
+      serotonin: t.hormoneSerotonin,
+      oxytocin: t.hormoneOxytocin,
+      erythropoietin: t.hormoneEpo,
+    };
+
+    const hormoneEffectMap: Record<HormoneType, string> = {
+      adrenaline: t.hormoneAdrenalineEffect,
+      noradrenaline: t.hormoneNoradrenalineEffect,
+      insulin: t.hormoneInsulinEffect,
+      glucagon: t.hormoneGlucagonEffect,
+      somatotropin_gh: t.hormoneSomatotropinEffect,
+      melatonin: t.hormoneMelatoninEffect,
+      thyroxine_t4: t.hormoneThyroxineEffect,
+      cortisol: t.hormoneCortisolEffect,
+      dopamine: t.hormoneDopamineEffect,
+      serotonin: t.hormoneSerotoninEffect,
+      oxytocin: t.hormoneOxytocinEffect,
+      erythropoietin: t.hormoneEpoEffect,
+    };
+
+    for (const h of this.hormones) {
+      h.pulsePhase += dt * 3.2;
+
+      if (!h.isAvailable) {
+        h.respawnTimer -= dt;
+        if (h.respawnTimer <= 0) {
+          h.isAvailable = true;
+          h.respawnTimer = 0;
+        }
+        continue;
+      }
+
+      // Gentle endocrine circulation drift
+      h.x += h.vx * dt;
+      h.y += h.vy * dt;
+      const distFromCenter = Math.hypot(h.x, h.y);
+      if (distFromCenter > WORLD_RADIUS - 150) {
+        h.vx = -h.vx;
+        h.vy = -h.vy;
+      }
+
+      // Check hormone absorption by any microbe
+      for (const org of organisms) {
+        if (!org.isAlive) continue;
+        for (const piece of org.pieces) {
+          const dist = Math.hypot(piece.x - h.x, piece.y - h.y);
+          if (dist < piece.radius + h.radius) {
+            h.isAvailable = false;
+            h.respawnTimer = 16;
+
+            // Grant hormone mass bonus
+            piece.mass += h.massBonus;
+            piece.targetRadius = GameEngine.massToRadius(piece.mass);
+            org.score += h.massBonus;
+
+            const durationSec = h.type === 'melatonin' || h.type === 'thyroxine_t4' || h.type === 'cortisol' ? 12 : 10;
+
+            // Special hormone physiological effects
+            if (h.speedBoost) {
+              const prevMult = org.speedMultiplier;
+              org.speedMultiplier = Math.max(org.speedMultiplier, h.speedBoost);
+              setTimeout(() => {
+                org.speedMultiplier = prevMult;
+              }, durationSec * 1000);
+            }
+            if (h.type === 'serotonin') {
+              // Instant cell fusion harmony (0s cooldown)
+              for (const p of org.pieces) p.remergeTimer = 0;
+            }
+            if (h.type === 'melatonin') {
+              // Calm all antibodies targeting this organism
+              for (const ab of this.antibodies) {
+                if (ab.targetOrganismId === org.id) {
+                  ab.targetOrganismId = null;
+                  ab.alertLevel = 0;
+                }
+              }
+            }
+            if (h.type === 'erythropoietin') {
+              // EPO Hematopoiesis: spawn 4 fresh Red Blood Cells right around the organism
+              for (let r = 0; r < 4; r++) {
+                const a = (r / 4) * Math.PI * 2 + Math.random() * 0.4;
+                const d = piece.radius + 45 + Math.random() * 45;
+                this.redBloodCells.push({
+                  id: `rbc_epo_${Date.now()}_${r}`,
+                  x: Math.max(-WORLD_RADIUS + 180, Math.min(WORLD_RADIUS - 180, piece.x + Math.cos(a) * d)),
+                  y: Math.max(-WORLD_RADIUS + 180, Math.min(WORLD_RADIUS - 180, piece.y + Math.sin(a) * d)),
+                  radius: 18 + Math.random() * 6,
+                  mass: 22,
+                  rotation: Math.random() * Math.PI * 2,
+                  rotationSpeed: 0.3,
+                  vx: (Math.random() - 0.5) * 14,
+                  vy: (Math.random() - 0.5) * 14,
+                  biconcaveScale: 0.72,
+                });
+              }
+            }
+            if (h.type === 'oxytocin' && this.gameMode === 'team') {
+              this.hostStatus.health = Math.min(100, +(this.hostStatus.health + 6).toFixed(1));
+            }
+            if (h.type === 'adrenaline' && this.gameMode === 'team') {
+              this.hostStatus.energyATP = Math.min(100, Math.round(this.hostStatus.energyATP + 6));
+            }
+
+            if (org.isPlayer) {
+              this.hormonesAbsorbedThisMatch++;
+              const localName = hormoneNameMap[h.type] || h.name;
+              const localEffect = hormoneEffectMap[h.type] || h.effectDesc;
+              this.activeHormoneBuff = {
+                type: h.type,
+                name: localName,
+                symbol: h.symbol,
+                effectDesc: localEffect,
+                color: h.color,
+                remainingTime: durationSec,
+                totalDuration: durationSec,
+              };
+              profileStorage.addCytes(h.cytesBonus);
+              soundEngine.playCollect();
+              this.addFloatingText(
+                h.x,
+                h.y - 32,
+                `🧪 ${localName.toUpperCase()} +${h.massBonus} ${t.massLabel} (+${h.cytesBonus} ${t.cytes})`,
+                h.glowColor
+              );
+              this.addFloatingText(h.x, h.y - 12, localEffect, '#ffffff');
+            }
+
+            for (let p = 0; p < 12; p++) {
+              const a = (p / 12) * Math.PI * 2;
+              this.particles.push({
+                x: h.x,
+                y: h.y,
+                vx: Math.cos(a) * 110,
+                vy: Math.sin(a) * 110,
+                radius: 3.5,
+                color: h.glowColor,
+                alpha: 0.95,
+                life: 0.6,
+                maxLife: 0.6,
+              });
+            }
+            break;
+          }
+        }
+        if (!h.isAvailable) break;
+      }
+    }
+  }
+
+  // Render the 3 Endocrine Bars / Hormone Hubs in the Bloodstream
+  private renderEndocrineBars(ctx: CanvasRenderingContext2D) {
+    const time = performance.now() * 0.002;
+    for (const bar of ENDOCRINE_BARS) {
+      if (this.isOutsideViewport(bar.x, bar.y, bar.radius * 1.8)) continue;
+
+      ctx.save();
+      ctx.translate(bar.x, bar.y);
+
+      const pulse = Math.sin(time + bar.y * 0.01) * 12;
+      const r = bar.radius + pulse;
+
+      const grad = ctx.createRadialGradient(0, 0, r * 0.15, 0, 0, r);
+      grad.addColorStop(0, `${bar.color}44`);
+      grad.addColorStop(0.65, `${bar.color}1c`);
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Hexagonal Endocrine Lounge Ring
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 + time * 0.25;
+        const hx = Math.cos(a) * (r * 0.72);
+        const hy = Math.sin(a) * (r * 0.72);
+        if (i === 0) ctx.moveTo(hx, hy);
+        else ctx.lineTo(hx, hy);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = `${bar.glowColor}88`;
+      ctx.lineWidth = 3;
+      ctx.setLineDash([10, 6]);
+      ctx.stroke();
+
+      // Bar Title Banner
+      ctx.setLineDash([]);
+      ctx.font = "900 16px 'Plus Jakarta Sans', sans-serif";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+      ctx.strokeText(`🧪 ${bar.name.toUpperCase()}`, 0, -r * 0.52);
+      ctx.fillStyle = bar.glowColor;
+      ctx.fillText(`🧪 ${bar.name.toUpperCase()}`, 0, -r * 0.52);
+
+      ctx.font = "700 11px 'Plus Jakarta Sans', sans-serif";
+      ctx.strokeText(bar.subtitle, 0, -r * 0.52 + 20);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(bar.subtitle, 0, -r * 0.52 + 20);
+
+      ctx.restore();
+    }
+  }
+
+  // Render the 12 Types of Biological Hormones (Hexagonal Molecular Rings)
+  private renderHormones(ctx: CanvasRenderingContext2D) {
+    for (const h of this.hormones) {
+      if (!h.isAvailable) continue;
+      if (this.isOutsideViewport(h.x, h.y, h.radius * 3.5)) continue;
+
+      ctx.save();
+      ctx.translate(h.x, h.y);
+
+      const scale = 1 + Math.sin(h.pulsePhase) * 0.08;
+      ctx.scale(scale, scale);
+
+      // Outer hormone aura
+      ctx.beginPath();
+      ctx.arc(0, 0, h.radius * 1.65, 0, Math.PI * 2);
+      ctx.fillStyle = `${h.color}33`;
+      ctx.fill();
+
+      // Hexagonal steroid/peptide molecular ring
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 + h.pulsePhase * 0.25;
+        const hx = Math.cos(a) * h.radius;
+        const hy = Math.sin(a) * h.radius;
+        if (i === 0) ctx.moveTo(hx, hy);
+        else ctx.lineTo(hx, hy);
+      }
+      ctx.closePath();
+      ctx.fillStyle = h.color;
+      ctx.fill();
+      ctx.lineWidth = 2.2;
+      ctx.strokeStyle = h.glowColor;
+      ctx.stroke();
+
+      // Hormone chemical symbol inside hexagon
+      ctx.font = "800 9px 'JetBrains Mono', monospace";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(h.symbol, 0, 0);
+
+      // Hormone label above molecule
+      ctx.font = "700 9px 'Plus Jakarta Sans', sans-serif";
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+      ctx.strokeText(h.name, 0, -h.radius - 8);
+      ctx.fillStyle = h.glowColor;
+      ctx.fillText(h.name, 0, -h.radius - 8);
+
+      ctx.restore();
+    }
+  }
+
   // Frustum culling helper
   private isOutsideViewport(x: number, y: number, margin: number): boolean {
     const halfW = (this.canvas.width / 2) / this.cameraZoom + margin;
@@ -3885,3 +5122,4 @@ export class GameEngine {
     );
   }
 }
+

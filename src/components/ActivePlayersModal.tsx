@@ -38,14 +38,13 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
 
   useEffect(() => {
     fetchActivePlayers();
-    const interval = setInterval(fetchActivePlayers, 6000);
+    const interval = setInterval(fetchActivePlayers, 2000);
     return () => clearInterval(interval);
   }, []);
 
   const myDeviceId = profileStorage.getDeviceId();
 
   const filteredPlayers = players.filter((p) => {
-    if (p.deviceId === myDeviceId) return false;
     if (filter !== 'all' && p.faction !== filter) return false;
     if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
@@ -100,7 +99,7 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
               placeholder={t.searchMicrobePlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 min-w-[200px] px-3.5 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400"
+              className="flex-1 min-w-[160px] px-3.5 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-cyan-400"
             />
 
             <div className="flex items-center gap-1.5 text-xs font-bold flex-wrap">
@@ -148,12 +147,17 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
             ) : (
               filteredPlayers.map((player) => {
                 const isImmune = player.faction === 'immune';
+                const isMe = player.deviceId === myDeviceId;
                 return (
                   <div
                     key={player.deviceId}
-                    className="p-3.5 rounded-2xl bg-black/40 border border-white/10 hover:border-cyan-500/40 transition-all flex items-center justify-between gap-3 flex-wrap"
+                    className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 flex-wrap ${
+                      isMe
+                        ? 'bg-emerald-950/30 border-emerald-500/40'
+                        : 'bg-black/40 border-white/10 hover:border-cyan-500/40'
+                    }`}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       {/* Faction & Status Badge */}
                       <div
                         className={`w-10 h-10 rounded-2xl flex items-center justify-center border shadow-inner shrink-0 ${
@@ -165,9 +169,11 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
                         {isImmune ? <Shield className="w-5 h-5" /> : <Skull className="w-5 h-5" />}
                       </div>
 
-                      <div>
+                      <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-sm font-black text-white">{player.name}</h4>
+                          <h4 className="text-sm font-black text-white break-words">
+                            {player.name} {isMe && <span className="text-emerald-400 font-bold">{t.youSuffix}</span>}
+                          </h4>
                           {player.isDev && player.devBadge && (
                             <DevBadge config={player.devBadge as any} size="sm" tooltip={t.devBadgeTooltip} />
                           )}
@@ -179,6 +185,10 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
                             }`}
                           >
                             {isImmune ? t.defenderRole : t.pathogenRole}
+                          </span>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[9px] font-black uppercase">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                            {t.onlineBadge}
                           </span>
                         </div>
 
@@ -192,19 +202,25 @@ export const ActivePlayersModal: React.FC<ActivePlayersModalProps> = ({ onClose,
                             {t.massLabel}: <strong className="text-white">{player.mass}</strong>
                           </span>
                           <span>·</span>
-                          <span className="text-[10px] text-neutral-500">ID: {player.deviceId}</span>
+                          <span className="text-[10px] text-neutral-500 truncate">ID: {player.deviceId}</span>
                         </div>
                       </div>
                     </div>
 
-                    {/* Invite Button */}
-                    <button
-                      onClick={() => setSelectedTarget(player)}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-neutral-950 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(6,182,212,0.35)] transition-all transform active:scale-95 cursor-pointer shrink-0"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>{t.inviteToRoomBtn}</span>
-                    </button>
+                    {/* Invite Button (for other connected players) or Live Self Status Badge */}
+                    {isMe ? (
+                      <span className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[10px] font-black uppercase tracking-wider shrink-0">
+                        ● {t.onlineBadge} {t.youSuffix}
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setSelectedTarget(player)}
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-neutral-950 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(6,182,212,0.35)] transition-all transform active:scale-95 cursor-pointer shrink-0"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>{t.inviteToRoomBtn}</span>
+                      </button>
+                    )}
                   </div>
                 );
               })

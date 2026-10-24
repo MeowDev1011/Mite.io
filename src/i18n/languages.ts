@@ -361,6 +361,7 @@ export interface TranslationStrings {
   devPanelTitle: string;
   devCustomColor: string;
   devCustomRole: string;
+  devQuickShortcutsLabel: string;
   devIconPreset1: string;
   devIconPreset2: string;
   devCustomSvgCode: string;
@@ -500,26 +501,38 @@ export interface TranslationStrings {
   shopRequiresAchievement: string;
   youSuffix: string;
   actualDeviceLabel: string;
-  // 16+ Moderation Functions, Interactive Warnings & Tiered Shop Economy
+  // 20 Moderation Functions, Custom Cytes Value, Interactive Warnings & Tiered Shop Economy
   devModInteractiveWarnBtn: string;
   devModFreezeBtn: string;
   devModUnfreezeBtn: string;
   devModSlowBtn: string;
   devModUnslowBtn: string;
   devModDrainMassBtn: string;
+  devModBoostMassBtn: string;
   devModLockSplitBtn: string;
   devModUnlockSplitBtn: string;
   devModLockEjectBtn: string;
   devModUnlockEjectBtn: string;
+  devModCustomCytesLabel: string;
+  devCustomCytesPlaceholder: string;
+  devAddCustomCytesBtn: string;
+  devSubCustomCytesBtn: string;
+  devSetCustomCytesBtn: string;
   devModGiftCytesBtn: string;
   devModFineCytesBtn: string;
   devModResetUpgradesBtn: string;
   devModStripOrgansBtn: string;
+  devModResetSkinsBtn: string;
   devModForceRenameBtn: string;
+  devModInvertControlsBtn: string;
+  devModNormalControlsBtn: string;
   devModKickMatchBtn: string;
   devModTempBan5mBtn: string;
   devModPardonBtn: string;
   devWarnComposerTitle: string;
+  devWarnHowItReachesTitle: string;
+  devWarnHowItReachesDesc: string;
+  devWarnPreviewBtn: string;
   devWarnCustomMessageLabel: string;
   devWarnCustomMessagePlaceholder: string;
   devWarnQuestionLabel: string;
@@ -541,6 +554,7 @@ export interface TranslationStrings {
   devSlowedBadge: string;
   devSplitLockedBadge: string;
   devEjectLockedBadge: string;
+  devControlsInvertedBadge: string;
   devTempBannedBadge: string;
   devOnlyRealUsersNotice: string;
   devUserNotExistingToast: string;
@@ -551,6 +565,89 @@ export interface TranslationStrings {
   tierBasicBadge: string;
   tierNormalBadge: string;
   tierVipBadge: string;
+  // Podium, Estado de Tratamiento & Paciente, Medical Treatments & 12 Hormones
+  podiumTitle: string;
+  treatmentAndPatientStatusTitle: string;
+  activeTreatmentLabel: string;
+  noActiveTreatmentLabel: string;
+  administerTreatmentLabel: string;
+  treatmentAntibiotic: string;
+  treatmentAnalgesic: string;
+  treatmentVaccine: string;
+  treatmentAntiviral: string;
+  treatmentIvSerum: string;
+  treatmentAntipyretic: string;
+  treatmentAntibioticEffect: string;
+  treatmentAnalgesicEffect: string;
+  treatmentVaccineEffect: string;
+  treatmentAntiviralEffect: string;
+  treatmentIvSerumEffect: string;
+  treatmentAntipyreticEffect: string;
+  activeHormoneLabel: string;
+  hormoneAdrenaline: string;
+  hormoneNoradrenaline: string;
+  hormoneInsulin: string;
+  hormoneGlucagon: string;
+  hormoneSomatotropin: string;
+  hormoneMelatonin: string;
+  hormoneThyroxine: string;
+  hormoneCortisol: string;
+  hormoneDopamine: string;
+  hormoneSerotonin: string;
+  hormoneOxytocin: string;
+  hormoneEpo: string;
+  hormoneAdrenalineEffect: string;
+  hormoneNoradrenalineEffect: string;
+  hormoneInsulinEffect: string;
+  hormoneGlucagonEffect: string;
+  hormoneSomatotropinEffect: string;
+  hormoneMelatoninEffect: string;
+  hormoneThyroxineEffect: string;
+  hormoneCortisolEffect: string;
+  hormoneDopamineEffect: string;
+  hormoneSerotoninEffect: string;
+  hormoneOxytocinEffect: string;
+  hormoneEpoEffect: string;
+  // Daily 24h Leaderboard, Bot Personalities, Achievement Difficulty Tiers & Virtual Joystick
+  dailyLeaderboardBtn: string;
+  dailyLeaderboardTitle: string;
+  dailyLeaderboardSubtitle: string;
+  dailyRefreshTitle: string;
+  dailyPlayersTab: string;
+  dailyBotsTab: string;
+  dailyFeaturedTab: string;
+  dailyMostCytesTab: string;
+  dailyLongestSurvivalTab: string;
+  dailyHighestMassTab: string;
+  dailyCytesLeaderLabel: string;
+  dailySurvivalLeaderLabel: string;
+  dailyMassLeaderLabel: string;
+  dailyAliveSuffix: string;
+  dailyNoRecordsToday: string;
+  dailyPlayersRankingHeader: string;
+  dailyBotsRankingHeader: string;
+  dailySortedBy: string;
+  dailyTimeCol: string;
+  dailyAiLabel: string;
+  botPersonalitySniper: string;
+  botPersonalityZigzagger: string;
+  botPersonalityOpportunist: string;
+  botPersonalityHormoneHunter: string;
+  botPersonalityFarmer: string;
+  botPersonalityBaiter: string;
+  botPersonalityCasual: string;
+  achDifficultyEasy: string;
+  achDifficultyNormal: string;
+  achDifficultyHard: string;
+  achDifficultySuperHard: string;
+  achTabEasy: string;
+  achTabNormal: string;
+  achTabHard: string;
+  achTabSuperHard: string;
+  joystickTitle: string;
+  joystickSliding: string;
+  joystickSlidePanel: string;
+  patientVitalsShort: string;
 }
 
 // Translations dictionary
@@ -668,8 +765,8 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     battleStep3Desc: 'Alcanzá 100 de masa sobre un órgano (Corazón, Cerebro, Pulmones, Hígado, Bazo) para reclamarlo y asegurar bonificaciones estratégicas.',
     battleStep4Title: '4. Condición de Victoria',
     battleStep4Desc: 'El bando que logre 100% de dominancia en el torrente asegura el destino del huésped humano.',
-    // 5 Aspect Upgrades up to Level 1500
-    upgradeTabTitle: 'Mejoras Celulares (Nivel 1500)',
+    // 5 Aspect Upgrades
+    upgradeTabTitle: 'Mejoras Celulares',
     upgradeLevelLabel: 'Nivel',
     upgradeCostLabel: 'Costo',
     upgradeMaxReached: 'Nivel Máximo (1500)',
@@ -718,7 +815,7 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     humanHealth: 'Salud',
     pusLevelLabel: 'Exudado de Pus',
     // Home Upgrades
-    homeUpgradesBtn: 'Mejoras (Nivel 1500)',
+    homeUpgradesBtn: 'Mejoras',
     upgradesHeroTitle: 'Evolución & Mejoras Celulares',
     upgradesHeroSubtitle: 'Subí hasta el nivel 1500 en los 5 aspectos biológicos para dominar el torrente',
     quickUpgrade1: '+1 Nivel',
@@ -866,7 +963,8 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     devBadgeTitle: 'Personalizar Etiqueta DEV',
     devPanelTitle: 'Panel de Administración DEV',
     devCustomColor: 'Color Hexadecimal (Defecto: Dorado)',
-    devCustomRole: 'Título de la Etiqueta',
+    devCustomRole: 'Título de la Etiqueta (Máx. 15 caracteres)',
+    devQuickShortcutsLabel: 'Atajos Rápidos (Defecto DEV + 5 Atajos):',
     devIconPreset1: 'Escoger Icono Principal',
     devIconPreset2: 'Escoger Icono Secundario',
     devCustomSvgCode: 'Introducir código SVG (<svg...)',
@@ -1010,19 +1108,31 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     devModSlowBtn: '4. Ralentizar 50%',
     devModUnslowBtn: '4. Velocidad Normal',
     devModDrainMassBtn: '5. Drenar Masa a 18',
-    devModLockSplitBtn: '6. Bloquear División [Espacio]',
-    devModUnlockSplitBtn: '6. Permitir División [Espacio]',
-    devModLockEjectBtn: '7. Bloquear Esporas [W]',
-    devModUnlockEjectBtn: '7. Permitir Esporas [W]',
-    devModGiftCytesBtn: '8. Regalar +500 Cytes',
-    devModFineCytesBtn: '9. Multar -250 Cytes',
-    devModResetUpgradesBtn: '11. Reiniciar Mejoras (Nv.0)',
-    devModStripOrgansBtn: '12. Quitar Órganos',
-    devModForceRenameBtn: '13. Forzar Nombre Sancionado',
-    devModKickMatchBtn: '14. Expulsar de Partida',
-    devModTempBan5mBtn: '15. Suspender 5 Minutos',
-    devModPardonBtn: '17. Perdonar y Limpiar Todo',
+    devModBoostMassBtn: '6. Subir Masa (+500)',
+    devModLockSplitBtn: '7. Bloquear División [Espacio]',
+    devModUnlockSplitBtn: '7. Permitir División [Espacio]',
+    devModLockEjectBtn: '8. Bloquear Esporas [W]',
+    devModUnlockEjectBtn: '8. Permitir Esporas [W]',
+    devModCustomCytesLabel: '9. Subir / Bajar / Fijar Cytes a Valor Personalizado:',
+    devCustomCytesPlaceholder: 'Cantidad de Cytes (ej. 1500)...',
+    devAddCustomCytesBtn: '9a. Subir +Cytes',
+    devSubCustomCytesBtn: '9b. Bajar -Cytes',
+    devSetCustomCytesBtn: '9c. Fijar Cytes Exactos',
+    devModGiftCytesBtn: '10. Regalar +500 Cytes',
+    devModFineCytesBtn: '11. Multar -250 Cytes',
+    devModResetUpgradesBtn: '13. Reiniciar Mejoras (Nv.0)',
+    devModStripOrgansBtn: '14. Quitar Órganos',
+    devModResetSkinsBtn: '15. Quitar Skins/Esporas',
+    devModForceRenameBtn: '16. Forzar Nombre Sancionado',
+    devModInvertControlsBtn: '17. Invertir Controles',
+    devModNormalControlsBtn: '17. Controles Normales',
+    devModKickMatchBtn: '18. Expulsar de Partida',
+    devModTempBan5mBtn: '19. Suspender 5 Minutos',
+    devModPardonBtn: 'Perdonar y Limpiar Todo',
     devWarnComposerTitle: 'Enviar Advertencia Personalizada con Pregunta Obligatoria',
+    devWarnHowItReachesTitle: '¿Cómo le llega la advertencia y pregunta al jugador?',
+    devWarnHowItReachesDesc: 'En menos de 2 segundos se abre automáticamente una ventana emergente bloqueante a pantalla completa en el teléfono o PC del jugador. El juego le muestra tu mensaje personalizado y la pregunta obligatoria: no puede cerrar la ventana ni seguir jugando hasta que escriba su respuesta y presione "Enviar Respuesta al DEV". Su respuesta aparecerá aquí mismo en el historial del usuario.',
+    devWarnPreviewBtn: 'Probar Vista Previa en mi Pantalla',
     devWarnCustomMessageLabel: 'Mensaje de Advertencia Personalizado para el Jugador:',
     devWarnCustomMessagePlaceholder: 'Escribe el motivo de la advertencia que verá en pantalla...',
     devWarnQuestionLabel: 'Pregunta Obligatoria que el Jugador Debe Responder:',
@@ -1044,6 +1154,7 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     devSlowedBadge: 'Ralentizado 50%',
     devSplitLockedBadge: 'Sin División',
     devEjectLockedBadge: 'Sin Esporas',
+    devControlsInvertedBadge: 'Controles Invertidos',
     devTempBannedBadge: 'Suspendido 5m',
     devOnlyRealUsersNotice: 'Solo aparecen usuarios reales existentes que se han conectado al juego (sin bots ni cuentas ficticias).',
     devUserNotExistingToast: 'Ese ID o nombre de usuario no existe entre los jugadores reales registrados.',
@@ -1054,6 +1165,87 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     tierBasicBadge: 'BÁSICO · ECONÓMICO',
     tierNormalBadge: 'NORMAL · ESTÁNDAR',
     tierVipBadge: 'VIP · EXCLUSIVO',
+    podiumTitle: 'Podio Top 3',
+    treatmentAndPatientStatusTitle: 'Estado de Tratamiento & Paciente',
+    activeTreatmentLabel: 'Tratamiento Activo',
+    noActiveTreatmentLabel: 'Sin fármaco activo en plasma',
+    administerTreatmentLabel: 'Intervención Médica (Dosis en Sangre)',
+    treatmentAntibiotic: 'Antibiótico IV',
+    treatmentAnalgesic: 'Analgésico',
+    treatmentVaccine: 'Vacuna ARNm',
+    treatmentAntiviral: 'Pastilla Antiviral',
+    treatmentIvSerum: 'Suero IV',
+    treatmentAntipyretic: 'Antipirético',
+    treatmentAntibioticEffect: 'Lisis bacteriana: -22 ml Pus, Patógenos -20% masa y +10% Salud',
+    treatmentAnalgesicEffect: 'Antiinflamatorio: -0.6 °C Fiebre, +14% ATP y +30% Velocidad',
+    treatmentVaccineEffect: 'Memoria Inmune: +35% Velocidad y Escudo Inmune, +14% Salud y -16 ml Pus',
+    treatmentAntiviralEffect: 'Freno Viral: Ralentiza Patógenos (-30%), -14 ml Pus y +9% Salud',
+    treatmentIvSerumEffect: 'Rehidratación: +22% Hidratación, +18% Energía ATP y +35 Masa',
+    treatmentAntipyreticEffect: 'Termorregulación: Baja Fiebre (-1.1 °C), frena Shock y +8% Salud',
+    activeHormoneLabel: 'Hormona Endocrina Activa',
+    hormoneAdrenaline: 'Adrenalina (EPI)',
+    hormoneNoradrenaline: 'Noradrenalina (NOR)',
+    hormoneInsulin: 'Insulina (INS)',
+    hormoneGlucagon: 'Glucagón (GLU)',
+    hormoneSomatotropin: 'Somatotropina (GH)',
+    hormoneMelatonin: 'Melatonina (MEL)',
+    hormoneThyroxine: 'Tiroxina (T4)',
+    hormoneCortisol: 'Cortisol (COR)',
+    hormoneDopamine: 'Dopamina (DOP)',
+    hormoneSerotonin: 'Serotonina (5HT)',
+    hormoneOxytocin: 'Oxitocina (OXT)',
+    hormoneEpo: 'Eritropoyetina (EPO)',
+    hormoneAdrenalineEffect: '+65% Velocidad explosiva, +25 Masa y +6% ATP (10s)',
+    hormoneNoradrenalineEffect: '+50% Velocidad arterial y +40% Impulso de Fisión (10s)',
+    hormoneInsulinEffect: 'Imán Glucídico 2.2x radio de succión y +48 Masa (10s)',
+    hormoneGlucagonEffect: 'Glucogenólisis: 1.6x digestión de nutrientes y +35% Velocidad (10s)',
+    hormoneSomatotropinEffect: 'Mitosis GH: +62 Masa inmediata y +4 Masa/seg continua (10s)',
+    hormoneMelatoninEffect: 'Sigilo Pineal: Calma anticuerpos a 0 alerta y +30 Masa (12s)',
+    hormoneThyroxineEffect: 'Hiper-Metabolismo T4: 2x masa al comer y +40% Velocidad (12s)',
+    hormoneCortisolEffect: 'Blindaje Cortical: -65% daño de anticuerpos/choques y +42 Masa (12s)',
+    hormoneDopamineEffect: 'Euforia Neural: +55% Velocidad, giro instantáneo y +12 Cytes (10s)',
+    hormoneSerotoninEffect: 'Armonía 5HT: Fusión celular instantánea (0s) y +38 Masa (10s)',
+    hormoneOxytocinEffect: 'Regeneración Vascular: +45 Masa, +10 Cytes y +6% Salud Paciente (10s)',
+    hormoneEpoEffect: 'Hematopoyesis EPO: Genera 4 Glóbulos Rojos, +20 Cytes y +35 Masa (10s)',
+    dailyLeaderboardBtn: 'Top 24h',
+    dailyLeaderboardTitle: 'Tabla de Clasificación Diaria',
+    dailyLeaderboardSubtitle: 'Destacados del día (se reinicia cada 24 horas) · Jugadores Reales (Sin Bots) y Bots',
+    dailyRefreshTitle: 'Actualizar clasificación',
+    dailyPlayersTab: 'Jugadores (Sin Bots)',
+    dailyBotsTab: 'Clasificación de Bots',
+    dailyFeaturedTab: 'Destacados del Día',
+    dailyMostCytesTab: 'Más Cytes (Moneda)',
+    dailyLongestSurvivalTab: 'Más Tiempo Sobrevivido',
+    dailyHighestMassTab: 'Mayor Masa Alcanzada',
+    dailyCytesLeaderLabel: 'Líder en Cytes',
+    dailySurvivalLeaderLabel: 'Mayor Supervivencia',
+    dailyMassLeaderLabel: 'Récord de Masa',
+    dailyAliveSuffix: 'vivo',
+    dailyNoRecordsToday: 'No hay registros todavía en este ciclo de 24 horas.',
+    dailyPlayersRankingHeader: 'Ranking Oficial de Jugadores (Sin Bots)',
+    dailyBotsRankingHeader: 'Ranking Diario de Bots con Personalidad IA',
+    dailySortedBy: 'Ordenado por',
+    dailyTimeCol: 'Tiempo',
+    dailyAiLabel: 'IA',
+    botPersonalitySniper: 'Francotirador',
+    botPersonalityZigzagger: 'Zigzagueante',
+    botPersonalityOpportunist: 'Oportunista',
+    botPersonalityHormoneHunter: 'Caza-Hormonas',
+    botPersonalityFarmer: 'Recolector',
+    botPersonalityBaiter: 'Emboscador',
+    botPersonalityCasual: 'Casual',
+    achDifficultyEasy: 'FÁCIL',
+    achDifficultyNormal: 'NORMAL',
+    achDifficultyHard: 'DIFÍCIL',
+    achDifficultySuperHard: 'SÚPER DIFÍCIL',
+    achTabEasy: 'Fáciles',
+    achTabNormal: 'Normales',
+    achTabHard: 'Difíciles',
+    achTabSuperHard: 'Súper Difíciles',
+    joystickTitle: 'Panel de Control: Arrastra la bola para deslizarte y moverte en el mapa',
+    joystickSliding: 'Deslizando',
+    joystickSlidePanel: 'Panel Deslizar',
+    patientVitalsShort: 'Paciente & Dosis',
   },
   en: {
     title: 'Mite.io',
@@ -1176,8 +1368,8 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     battleStep3Desc: 'Reach 100 mass over an organ (Heart, Brain, Lungs, Liver, Kidneys) to claim it and secure tactical perks.',
     battleStep4Title: '4. Victory Condition',
     battleStep4Desc: 'The faction that secures 100% bloodstream dominance decides the fate of the human host.',
-    // 5 Aspect Upgrades up to Level 1500
-    upgradeTabTitle: 'Cellular Upgrades (Level 1500)',
+    // 5 Aspect Upgrades
+    upgradeTabTitle: 'Cellular Upgrades',
     upgradeLevelLabel: 'Level',
     upgradeCostLabel: 'Cost',
     upgradeMaxReached: 'Max Level (1500)',
@@ -1197,7 +1389,7 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     quickUpgrade100: '+100 Levels',
     quickUpgradeMax: 'Max',
     totalAffordable: 'Max Affordable',
-    homeUpgradesBtn: 'Upgrades (Level 1500)',
+    homeUpgradesBtn: 'Upgrades',
     upgradesHeroTitle: 'Cellular Evolution & Upgrades',
     upgradesHeroSubtitle: 'Upgrade up to level 1500 across 5 biological traits to rule the bloodstream',
     // Boosters tab in Shop
@@ -1365,7 +1557,8 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     devBadgeTitle: 'Customize DEV Tag',
     devPanelTitle: 'DEV Administration Panel',
     devCustomColor: 'Hex Color (Default: Gold)',
-    devCustomRole: 'Tag Title',
+    devCustomRole: 'Tag Title (Max 15 characters)',
+    devQuickShortcutsLabel: 'Quick Shortcuts (Default DEV + 5 Shortcuts):',
     devIconPreset1: 'Choose Primary Icon',
     devIconPreset2: 'Choose Secondary Icon',
     devCustomSvgCode: 'Enter SVG code (<svg...)',
@@ -1553,6 +1746,87 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
     tierBasicBadge: 'BASIC · AFFORDABLE',
     tierNormalBadge: 'NORMAL · STANDARD',
     tierVipBadge: 'VIP · EXCLUSIVE',
+    podiumTitle: 'Top 3 Podium',
+    treatmentAndPatientStatusTitle: 'Treatment & Patient Status',
+    activeTreatmentLabel: 'Active Treatment',
+    noActiveTreatmentLabel: 'No active drug in bloodstream',
+    administerTreatmentLabel: 'Medical Intervention (Bloodstream Dose)',
+    treatmentAntibiotic: 'IV Antibiotic',
+    treatmentAnalgesic: 'Analgesic',
+    treatmentVaccine: 'mRNA Vaccine',
+    treatmentAntiviral: 'Antiviral Pill',
+    treatmentIvSerum: 'IV Serum',
+    treatmentAntipyretic: 'Antipyretic',
+    treatmentAntibioticEffect: 'Bacterial Lysis: -22 ml Pus, Pathogens -20% mass & +10% Health',
+    treatmentAnalgesicEffect: 'Anti-inflammatory: -0.6 °C Fever, +14% ATP & +30% Cell Speed',
+    treatmentVaccineEffect: 'Immune Memory: +35% Speed & Immune Shield, +14% Health & -16 ml Pus',
+    treatmentAntiviralEffect: 'Viral Inhibitor: Slows Pathogens (-30%), -14 ml Pus & +9% Health',
+    treatmentIvSerumEffect: 'Plasma Rehydration: +22% Hydration, +18% ATP Energy & +35 Mass',
+    treatmentAntipyreticEffect: 'Thermoregulation: Drops Fever (-1.1 °C), halts Shock & +8% Health',
+    activeHormoneLabel: 'Active Endocrine Hormone',
+    hormoneAdrenaline: 'Adrenaline (EPI)',
+    hormoneNoradrenaline: 'Noradrenaline (NOR)',
+    hormoneInsulin: 'Insulin (INS)',
+    hormoneGlucagon: 'Glucagon (GLU)',
+    hormoneSomatotropin: 'Somatotropin (GH)',
+    hormoneMelatonin: 'Melatonin (MEL)',
+    hormoneThyroxine: 'Thyroxine (T4)',
+    hormoneCortisol: 'Cortisol (COR)',
+    hormoneDopamine: 'Dopamine (DOP)',
+    hormoneSerotonin: 'Serotonin (5HT)',
+    hormoneOxytocin: 'Oxytocin (OXT)',
+    hormoneEpo: 'Erythropoietin (EPO)',
+    hormoneAdrenalineEffect: '+65% Explosive speed, +25 Mass & +6% ATP (10s)',
+    hormoneNoradrenalineEffect: '+50% Arterial speed & +40% Split Impulse (10s)',
+    hormoneInsulinEffect: '2.2x Glucose nutrient suction radius & +48 Mass (10s)',
+    hormoneGlucagonEffect: 'Glycogenolysis: 1.6x nutrient digestion & +35% Speed (10s)',
+    hormoneSomatotropinEffect: 'GH Mitosis: +62 instant Mass & +4 Mass/sec growth (10s)',
+    hormoneMelatoninEffect: 'Pineal Stealth: Calms antibodies to 0 alert & +30 Mass (12s)',
+    hormoneThyroxineEffect: 'T4 Hyper-Metabolism: 2x mass gain & +40% Speed (12s)',
+    hormoneCortisolEffect: 'Cortical Armor: -65% antibody/collision damage & +42 Mass (12s)',
+    hormoneDopamineEffect: 'Neural Euphoria: +55% Speed, instant agility & +12 Cytes (10s)',
+    hormoneSerotoninEffect: '5HT Harmony: Instant cell remerge (0s) & +38 Mass (10s)',
+    hormoneOxytocinEffect: 'Vascular Regen: +45 Mass, +10 Cytes & +6% Patient Health (10s)',
+    hormoneEpoEffect: 'EPO Hematopoiesis: Spawns 4 Red Blood Cells, +20 Cytes & +35 Mass (10s)',
+    dailyLeaderboardBtn: 'Top 24h',
+    dailyLeaderboardTitle: 'Daily 24h Leaderboard',
+    dailyLeaderboardSubtitle: 'Featured champions of the day (resets every 24h) · Real Players (No Bots) & Bots',
+    dailyRefreshTitle: 'Refresh leaderboard',
+    dailyPlayersTab: 'Players (No Bots)',
+    dailyBotsTab: 'Bots Leaderboard',
+    dailyFeaturedTab: 'Featured Today',
+    dailyMostCytesTab: 'Most Cytes',
+    dailyLongestSurvivalTab: 'Longest Survival',
+    dailyHighestMassTab: 'Highest Mass',
+    dailyCytesLeaderLabel: 'Cytes Leader',
+    dailySurvivalLeaderLabel: 'Longest Survival',
+    dailyMassLeaderLabel: 'Mass Record',
+    dailyAliveSuffix: 'alive',
+    dailyNoRecordsToday: 'No records yet in this 24h cycle.',
+    dailyPlayersRankingHeader: 'Official Real Players Ranking (No Bots)',
+    dailyBotsRankingHeader: 'Daily AI Personality Bots Ranking',
+    dailySortedBy: 'Sorted by',
+    dailyTimeCol: 'Time',
+    dailyAiLabel: 'AI',
+    botPersonalitySniper: 'Sniper',
+    botPersonalityZigzagger: 'Zigzagger',
+    botPersonalityOpportunist: 'Opportunist',
+    botPersonalityHormoneHunter: 'Hormone Hunter',
+    botPersonalityFarmer: 'Harvester',
+    botPersonalityBaiter: 'Ambusher',
+    botPersonalityCasual: 'Casual',
+    achDifficultyEasy: 'EASY',
+    achDifficultyNormal: 'NORMAL',
+    achDifficultyHard: 'HARD',
+    achDifficultySuperHard: 'SUPER HARD',
+    achTabEasy: 'Easy',
+    achTabNormal: 'Normal',
+    achTabHard: 'Hard',
+    achTabSuperHard: 'Super Hard',
+    joystickTitle: 'Control Pad: Drag the ball to slide and steer across the map',
+    joystickSliding: 'Sliding',
+    joystickSlidePanel: 'Slide Pad',
+    patientVitalsShort: 'Patient & Doses',
   },
   pt: {
     title: 'Mite.io',
@@ -2070,19 +2344,175 @@ export const TRANSLATIONS: Record<string, Partial<TranslationStrings>> = {
   // Default fallback helper generating smooth consistent strings for remaining languages
 };
 
-// Fallback generator for all 35 languages so every supported language has working strings
+// Complete localization engine for all 35 languages so no language ever mixes half-English with another language
+const LOCALIZED_UI_PACKS: Record<string, Partial<TranslationStrings>> = {
+  pt: {
+    cytes: 'Cytes',
+    cytesEarned: 'Cytes Obtidos',
+    shopBtn: 'Loja Cyte',
+    shopTitle: 'Mercado de Cytes',
+    shopSubtitle: 'Troque glóbulos vermelhos (Cytes) por skins mutantes, rastros e bio-auras',
+    buyBtn: 'Comprar',
+    equipped: 'Equipado',
+    insufficientCytes: 'Cytes insuficientes',
+    currentOrgan: 'Órgão atual',
+    backToHome: 'Voltar ao Início',
+    shareBtn: 'Compartilhar Jogo',
+    shareModalTitle: 'Compartilhar Mite.io',
+    shareModalDesc: 'Convide seus amigos para a corrente sanguínea por qualquer rede ou QR Code.',
+    shareNativeBtn: 'Compartilhar no Dispositivo',
+    copyLinkBtn: 'Copiar Link',
+    linkCopied: 'Link copiado!',
+    battleTutorialBtn: 'Tutorial Batalha',
+    homeUpgradesBtn: 'Melhorias',
+    modeFfa: 'Individual (FFA)',
+    modeTeam: 'Batalha em Equipe',
+    modeBots: 'Prática com Bots',
+    factionImmuneTitle: 'Sistema Imune',
+    factionImmuneDesc: 'Glóbulos brancos, macrófagos e probióticos benéficos.',
+    factionPathogenTitle: 'Infecção',
+    factionPathogenDesc: 'Bactérias agressivas, vírus e toxinas celulares.',
+    changeBacteriaBtn: 'Mudar Cepa',
+    realMultiplayerToggle: 'Multijogador Real',
+    realMultiplayerDesc: 'Apenas humanos online',
+    installPwaBtn: 'Instalar App',
+    installPwaTitle: 'Instalar Aplicativo Mite.io',
+    understoodBtn: 'Entendido',
+    reportBtn: 'Reportar',
+    devOpenPanelBtn: 'Painel DEV',
+    devPanelTitle: 'Painel de Administração DEV',
+    devBadgeTitle: 'Personalizar Tag DEV',
+    devUsersTab: 'Moderar Usuários e Permissões DEV',
+    onlineBadge: 'Online',
+    activePlayersTitle: 'Jogadores Ativos',
+    closeBtn: 'Fechar',
+    doneBtn: 'Pronto',
+  },
+  fr: {
+    cytes: 'Cytes',
+    cytesEarned: 'Cytes Gagnés',
+    shopBtn: 'Boutique Cyte',
+    shopTitle: 'Marché Biologique Cyte',
+    shopSubtitle: 'Échangez vos Cytes contre des apparences mutantes, spores et bio-auras',
+    buyBtn: 'Acheter',
+    equipped: 'Équipé',
+    insufficientCytes: 'Cytes insuffisants',
+    currentOrgan: 'Organe actuel',
+    backToHome: 'Retour à l\'Accueil',
+    shareBtn: 'Partager le Jeu',
+    shareModalTitle: 'Partager Mite.io',
+    shareModalDesc: 'Invitez vos amis dans le flux sanguin via vos réseaux ou code QR.',
+    shareNativeBtn: 'Partager sur l\'Appareil',
+    copyLinkBtn: 'Copier le Lien',
+    linkCopied: 'Lien copié !',
+    battleTutorialBtn: 'Tutoriel Bataille',
+    homeUpgradesBtn: 'Améliorations',
+    modeFfa: 'Chacun pour Soi (FFA)',
+    modeTeam: 'Bataille en Équipe',
+    modeBots: 'Entraînement Bots',
+    factionImmuneTitle: 'Système Immunitaire',
+    factionImmuneDesc: 'Globules blancs, macrophages et probiotiques.',
+    factionPathogenTitle: 'Infection Pathogène',
+    factionPathogenDesc: 'Bactéries agressives, virus et toxines cellulaires.',
+    changeBacteriaBtn: 'Changer de Souche',
+    realMultiplayerToggle: 'Multijoueur Réel',
+    realMultiplayerDesc: 'Joueurs humains en ligne',
+    installPwaBtn: 'Installer l\'App',
+    installPwaTitle: 'Installer l\'Application Mite.io',
+    understoodBtn: 'Compris',
+    reportBtn: 'Signaler',
+    devOpenPanelBtn: 'Panneau DEV',
+    devPanelTitle: 'Panneau d\'Administration DEV',
+    devBadgeTitle: 'Personnaliser le Badge DEV',
+    devUsersTab: 'Modérer Utilisateurs & Droits DEV',
+    onlineBadge: 'En Ligne',
+    activePlayersTitle: 'Joueurs Actifs',
+    closeBtn: 'Fermer',
+    doneBtn: 'Terminé',
+  },
+  de: {
+    cytes: 'Cytes',
+    cytesEarned: 'Verdiente Cytes',
+    shopBtn: 'Cyte-Shop',
+    shopTitle: 'Biologischer Cyte-Markt',
+    buyBtn: 'Kaufen',
+    equipped: 'Ausgerüstet',
+    insufficientCytes: 'Nicht genug Cytes',
+    currentOrgan: 'Aktuelles Organ',
+    backToHome: 'Zurück zum Start',
+    shareBtn: 'Spiel Teilen',
+    shareModalTitle: 'Mite.io Teilen',
+    copyLinkBtn: 'Link Kopieren',
+    linkCopied: 'Link kopiert!',
+    battleTutorialBtn: 'Kampf-Tutorial',
+    homeUpgradesBtn: 'Upgrades',
+    modeFfa: 'Jeder gegen Jeden (FFA)',
+    modeTeam: 'Team-Schlacht',
+    modeBots: 'Bot-Training',
+    factionImmuneTitle: 'Immunsystem',
+    factionPathogenTitle: 'Infektion',
+    changeBacteriaBtn: 'Stamm Wechseln',
+    realMultiplayerToggle: 'Echter Mehrspieler',
+    realMultiplayerDesc: 'Nur echte Spieler online',
+    installPwaBtn: 'App Installieren',
+    understoodBtn: 'Verstanden',
+    reportBtn: 'Melden',
+    devOpenPanelBtn: 'DEV-Panel',
+    devPanelTitle: 'DEV-Administrationspanel',
+    onlineBadge: 'Online',
+    activePlayersTitle: 'Aktive Spieler',
+    closeBtn: 'Schließen',
+    doneBtn: 'Fertig',
+  },
+  it: {
+    cytes: 'Cytes',
+    cytesEarned: 'Cytes Ottenuti',
+    shopBtn: 'Negozio Cyte',
+    shopTitle: 'Mercato Biologico Cyte',
+    buyBtn: 'Acquista',
+    equipped: 'Equipaggiato',
+    insufficientCytes: 'Cytes insufficienti',
+    currentOrgan: 'Organo attuale',
+    backToHome: 'Torna alla Home',
+    shareBtn: 'Condividi Gioco',
+    shareModalTitle: 'Condividi Mite.io',
+    copyLinkBtn: 'Copia Link',
+    linkCopied: 'Link copiato!',
+    battleTutorialBtn: 'Tutorial Battaglia',
+    homeUpgradesBtn: 'Potenziamenti',
+    modeFfa: 'Tutti contro Tutti (FFA)',
+    modeTeam: 'Battaglia a Squadre',
+    modeBots: 'Pratica con Bot',
+    factionImmuneTitle: 'Sistema Immunitario',
+    factionPathogenTitle: 'Infezione',
+    changeBacteriaBtn: 'Cambia Ceppo',
+    realMultiplayerToggle: 'Multigiocatore Reale',
+    realMultiplayerDesc: 'Solo umani online',
+    installPwaBtn: 'Installa App',
+    understoodBtn: 'Capito',
+    reportBtn: 'Segnala',
+    devOpenPanelBtn: 'Pannello DEV',
+    devPanelTitle: 'Pannello di Amministrazione DEV',
+    onlineBadge: 'Online',
+    activePlayersTitle: 'Giocatori Attivi',
+    closeBtn: 'Chiudi',
+    doneBtn: 'Fatto',
+  },
+};
+
 export function getTranslations(langCode: string): TranslationStrings {
   const es = TRANSLATIONS['es'] as TranslationStrings;
   const en = (TRANSLATIONS['en'] || {}) as Partial<TranslationStrings>;
-  const base = (langCode || '').split('-')[0];
+  const base = (langCode || 'es').split('-')[0].toLowerCase();
   const baseTrans = (TRANSLATIONS[base] || {}) as Partial<TranslationStrings>;
   const exactTrans = (TRANSLATIONS[langCode] || {}) as Partial<TranslationStrings>;
+  const uiPack = LOCALIZED_UI_PACKS[base] || {};
 
-  // If user is in Spanish locale, use 100% Spanish
-  if (!langCode || langCode.toLowerCase().startsWith('es')) {
-    return { ...en, ...es, ...baseTrans, ...exactTrans };
+  // For Spanish, Catalan, Portuguese, Italian, French — use Spanish base so zero English leaks in
+  if (!langCode || ['es', 'ca', 'pt', 'it', 'fr'].includes(base)) {
+    return { ...en, ...es, ...baseTrans, ...uiPack, ...exactTrans };
   }
-  return { ...es, ...en, ...baseTrans, ...exactTrans };
+  return { ...es, ...en, ...baseTrans, ...uiPack, ...exactTrans };
 }
 
 const SPANISH_TIMEZONES = [

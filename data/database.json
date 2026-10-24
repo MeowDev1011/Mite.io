@@ -1,14 +1,20 @@
 {
   "profiles": {
-    "test_device_fresh_99": {
-      "deviceId": "test_device_fresh_99",
-      "name": "Microbio-H_99",
-      "cytes": 0,
-      "totalCytesEarned": 0,
+    "bio_dev_156b119a2a3a3c": {
+      "deviceId": "bio_dev_156b119a2a3a3c",
+      "name": "Microbio-3A3C",
+      "deviceType": "Desktop",
+      "cytes": 53,
+      "totalCytesEarned": 53,
       "selectedSkinId": "emerald_mite",
       "selectedSporeId": "spore_plasma",
       "selectedBacteriaId": "bacillus_subtilis",
-      "achievements": {},
+      "achievements": {
+        "explore_15": {
+          "unlocked": true,
+          "unlockedAt": "2026-10-24T15:15:49.289Z"
+        }
+      },
       "unlockedSkinIds": [
         "emerald_mite"
       ],
@@ -17,96 +23,49 @@
       ],
       "unlockedBacteriaIds": [
         "bacillus_subtilis",
-        "escherichia_coli",
-        "lactobacillus_casei"
+        "streptococcus_celer",
+        "spirillum_flex"
       ],
       "conqueredOrgans": [],
+      "upgrades": {
+        "attraction": 0,
+        "speed": 0,
+        "armor": 0,
+        "metabolism": 0,
+        "sporesFission": 0
+      },
       "stats": {
-        "gamesPlayed": 0,
-        "highestMass": 18,
+        "gamesPlayed": 1,
+        "highestMass": 40,
         "totalKills": 0,
         "totalRBCDevoured": 0,
-        "secretZoneFound": false
+        "secretZoneFound": false,
+        "longestSurvivalSec": 34
       },
       "preferredLanguage": "es",
-      "createdAt": "2026-10-17T13:39:20.899Z"
+      "createdAt": "2026-10-24T15:13:28.005Z",
+      "updatedAt": "2026-10-24T15:16:04.773Z",
+      "isDev": true,
+      "isFirstDev": true,
+      "isRealUser": true,
+      "lastSeenMs": 1792855472963,
+      "lastStatus": "online",
+      "lastOrgan": "Vasos Sanguíneos",
+      "lastMass": 40,
+      "lastFaction": "immune",
+      "lastX": 1500,
+      "lastY": 1500
     }
   },
   "territories": {},
-  "rooms": {
-    "room-human-ffa": {
-      "id": "room-human-ffa",
-      "mode": "ffa",
-      "humansOnly": true,
-      "playerCount": 18,
-      "maxPlayers": 50,
-      "leaderName": "Alpha-Leuko",
-      "leaderMass": 2450
-    },
-    "room-human-team": {
-      "id": "room-human-team",
-      "mode": "team",
-      "humansOnly": true,
-      "playerCount": 26,
-      "maxPlayers": 50,
-      "leaderName": "Titan-Macrophage",
-      "leaderMass": 3100,
-      "factionScores": {
-        "immune": 54,
-        "pathogen": 46
-      }
-    },
-    "room-bot-practice": {
-      "id": "room-bot-practice",
-      "mode": "bots",
-      "humansOnly": false,
-      "playerCount": 50,
-      "maxPlayers": 50,
-      "leaderName": "Bacillus-Prime",
-      "leaderMass": 1850
-    },
-    "room-test": {
-      "id": "room-test",
-      "mode": "team",
-      "humansOnly": true,
-      "playerCount": 2,
-      "maxPlayers": 50,
-      "leaderName": "HostPlayer",
-      "leaderMass": 100,
-      "factionScores": {
-        "immune": 50,
-        "pathogen": 50
-      }
-    }
-  },
-  "invitations": {
-    "inv_oddq4e3": {
-      "id": "inv_oddq4e3",
-      "fromDeviceId": "dev_host",
-      "fromPlayerName": "HostPlayer",
-      "toDeviceId": "dev_guest",
-      "toPlayerName": "GuestPlayer",
-      "mode": "team",
-      "factionRule": "host_decides",
-      "hostFaction": "immune",
-      "guestFaction": "pathogen",
-      "roomId": "room-test",
-      "status": "pending",
-      "createdAt": 1792244365207
-    },
-    "inv_3u0s34k": {
-      "id": "inv_3u0s34k",
-      "fromDeviceId": "dev_host",
-      "fromPlayerName": "HostPlayer",
-      "toDeviceId": "dev_guest",
-      "toPlayerName": "GuestPlayer",
-      "mode": "team",
-      "factionRule": "host_decides",
-      "hostFaction": "immune",
-      "guestFaction": "pathogen",
-      "roomId": "room-test",
-      "status": "pending",
-      "createdAt": 1792244387211
-    }
-  }
+  "rooms": {},
+  "invitations": {},
+  "firstDevId": "bio_dev_156b119a2a3a3c",
+  "devIds": [
+    "bio_dev_156b119a2a3a3c"
+  ],
+  "revokedDevIds": [],
+  "devBadges": {},
+  "moderation": {},
+  "reports": []
 }

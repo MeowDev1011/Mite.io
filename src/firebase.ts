@@ -23,8 +23,35 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
+// Named database provisioned for AI Studio
 export const db = getFirestore(app, appletConfig.firestoreDatabaseId);
+// Default '(default)' database shown first in the Firebase Console
+export const defaultDb = getFirestore(app);
 export const auth = getAuth(app);
+
+/**
+ * Writes a document to BOTH the named database AND the '(default)' database in Firebase
+ * so that inspecting either database in the Firebase Console always shows live data.
+ */
+export async function setDocDual(
+  collectionName: string,
+  docId: string,
+  data: Record<string, any>,
+  options?: { merge?: boolean }
+): Promise<void> {
+  const opts = options || { merge: true };
+  await Promise.allSettled([
+    setDoc(doc(db, collectionName, docId), data, opts),
+    setDoc(doc(defaultDb, collectionName, docId), data, opts),
+  ]);
+}
+
+export async function deleteDocDual(collectionName: string, docId: string): Promise<void> {
+  await Promise.allSettled([
+    deleteDoc(doc(db, collectionName, docId)),
+    deleteDoc(doc(defaultDb, collectionName, docId)),
+  ]);
+}
 
 // Initialize Analytics safely in browser environments
 if (typeof window !== 'undefined') {
@@ -51,7 +78,7 @@ export interface FirestoreErrorInfo {
   authInfo: {
     userId?: string | null;
     email?: string | null;
-    emailVerified?: boolean | null;
+    emailVerified?: string | boolean | null;
     isAnonymous?: boolean | null;
     tenantId?: string | null;
     providerInfo?: {
