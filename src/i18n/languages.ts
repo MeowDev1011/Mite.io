@@ -1,6 +1,5 @@
-// Internationalization (i18n) Engine for Mite.io supporting 35 languages
+// Internationalization with (i18n) Engine for Mite.io supporting 35 languages
 // Auto-detects device language and provides manual switching with full fallback.
-
 export interface LanguageInfo {
   code: string;
   name: string;
